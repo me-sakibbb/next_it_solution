@@ -119,6 +119,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -154,15 +155,15 @@
   .feature-card {
     @apply relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl;
   }
-  
+
   .feature-card-gradient {
     @apply absolute inset-0 opacity-10 dark:opacity-20;
   }
-  
+
   .feature-card-content {
     @apply relative z-10;
   }
-  
+
   .feature-icon-wrapper {
     @apply rounded-xl p-4 transition-transform duration-300 group-hover:scale-110;
   }
@@ -174,6 +175,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -184,6 +186,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -195,4 +198,29 @@
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* Print Styles for CV */
+@media print {
+  @page {
+    size: 210mm 297mm;
+    /* A4 size */
+    margin: 0;
+    /* Removing margins to let the template control spacing */
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure the print container takes up the full page */
+  .print-container {
+    width: 210mm;
+    min-height: 297mm;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
 }

@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
@@ -50,6 +50,13 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   const [sharpness, setSharpness] = useState(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Performance: refs for values that change at high frequency during drag
+  const cropRef = useRef({ x: 0, y: 0, w: 600, h: 600 })
+  const photoRef = useRef({ x: 0, y: 0, scale: 1 })
+  const rafRef = useRef<number>(0)
+  const filteredCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const filterDirtyRef = useRef(true)
+  const displayScaleRef = useRef({ x: 1, y: 1 }) // scale from original to display canvas
   
   // Crop state
   const [isCropping, setIsCropping] = useState(false)
@@ -132,15 +139,19 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   }
 
   const getHandleAtPosition = (x: number, y: number, handleSize: number = 12) => {
+    const cr = cropRef.current
+    const ds = displayScaleRef.current
+    
+    // Convert crop coordinates to display canvas space
     const handles = [
-      { name: 'tl' as ResizeHandle, x: cropX, y: cropY },
-      { name: 'tr' as ResizeHandle, x: cropX + cropWidth, y: cropY },
-      { name: 'bl' as ResizeHandle, x: cropX, y: cropY + cropHeight },
-      { name: 'br' as ResizeHandle, x: cropX + cropWidth, y: cropY + cropHeight },
-      { name: 'tm' as ResizeHandle, x: cropX + cropWidth / 2, y: cropY },
-      { name: 'bm' as ResizeHandle, x: cropX + cropWidth / 2, y: cropY + cropHeight },
-      { name: 'ml' as ResizeHandle, x: cropX, y: cropY + cropHeight / 2 },
-      { name: 'mr' as ResizeHandle, x: cropX + cropWidth, y: cropY + cropHeight / 2 },
+      { name: 'tl' as ResizeHandle, x: cr.x * ds.x, y: cr.y * ds.y },
+      { name: 'tr' as ResizeHandle, x: (cr.x + cr.w) * ds.x, y: cr.y * ds.y },
+      { name: 'bl' as ResizeHandle, x: cr.x * ds.x, y: (cr.y + cr.h) * ds.y },
+      { name: 'br' as ResizeHandle, x: (cr.x + cr.w) * ds.x, y: (cr.y + cr.h) * ds.y },
+      { name: 'tm' as ResizeHandle, x: (cr.x + cr.w / 2) * ds.x, y: cr.y * ds.y },
+      { name: 'bm' as ResizeHandle, x: (cr.x + cr.w / 2) * ds.x, y: (cr.y + cr.h) * ds.y },
+      { name: 'ml' as ResizeHandle, x: cr.x * ds.x, y: (cr.y + cr.h / 2) * ds.y },
+      { name: 'mr' as ResizeHandle, x: (cr.x + cr.w) * ds.x, y: (cr.y + cr.h / 2) * ds.y },
     ]
     
     for (const handle of handles) {
@@ -150,8 +161,10 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
       }
     }
     
-    // Check if inside crop box
-    if (x >= cropX && x <= cropX + cropWidth && y >= cropY && y <= cropY + cropHeight) {
+    // Check if inside crop box (convert x,y to original image space)
+    const origX = x / ds.x
+    const origY = y / ds.y
+    if (origX >= cr.x && origX <= cr.x + cr.w && origY >= cr.y && origY <= cr.y + cr.h) {
       return 'move' as ResizeHandle
     }
     
@@ -161,11 +174,13 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   // Get the photo's bounding rect in canvas coordinates (accounting for photoX/Y/Scale)
   const getPhotoBounds = () => {
     if (!image) return { x: 0, y: 0, w: 0, h: 0 }
+    const pr = photoRef.current
+    const ds = displayScaleRef.current
     return {
-      x: photoX,
-      y: photoY,
-      w: image.width * photoScale,
-      h: image.height * photoScale,
+      x: pr.x * ds.x,
+      y: pr.y * ds.y,
+      w: image.width * pr.scale * ds.x,
+      h: image.height * pr.scale * ds.y,
     }
   }
 
@@ -191,13 +206,15 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   }
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isCropping || !canvasRef.current) return
+    if (!isCropping || !canvasRef.current || !image) return
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
     const scaleX = canvas.width / rect.width
     const scaleY = canvas.height / rect.height
     const x = (e.clientX - rect.left) * scaleX
     const y = (e.clientY - rect.top) * scaleY
+    
+    const ds = displayScaleRef.current
     
     if (isPhotoMode) {
       // Photo mode: drag or resize the image itself
@@ -209,7 +226,8 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
         canvas.style.cursor = 'nwse-resize'
       } else if (handle === 'move') {
         setIsDragging(true)
-        setDragStart({ x: x - photoX, y: y - photoY })
+        // Store offset in display space
+        setDragStart({ x: x - photoRef.current.x * ds.x, y: y - photoRef.current.y * ds.y })
         canvas.style.cursor = 'grabbing'
       }
     } else {
@@ -217,7 +235,8 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
       const handle = getHandleAtPosition(x, y)
       if (handle === 'move') {
         setIsDragging(true)
-        setDragStart({ x: x - cropX, y: y - cropY })
+        // Store offset in display space
+        setDragStart({ x: x - cropRef.current.x * ds.x, y: y - cropRef.current.y * ds.y })
       } else if (handle) {
         setIsResizing(true)
         setActiveHandle(handle)
@@ -236,53 +255,54 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     const x = (e.clientX - rect.left) * scaleX
     const y = (e.clientY - rect.top) * scaleY
     
+    const ds = displayScaleRef.current
+    
     if (isPhotoMode) {
       if (isDragging) {
-        // Move the photo
-        setPhotoX(x - dragStart.x)
-        setPhotoY(y - dragStart.y)
+        // Move the photo - convert to original image space
+        photoRef.current.x = (x - dragStart.x) / ds.x
+        photoRef.current.y = (y - dragStart.y) / ds.y
+        scheduleRender()
       } else if (isResizing && photoResizeHandle) {
-        // Resize the photo from the corner handle, maintaining aspect ratio
-        const b = getPhotoBounds()
+        const pr = photoRef.current
+        const b = { x: pr.x * ds.x, y: pr.y * ds.y, w: image.width * pr.scale * ds.x, h: image.height * pr.scale * ds.y }
         const aspect = image.width / image.height
         
-        let newX = photoX
-        let newY = photoY
+        let newX = pr.x
+        let newY = pr.y
         let newW = b.w
-        let newH = b.h
         
         switch (photoResizeHandle) {
           case 'br': {
             newW = Math.max(50, x - b.x)
-            newH = newW / aspect
             break
           }
           case 'bl': {
             newW = Math.max(50, (b.x + b.w) - x)
-            newH = newW / aspect
-            newX = (b.x + b.w) - newW
+            newX = ((b.x + b.w) - newW) / ds.x
             break
           }
           case 'tr': {
             newW = Math.max(50, x - b.x)
-            newH = newW / aspect
-            newY = (b.y + b.h) - newH
+            const newH = newW / aspect
+            newY = ((b.y + b.h) - newH) / ds.y
             break
           }
           case 'tl': {
             newW = Math.max(50, (b.x + b.w) - x)
-            newH = newW / aspect
-            newX = (b.x + b.w) - newW
-            newY = (b.y + b.h) - newH
+            const newH = newW / aspect
+            newX = ((b.x + b.w) - newW) / ds.x
+            newY = ((b.y + b.h) - newH) / ds.y
             break
           }
         }
         
-        setPhotoX(newX)
-        setPhotoY(newY)
-        setPhotoScale(newW / image.width)
+        photoRef.current.x = newX
+        photoRef.current.y = newY
+        photoRef.current.scale = newW / (image.width * ds.x)
+        scheduleRender()
       } else {
-        // Cursor feedback
+        // Cursor feedback only (no render needed)
         const handle = getPhotoHandleAtPosition(x, y)
         if (handle === 'tl' || handle === 'br') canvas.style.cursor = 'nwse-resize'
         else if (handle === 'tr' || handle === 'bl') canvas.style.cursor = 'nesw-resize'
@@ -302,57 +322,61 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
       }
       
       if (isDragging) {
-        const newX = Math.max(0, Math.min(x - dragStart.x, image.width - cropWidth))
-        const newY = Math.max(0, Math.min(y - dragStart.y, image.height - cropHeight))
-        setCropX(newX)
-        setCropY(newY)
+        const cr = cropRef.current
+        // Convert to original image space
+        const newX = Math.max(0, Math.min((x - dragStart.x) / ds.x, image.width - cr.w))
+        const newY = Math.max(0, Math.min((y - dragStart.y) / ds.y, image.height - cr.h))
+        cr.x = newX
+        cr.y = newY
+        scheduleRender()
       } else if (isResizing && activeHandle) {
         const dx = x - dragStart.x
         const dy = y - dragStart.y
-        const aspectRatio = cropWidth / cropHeight
+        const cr = cropRef.current
+        const aspectRatio = cr.w / cr.h
         
-        let newX = cropX
-        let newY = cropY
-        let newWidth = cropWidth
-        let newHeight = cropHeight
+        let newX = cr.x
+        let newY = cr.y
+        let newWidth = cr.w
+        let newHeight = cr.h
       
       switch (activeHandle) {
         case 'br':
-          newWidth = Math.max(50, cropWidth + dx)
-          newHeight = maintainAspectRatio ? newWidth / aspectRatio : Math.max(50, cropHeight + dy)
+          newWidth = Math.max(50, cr.w + dx / ds.x)
+          newHeight = maintainAspectRatio ? newWidth / aspectRatio : Math.max(50, cr.h + dy / ds.y)
           break
         case 'bl':
-          newWidth = Math.max(50, cropWidth - dx)
-          newHeight = maintainAspectRatio ? newWidth / aspectRatio : Math.max(50, cropHeight + dy)
-          newX = cropX + (cropWidth - newWidth)
+          newWidth = Math.max(50, cr.w - dx / ds.x)
+          newHeight = maintainAspectRatio ? newWidth / aspectRatio : Math.max(50, cr.h + dy / ds.y)
+          newX = cr.x + (cr.w - newWidth)
           break
         case 'tr':
-          newWidth = Math.max(50, cropWidth + dx)
-          newHeight = maintainAspectRatio ? newWidth / aspectRatio : Math.max(50, cropHeight - dy)
-          newY = cropY + (cropHeight - newHeight)
+          newWidth = Math.max(50, cr.w + dx / ds.x)
+          newHeight = maintainAspectRatio ? newWidth / aspectRatio : Math.max(50, cr.h - dy / ds.y)
+          newY = cr.y + (cr.h - newHeight)
           break
         case 'tl':
-          newWidth = Math.max(50, cropWidth - dx)
-          newHeight = maintainAspectRatio ? newWidth / aspectRatio : Math.max(50, cropHeight - dy)
-          newX = cropX + (cropWidth - newWidth)
-          newY = cropY + (cropHeight - newHeight)
+          newWidth = Math.max(50, cr.w - dx / ds.x)
+          newHeight = maintainAspectRatio ? newWidth / aspectRatio : Math.max(50, cr.h - dy / ds.y)
+          newX = cr.x + (cr.w - newWidth)
+          newY = cr.y + (cr.h - newHeight)
           break
         case 'mr':
-          newWidth = Math.max(50, cropWidth + dx)
+          newWidth = Math.max(50, cr.w + dx / ds.x)
           if (maintainAspectRatio) newHeight = newWidth / aspectRatio
           break
         case 'ml':
-          newWidth = Math.max(50, cropWidth - dx)
-          newX = cropX + (cropWidth - newWidth)
+          newWidth = Math.max(50, cr.w - dx / ds.x)
+          newX = cr.x + (cr.w - newWidth)
           if (maintainAspectRatio) newHeight = newWidth / aspectRatio
           break
         case 'bm':
-          newHeight = Math.max(50, cropHeight + dy)
+          newHeight = Math.max(50, cr.h + dy / ds.y)
           if (maintainAspectRatio) newWidth = newHeight * aspectRatio
           break
         case 'tm':
-          newHeight = Math.max(50, cropHeight - dy)
-          newY = cropY + (cropHeight - newHeight)
+          newHeight = Math.max(50, cr.h - dy / ds.y)
+          newY = cr.y + (cr.h - newHeight)
           if (maintainAspectRatio) newWidth = newHeight * aspectRatio
           break
       }
@@ -373,16 +397,27 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
         newHeight = image.height - newY
       }
       
-      setCropX(newX)
-      setCropY(newY)
-      setCropWidth(newWidth)
-      setCropHeight(newHeight)
+      cr.x = newX
+      cr.y = newY
+      cr.w = newWidth
+      cr.h = newHeight
       setDragStart({ x, y })
+      scheduleRender()
       }
     }
   }
 
   const handleMouseUp = () => {
+    // Sync refs back to state on mouse up (triggers one final proper render)
+    if (isDragging || isResizing) {
+      setCropX(cropRef.current.x)
+      setCropY(cropRef.current.y)
+      setCropWidth(cropRef.current.w)
+      setCropHeight(cropRef.current.h)
+      setPhotoX(photoRef.current.x)
+      setPhotoY(photoRef.current.y)
+      setPhotoScale(photoRef.current.scale)
+    }
     setIsDragging(false)
     setIsResizing(false)
     setActiveHandle(null)
@@ -396,21 +431,27 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     if (!isCropping || !isPhotoMode || !image) return
     e.preventDefault()
     
-    // Scale the photo up/down centered on the crop area
+    const pr = photoRef.current
+    const cr = cropRef.current
     const delta = e.deltaY > 0 ? -0.03 : 0.03
-    const newScale = Math.max(0.1, Math.min(5, photoScale + delta))
+    const newScale = Math.max(0.1, Math.min(5, pr.scale + delta))
     
-    // Keep image centered around the crop center while scaling
-    const cropCenterX = cropX + cropWidth / 2
-    const cropCenterY = cropY + cropHeight / 2
-    const oldW = image.width * photoScale
-    const oldH = image.height * photoScale
+    const cropCenterX = cr.x + cr.w / 2
+    const cropCenterY = cr.y + cr.h / 2
+    const oldW = image.width * pr.scale
+    const oldH = image.height * pr.scale
     const newW = image.width * newScale
     const newH = image.height * newScale
     
-    setPhotoX(photoX - (newW - oldW) * ((cropCenterX - photoX) / oldW))
-    setPhotoY(photoY - (newH - oldH) * ((cropCenterY - photoY) / oldH))
-    setPhotoScale(newScale)
+    pr.x = pr.x - (newW - oldW) * ((cropCenterX - pr.x) / oldW)
+    pr.y = pr.y - (newH - oldH) * ((cropCenterY - pr.y) / oldH)
+    pr.scale = newScale
+    scheduleRender()
+    
+    // Debounce state sync for wheel
+    setPhotoX(pr.x)
+    setPhotoY(pr.y)
+    setPhotoScale(pr.scale)
   }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -423,12 +464,18 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     const x = (e.clientX - rect.left) * scaleX
     const y = (e.clientY - rect.top) * scaleY
     
+    const ds = displayScaleRef.current
+    
     if (isPhotoMode) {
       // Double-click to go back to crop box mode
       setIsPhotoMode(false)
     } else {
       // Double-click inside crop to enter photo mode
-      if (x >= cropX && x <= cropX + cropWidth && y >= cropY && y <= cropY + cropHeight) {
+      const cr = cropRef.current
+      // Convert x, y to original image space for hit test
+      const origX = x / ds.x
+      const origY = y / ds.y
+      if (origX >= cr.x && origX <= cr.x + cr.w && origY >= cr.y && origY <= cr.y + cr.h) {
         // Initialize photo position/scale: image is at (0,0) with scale 1 by default
         if (photoScale === 1 && photoX === 0 && photoY === 0) {
           setPhotoX(0)
@@ -583,161 +630,214 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     }
   }
 
+  // Build pre-filtered offscreen canvas when filters/rotation change (expensive, done rarely)
   useEffect(() => {
-    if (image && canvasRef.current) {
-      const canvas = canvasRef.current
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
+    filterDirtyRef.current = true
+  }, [image, brightness, contrast, saturation, rotation, blur])
 
-      // Set canvas size
-      canvas.width = image.width
-      canvas.height = image.height
+  const buildFilteredCanvas = useCallback(() => {
+    if (!image) return null
+    const offscreen = document.createElement('canvas')
+    offscreen.width = image.width
+    offscreen.height = image.height
+    const octx = offscreen.getContext('2d')
+    if (!octx) return null
 
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    octx.save()
+    octx.translate(offscreen.width / 2, offscreen.height / 2)
+    octx.rotate((rotation * Math.PI) / 180)
+    octx.translate(-offscreen.width / 2, -offscreen.height / 2)
 
-      // Apply transformations
-      ctx.save()
-      
-      // Move to center for rotation
-      ctx.translate(canvas.width / 2, canvas.height / 2)
-      ctx.rotate((rotation * Math.PI) / 180)
-      ctx.translate(-canvas.width / 2, -canvas.height / 2)
+    let filterString = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
+    if (blur > 0) filterString += ` blur(${blur}px)`
+    octx.filter = filterString
+    octx.drawImage(image, 0, 0, offscreen.width, offscreen.height)
+    octx.restore()
 
-      // Apply filters
-      let filterString = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
-      if (blur > 0) filterString += ` blur(${blur}px)`
-      ctx.filter = filterString
-      
-      // Draw image (at photoX/Y/Scale if in photo mode, otherwise normally)
-      if (isCropping && isPhotoMode) {
-        ctx.drawImage(image, photoX, photoY, image.width * photoScale, image.height * photoScale)
-      } else {
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-      }
-      ctx.restore()
-      
-      // Draw crop overlay if cropping
-      if (isCropping) {
-        // Draw dark overlay on full canvas
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        
-        // Clear crop area to reveal image
-        ctx.clearRect(cropX, cropY, cropWidth, cropHeight)
-        
-        // Redraw image only inside crop area (clip to crop box)
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(cropX, cropY, cropWidth, cropHeight)
-        ctx.clip()
-        
-        let cropFilterString = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
-        if (blur > 0) cropFilterString += ` blur(${blur}px)`
-        ctx.filter = cropFilterString
-        
-        if (isPhotoMode) {
-          ctx.drawImage(image, photoX, photoY, image.width * photoScale, image.height * photoScale)
-        } else {
-          ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-        }
-        ctx.restore()
-        
-        if (isPhotoMode) {
-          // PHOTO MODE: Draw the full image boundary (faded) outside crop area
-          // to show where the image is
-          ctx.save()
-          ctx.globalAlpha = 0.3
-          let photoFilterString = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
-          if (blur > 0) photoFilterString += ` blur(${blur}px)`
-          ctx.filter = photoFilterString
-          ctx.drawImage(image, photoX, photoY, image.width * photoScale, image.height * photoScale)
-          ctx.restore()
-          
-          // Re-draw the crop area at full opacity on top
-          ctx.save()
-          ctx.beginPath()
-          ctx.rect(cropX, cropY, cropWidth, cropHeight)
-          ctx.clip()
-          let cropFilterString2 = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
-          if (blur > 0) cropFilterString2 += ` blur(${blur}px)`
-          ctx.filter = cropFilterString2
-          ctx.drawImage(image, photoX, photoY, image.width * photoScale, image.height * photoScale)
-          ctx.restore()
-          
-          // Draw crop box border (green, locked)
-          ctx.strokeStyle = '#10b981'
-          ctx.lineWidth = 3
-          ctx.setLineDash([8, 4])
-          ctx.strokeRect(cropX, cropY, cropWidth, cropHeight)
-          ctx.setLineDash([])
-          
-          // Draw photo boundary border with corner handles
-          const pb = { x: photoX, y: photoY, w: image.width * photoScale, h: image.height * photoScale }
-          ctx.strokeStyle = '#3b82f6'
-          ctx.lineWidth = 2
-          ctx.strokeRect(pb.x, pb.y, pb.w, pb.h)
-          
-          // Draw corner handles on the photo
-          const hs = 14
-          ctx.fillStyle = '#3b82f6'
-          ctx.fillRect(pb.x - hs/2, pb.y - hs/2, hs, hs)
-          ctx.fillRect(pb.x + pb.w - hs/2, pb.y - hs/2, hs, hs)
-          ctx.fillRect(pb.x - hs/2, pb.y + pb.h - hs/2, hs, hs)
-          ctx.fillRect(pb.x + pb.w - hs/2, pb.y + pb.h - hs/2, hs, hs)
-          
-          // White inner squares on handles
-          const ihs = 8
-          ctx.fillStyle = '#ffffff'
-          ctx.fillRect(pb.x - ihs/2, pb.y - ihs/2, ihs, ihs)
-          ctx.fillRect(pb.x + pb.w - ihs/2, pb.y - ihs/2, ihs, ihs)
-          ctx.fillRect(pb.x - ihs/2, pb.y + pb.h - ihs/2, ihs, ihs)
-          ctx.fillRect(pb.x + pb.w - ihs/2, pb.y + pb.h - ihs/2, ihs, ihs)
-          
-          // Label
-          ctx.fillStyle = '#10b981'
-          ctx.font = 'bold 14px sans-serif'
-          ctx.fillText(`${Math.round(photoScale * 100)}%`, cropX + 8, cropY - 8)
-        } else {
-          // CROP BOX MODE: Draw crop box border + grid + handles
-          ctx.strokeStyle = '#3b82f6'
-          ctx.lineWidth = 3
-          ctx.strokeRect(cropX, cropY, cropWidth, cropHeight)
-          
-          // Grid lines (rule of thirds)
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
-          ctx.lineWidth = 1
-          ctx.beginPath()
-          ctx.moveTo(cropX + cropWidth / 3, cropY)
-          ctx.lineTo(cropX + cropWidth / 3, cropY + cropHeight)
-          ctx.moveTo(cropX + (2 * cropWidth) / 3, cropY)
-          ctx.lineTo(cropX + (2 * cropWidth) / 3, cropY + cropHeight)
-          ctx.moveTo(cropX, cropY + cropHeight / 3)
-          ctx.lineTo(cropX + cropWidth, cropY + cropHeight / 3)
-          ctx.moveTo(cropX, cropY + (2 * cropHeight) / 3)
-          ctx.lineTo(cropX + cropWidth, cropY + (2 * cropHeight) / 3)
-          ctx.stroke()
-          
-          // Crop corner and edge handles
-          const handleSize = 12
-          ctx.fillStyle = '#3b82f6'
-          ctx.fillRect(cropX - handleSize/2, cropY - handleSize/2, handleSize, handleSize)
-          ctx.fillRect(cropX + cropWidth - handleSize/2, cropY - handleSize/2, handleSize, handleSize)
-          ctx.fillRect(cropX - handleSize/2, cropY + cropHeight - handleSize/2, handleSize, handleSize)
-          ctx.fillRect(cropX + cropWidth - handleSize/2, cropY + cropHeight - handleSize/2, handleSize, handleSize)
-          ctx.fillRect(cropX + cropWidth/2 - handleSize/2, cropY - handleSize/2, handleSize, handleSize)
-          ctx.fillRect(cropX + cropWidth/2 - handleSize/2, cropY + cropHeight - handleSize/2, handleSize, handleSize)
-          ctx.fillRect(cropX - handleSize/2, cropY + cropHeight/2 - handleSize/2, handleSize, handleSize)
-          ctx.fillRect(cropX + cropWidth - handleSize/2, cropY + cropHeight/2 - handleSize/2, handleSize, handleSize)
-          
-          // Dimension label
-          ctx.fillStyle = '#3b82f6'
-          ctx.font = 'bold 14px sans-serif'
-          ctx.fillText(`${Math.round(cropWidth)} × ${Math.round(cropHeight)}px`, cropX + 10, cropY + 25)
-        }
-      }
+    filteredCanvasRef.current = offscreen
+    filterDirtyRef.current = false
+    return offscreen
+  }, [image, brightness, contrast, saturation, rotation, blur])
+
+  // Fast draw function that uses the pre-filtered canvas
+  const drawCanvas = useCallback(() => {
+    if (!image || !canvasRef.current) return
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // Scale canvas to fit container (max 1200x800) while maintaining aspect ratio
+    const maxWidth = 1200
+    const maxHeight = 800
+    let displayWidth = image.width
+    let displayHeight = image.height
+    
+    if (displayWidth > maxWidth || displayHeight > maxHeight) {
+      const scale = Math.min(maxWidth / displayWidth, maxHeight / displayHeight)
+      displayWidth = Math.floor(displayWidth * scale)
+      displayHeight = Math.floor(displayHeight * scale)
     }
-  }, [image, brightness, contrast, saturation, rotation, blur, isCropping, cropX, cropY, cropWidth, cropHeight, photoX, photoY, photoScale, isPhotoMode])
+
+    // Only resize canvas if dimensions changed
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width = displayWidth
+      canvas.height = displayHeight
+      filterDirtyRef.current = true
+    }
+
+    // Store display scale for mouse coordinate conversion
+    displayScaleRef.current = {
+      x: displayWidth / image.width,
+      y: displayHeight / image.height
+    }
+
+    // Rebuild filtered image only when filters changed
+    let filtered = filteredCanvasRef.current
+    if (filterDirtyRef.current || !filtered) {
+      filtered = buildFilteredCanvas()
+    }
+    if (!filtered) return
+
+    // Calculate scale factor from original image to display canvas
+    const scaleX = canvas.width / image.width
+    const scaleY = canvas.height / image.height
+
+    const cx = cropRef.current.x * scaleX
+    const cy = cropRef.current.y * scaleY
+    const cw = cropRef.current.w * scaleX
+    const ch = cropRef.current.h * scaleY
+    const px = photoRef.current.x * scaleX
+    const py = photoRef.current.y * scaleY
+    const ps = photoRef.current.scale
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Draw base image
+    if (isCropping && isPhotoMode) {
+      ctx.drawImage(filtered, px, py, canvas.width * ps, canvas.height * ps)
+    } else {
+      ctx.drawImage(filtered, 0, 0, canvas.width, canvas.height)
+    }
+
+    if (!isCropping) return
+
+    // --- CROP OVERLAY ---
+    // Dark overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    // Reveal crop area
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(cx, cy, cw, ch)
+    ctx.clip()
+    if (isPhotoMode) {
+      ctx.drawImage(filtered, px, py, canvas.width * ps, canvas.height * ps)
+    } else {
+      ctx.drawImage(filtered, 0, 0, canvas.width, canvas.height)
+    }
+    ctx.restore()
+
+    if (isPhotoMode) {
+      // Faded full image boundary
+      ctx.save()
+      ctx.globalAlpha = 0.3
+      ctx.drawImage(filtered, px, py, canvas.width * ps, canvas.height * ps)
+      ctx.restore()
+
+      // Re-draw crop area at full opacity on top
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(cx, cy, cw, ch)
+      ctx.clip()
+      ctx.drawImage(filtered, px, py, canvas.width * ps, canvas.height * ps)
+      ctx.restore()
+
+      // Locked crop border (green dashed)
+      ctx.strokeStyle = '#10b981'
+      ctx.lineWidth = 3
+      ctx.setLineDash([8, 4])
+      ctx.strokeRect(cx, cy, cw, ch)
+      ctx.setLineDash([])
+
+      // Photo boundary + handles
+      const pbw = canvas.width * ps
+      const pbh = canvas.height * ps
+      ctx.strokeStyle = '#3b82f6'
+      ctx.lineWidth = 2
+      ctx.strokeRect(px, py, pbw, pbh)
+
+      const hs = 14
+      const ihs = 8
+      const corners = [
+        [px, py], [px + pbw, py],
+        [px, py + pbh], [px + pbw, py + pbh]
+      ]
+      for (const [hx, hy] of corners) {
+        ctx.fillStyle = '#3b82f6'
+        ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs)
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(hx - ihs / 2, hy - ihs / 2, ihs, ihs)
+      }
+
+      ctx.fillStyle = '#10b981'
+      ctx.font = 'bold 14px sans-serif'
+      ctx.fillText(`${Math.round(ps * 100)}%`, cx + 8, cy - 8)
+    } else {
+      // CROP BOX MODE border
+      ctx.strokeStyle = '#3b82f6'
+      ctx.lineWidth = 3
+      ctx.strokeRect(cx, cy, cw, ch)
+
+      // Grid (rule of thirds)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(cx + cw / 3, cy)
+      ctx.lineTo(cx + cw / 3, cy + ch)
+      ctx.moveTo(cx + (2 * cw) / 3, cy)
+      ctx.lineTo(cx + (2 * cw) / 3, cy + ch)
+      ctx.moveTo(cx, cy + ch / 3)
+      ctx.lineTo(cx + cw, cy + ch / 3)
+      ctx.moveTo(cx, cy + (2 * ch) / 3)
+      ctx.lineTo(cx + cw, cy + (2 * ch) / 3)
+      ctx.stroke()
+
+      // Handles
+      const hs = 12
+      ctx.fillStyle = '#3b82f6'
+      const handlePositions = [
+        [cx, cy], [cx + cw, cy], [cx, cy + ch], [cx + cw, cy + ch],
+        [cx + cw / 2, cy], [cx + cw / 2, cy + ch],
+        [cx, cy + ch / 2], [cx + cw, cy + ch / 2]
+      ]
+      for (const [hx, hy] of handlePositions) {
+        ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs)
+      }
+
+      // Dimensions
+      ctx.fillStyle = '#3b82f6'
+      ctx.font = 'bold 14px sans-serif'
+      ctx.fillText(`${Math.round(cw)} × ${Math.round(ch)}px`, cx + 10, cy + 25)
+    }
+  }, [image, isCropping, isPhotoMode, buildFilteredCanvas])
+
+  // Schedule a render on next animation frame
+  const scheduleRender = useCallback(() => {
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      drawCanvas()
+    })
+  }, [drawCanvas])
+
+  // Trigger full re-render when non-drag state changes
+  useEffect(() => {
+    // Sync refs from state (for when state is set outside drag, e.g. preset change)
+    cropRef.current = { x: cropX, y: cropY, w: cropWidth, h: cropHeight }
+    photoRef.current = { x: photoX, y: photoY, scale: photoScale }
+    scheduleRender()
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [image, brightness, contrast, saturation, rotation, blur, isCropping, cropX, cropY, cropWidth, cropHeight, photoX, photoY, photoScale, isPhotoMode, scheduleRender])
 
   const handleRotate = () => {
     setRotation((prev) => (prev + 90) % 360)
