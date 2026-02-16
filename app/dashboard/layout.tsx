@@ -1,6 +1,7 @@
 import React from "react"
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { DashboardLayoutClient } from './dashboard-layout-client'
 
 export default async function DashboardLayout({
   children,
@@ -16,6 +17,16 @@ export default async function DashboardLayout({
     redirect('/auth/login')
   }
 
-  // Just return children - let each route handle its own layout
-  return <>{children}</>
+  // Fetch user profile
+  const { data: profile } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  return (
+    <DashboardLayoutClient user={user} profile={profile}>
+      {children}
+    </DashboardLayoutClient>
+  )
 }

@@ -5,7 +5,6 @@ import { useSales } from '@/hooks/use-sales'
 import { useProducts } from '@/hooks/use-products'
 import { useStaff } from '@/hooks/use-staff'
 import { DashboardClient } from './dashboard-client'
-import { DashboardHeader } from '@/components/dashboard/header'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -34,13 +33,10 @@ export default function DashboardPage() {
   // Show loading state while fetching initial data
   if (shopLoading || salesLoading || productsLoading || staffLoading) {
     return (
-      <div className="flex h-screen flex-col overflow-hidden bg-background">
-        {user && <DashboardHeader user={user} profile={profile} />}
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading dashboard...</p>
-          </div>
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     )
@@ -48,12 +44,9 @@ export default function DashboardPage() {
 
   if (!shop || !user) {
     return (
-      <div className="flex h-screen flex-col overflow-hidden bg-background">
-        {user && <DashboardHeader user={user} profile={profile} />}
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="text-center space-y-4">
-            <p className="text-destructive">Failed to load shop data</p>
-          </div>
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="text-center space-y-4">
+          <p className="text-destructive">Failed to load shop data</p>
         </div>
       </div>
     )
@@ -64,20 +57,17 @@ export default function DashboardPage() {
   const activeStaff = staff?.filter((s) => s.is_active).length || 0
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <DashboardHeader user={user} profile={profile} />
-      <main className="flex-1 overflow-y-auto p-6">
-        <DashboardClient
-          totalRevenue={totalRevenue}
-          activeProducts={activeProducts}
-          activeStaff={activeStaff}
-          salesCount={sales.length}
-          shopName={shop.name}
-          productsTotal={products.length}
-          staffTotal={staff?.length || 0}
-          userEmail={user.email}
-        />
-      </main>
-    </div>
+    <DashboardClient
+      totalRevenue={totalRevenue}
+      activeProducts={activeProducts}
+      activeStaff={activeStaff}
+      salesCount={sales.length}
+      shopName={shop.name}
+      productsTotal={products.length}
+      staffTotal={staff?.length || 0}
+      userEmail={user.email}
+      user={user}
+      profile={profile}
+    />
   )
 }

@@ -285,3 +285,19 @@ export interface PhotoPreset {
   created_at: string
   updated_at: string
 }
+
+export type TaskStatus = 'pending' | 'completed'
+
+export interface ShopTask {
+  id: string
+  shop_id: string
+  title: string
+  description?: string
+  price: number
+  status: TaskStatus
+  customer_name?: string
+  due_date?: string
+  created_at: string
+  updated_at: string
+  completed_at?: string
+}

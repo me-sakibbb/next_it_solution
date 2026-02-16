@@ -12,6 +12,7 @@ import {
   UserCircle,
   Home,
   ArrowLeft,
+  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { User } from '@supabase/supabase-js'
@@ -30,6 +31,7 @@ const shopMenuItems = [
   { name: 'Staff', href: '/dashboard/shop/staff', icon: Users },
   { name: 'Payroll', href: '/dashboard/shop/payroll', icon: DollarSign },
   { name: 'Reports', href: '/dashboard/shop/reports', icon: TrendingUp },
+  { name: 'Tasks', href: '/dashboard/shop/tasks', icon: ClipboardList },
 ]
 
 export function ShopSidebar({ user, profile }: ShopSidebarProps) {
@@ -60,7 +62,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
         {shopMenuItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href
-          
+
           return (
             <Link
               key={item.href}

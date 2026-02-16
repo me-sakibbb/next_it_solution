@@ -48,7 +48,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
 
   const addToCart = (product: any) => {
     const existingItem = cart.find(item => item.product_id === product.id)
-    
+
     if (existingItem) {
       setCart(cart.map(item =>
         item.product_id === product.id
@@ -116,13 +116,13 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
       }
 
       await createSale(shopId, saleData)
-      
+
       // Reset form
       setCart([])
       setSelectedCustomer('')
       setPaidAmount('')
       setDiscount('0')
-      
+
       router.push('/dashboard/shop/sales')
     } catch (err: any) {
       setError(err.message)
@@ -150,37 +150,59 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
           />
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto h-[calc(100vh-18rem)]">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto h-[calc(100vh-18rem)] pr-2 pb-2">
           {filteredProducts.map((product) => {
             const stock = product.inventory?.[0]?.quantity || 0
             const isLowStock = stock <= product.min_stock_level
             const isOutOfStock = stock === 0
 
+            // Generate a consistent color based on the first letter of the category or name
+            const colors = [
+              'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500'
+            ];
+            const colorIndex = (product.category?.name || product.name).charCodeAt(0) % colors.length;
+            const accentColor = colors[colorIndex];
+            const bgHoverColor = accentColor.replace('bg-', 'hover:bg-').replace('500', '50/50');
+            const borderColor = accentColor.replace('bg-', 'border-').replace('500', '200');
+
             return (
-              <Card
+              <div
                 key={product.id}
-                className={`cursor-pointer transition-colors hover:bg-accent ${
-                  isOutOfStock ? 'opacity-50' : ''
-                }`}
+                className={`
+                    group relative flex flex-col justify-between
+                    rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-200
+                    hover:shadow-md hover:border-primary/50 cursor-pointer overflow-hidden
+                    ${isOutOfStock ? 'opacity-60 grayscale' : 'hover:-translate-y-1'}
+                `}
                 onClick={() => !isOutOfStock && addToCart(product)}
               >
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="font-medium line-clamp-2">{product.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {product.category?.name || 'Uncategorized'}
+                {/* Accent Bar */}
+                <div className={`absolute top-0 left-0 w-1 h-full ${accentColor} opacity-80`} />
+
+                <div className="p-3 pl-4 flex flex-col h-full gap-2">
+                  <div className="flex justify-between items-start">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground line-clamp-1">
+                      {product.category?.name || 'Item'}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-lg font-bold text-primary">
-                        {formatCurrency(product.selling_price)}
-                      </div>
-                      <Badge variant={isOutOfStock ? 'destructive' : isLowStock ? 'secondary' : 'default'}>
-                        {stock} {product.unit}
-                      </Badge>
+                    {isOutOfStock && (
+                      <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">Out</Badge>
+                    )}
+                  </div>
+
+                  <div className="font-semibold leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
+                    {product.name}
+                  </div>
+
+                  <div className="mt-auto pt-2 flex items-center justify-between border-t border-border/50">
+                    <div className="text-lg font-bold text-foreground">
+                      {formatCurrency(product.selling_price)}
+                    </div>
+                    <div className={`text-xs font-medium px-2 py-0.5 rounded-full bg-secondary ${isLowStock && !isOutOfStock ? 'text-amber-600 bg-amber-100' : ''}`}>
+                      {stock} {product.unit}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )
           })}
         </div>
