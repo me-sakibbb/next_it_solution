@@ -7,5 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 
 // Format currency in Bangladeshi Taka
 export function formatCurrency(amount: number): string {
-  return `৳${amount.toFixed(2)}`
+  return `৳${new Intl.NumberFormat('en-BD', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)}`
 }

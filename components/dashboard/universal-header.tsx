@@ -32,8 +32,8 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
 
     return (
         <header className="flex h-16 items-center gap-4 border-b bg-card px-6 sticky top-0 z-50">
-            <div className="flex flex-1 items-center gap-4">
-                <Link href="/dashboard" className="flex items-center gap-2 group">
+            <div className="flex flex-1 items-center gap-6">
+                <Link href="/dashboard" className="flex items-center gap-2 group mr-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-all group-hover:scale-110 group-active:scale-95">
                         <Store className="h-6 w-6" />
                     </div>

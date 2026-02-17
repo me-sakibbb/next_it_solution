@@ -37,6 +37,7 @@ export interface User {
   phone?: string
   avatar_url?: string
   role: UserRole
+  balance: number
   is_active: boolean
   created_at: string
   updated_at: string
@@ -300,4 +301,38 @@ export interface ShopTask {
   created_at: string
   updated_at: string
   completed_at?: string
+}
+
+export type ServiceStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+
+export interface Service {
+  id: string
+  name: string
+  description?: string
+  price: number
+  category: string
+  is_active: boolean
+  image_url?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ServiceOrder {
+  id: string
+  user_id: string
+  service_id: string
+  status: ServiceStatus
+  requirements?: string
+  deliverables?: string
+  total_price: number
+  created_at: string
+  updated_at: string
+  service?: Service // user expanded
+  user?: User // admin expanded
+}
+
+export interface SuperAdmin {
+  id: string
+  email: string
+  created_at: string
 }

@@ -8,12 +8,15 @@ import { DashboardClient } from './dashboard-client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+import { getUserOrders } from '@/actions/services'
+
 export default function DashboardPage() {
   const { user, shop, loading: shopLoading } = useShop()
   const { sales, loading: salesLoading } = useSales(shop?.id || '')
   const { products, loading: productsLoading } = useProducts(shop?.id || '')
   const { staff, loading: staffLoading } = useStaff(shop?.id || '')
   const [profile, setProfile] = useState<any>(null)
+  const [orders, setOrders] = useState<any[]>([])
 
   useEffect(() => {
     async function fetchProfile() {
@@ -25,6 +28,10 @@ export default function DashboardPage() {
           .eq('id', user.id)
           .single()
         setProfile(data)
+
+        // Fetch orders
+        const userOrders = await getUserOrders()
+        setOrders(userOrders || [])
       }
     }
     fetchProfile()
@@ -68,6 +75,7 @@ export default function DashboardPage() {
       userEmail={user.email}
       user={user}
       profile={profile}
+      orders={orders}
     />
   )
 }

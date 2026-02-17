@@ -94,10 +94,10 @@ export default function ShopTasksPage() {
         .reduce((sum, t) => sum + Number(t.price), 0)
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: shop?.currency || 'USD',
-        }).format(amount)
+        return `৳${new Intl.NumberFormat('en-BD', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(amount)}`
     }
 
     return (

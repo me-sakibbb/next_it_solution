@@ -38,10 +38,10 @@ export function AccountOverview({ user, profile }: AccountOverviewProps) {
 
     // Formatter for currency
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(amount)
+        return `৳${new Intl.NumberFormat('en-BD', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(amount)}`
     }
 
     // Mock balance for now (replace with actual balance field from profile if it exists)

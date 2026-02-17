@@ -1,10 +1,11 @@
 
 'use client'
 
-import { ImageIcon, FileUser, Store, Type } from 'lucide-react'
+import { ImageIcon, FileUser, Store, Type, ShoppingBag } from 'lucide-react'
 import { ServiceCard } from '@/components/dashboard/service-card'
 import { AccountOverview } from '@/components/dashboard/account-overview'
-import { RecentActivity } from '@/components/dashboard/recent-activity'
+import { RecentOrdersWidget } from '@/components/dashboard/recent-orders-widget'
+import { ServiceOrder } from '@/lib/types'
 
 interface DashboardClientProps {
     totalRevenue: number
@@ -17,6 +18,7 @@ interface DashboardClientProps {
     userEmail: string | undefined
     user: any
     profile: any
+    orders: ServiceOrder[]
 }
 
 export function DashboardClient({
@@ -29,7 +31,8 @@ export function DashboardClient({
     staffTotal,
     userEmail,
     user,
-    profile
+    profile,
+    orders
 }: DashboardClientProps) {
 
     return (
@@ -83,14 +86,22 @@ export function DashboardClient({
                                 iconColorClass="text-orange-600"
                                 disabled={true}
                             />
+                            <ServiceCard
+                                title="Order Premium Services"
+                                description="Boost your business with our professional services."
+                                icon={ShoppingBag}
+                                href="/dashboard/services"
+                                colorClass="bg-pink-500/10 text-pink-600"
+                                iconColorClass="text-pink-600"
+                            />
                         </div>
                     </div>
                 </div>
 
-                {/* Recent Activity Section - Spans 1 column */}
+                {/* Recent Orders Section - Spans 1 column */}
                 <div className="lg:col-span-1">
-                    <h2 className="text-xl font-semibold tracking-tight mb-4">Recent Activity</h2>
-                    <RecentActivity />
+                    <h2 className="text-xl font-semibold tracking-tight mb-4">Recent Orders</h2>
+                    <RecentOrdersWidget orders={orders || []} />
                 </div>
             </div>
         </div>
