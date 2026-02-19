@@ -12,6 +12,7 @@ import { Plus, Minus, X, Search, ShoppingCart, Loader2 } from 'lucide-react'
 import { createSale } from '@/app/actions/sales'
 import { useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
+import { CustomerSelector } from '@/components/dashboard/shop/customer-selector'
 
 interface CartItem {
   product_id: string
@@ -111,8 +112,16 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
           discount_amount: item.discount_amount,
         })),
         discount_amount: discountAmount,
-        payment_method: paymentMethod,
-        paid_amount: Number(paidAmount) || totalAmount,
+        payment_method: paymentMethod === 'due' ? 'cash' : paymentMethod, // If due, we default payment method of paid part to cash if not specified, but usually due is mixed. For now, if full due, payment method doesn't matter much for the payment record (0 amount).
+        paid_amount: paymentMethod === 'due' && paidAmount === '' ? 0 : (Number(paidAmount) || 0), // If due selected and no amount, assume 0. OR permit partial.
+      }
+
+      // Validation: If there is a due amount (total > paid), customer is required
+      const paid = Number(saleData.paid_amount)
+      if (totalAmount > paid && !saleData.customer_id) {
+        setError('বাকি বিক্রয়ের জন্য কাস্টমার নির্বাচন আবশ্যক')
+        setLoading(false)
+        return
       }
 
       await createSale(shopId, saleData)
@@ -150,55 +159,88 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
           />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto h-[calc(100vh-18rem)] pr-2 pb-2">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 overflow-y-auto h-[calc(100vh-18rem)] pr-2 pb-2 content-start">
           {filteredProducts.map((product) => {
             const stock = product.inventory?.[0]?.quantity || 0
             const isLowStock = stock <= product.min_stock_level
             const isOutOfStock = stock === 0
 
-            // Generate a consistent color based on the first letter of the category or name
-            const colors = [
-              'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500'
+            // Expanded color palette for a more vibrant look
+            const colorMap = [
+              { name: 'blue', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', iconBg: 'bg-blue-100', ring: 'ring-blue-100' },
+              { name: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', iconBg: 'bg-emerald-100', ring: 'ring-emerald-100' },
+              { name: 'violet', bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', iconBg: 'bg-violet-100', ring: 'ring-violet-100' },
+              { name: 'amber', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', iconBg: 'bg-amber-100', ring: 'ring-amber-100' },
+              { name: 'rose', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', iconBg: 'bg-rose-100', ring: 'ring-rose-100' },
+              { name: 'cyan', bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200', iconBg: 'bg-cyan-100', ring: 'ring-cyan-100' },
+              { name: 'indigo', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', iconBg: 'bg-indigo-100', ring: 'ring-indigo-100' },
+              { name: 'orange', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', iconBg: 'bg-orange-100', ring: 'ring-orange-100' },
             ];
-            const colorIndex = (product.category?.name || product.name).charCodeAt(0) % colors.length;
-            const accentColor = colors[colorIndex];
-            const bgHoverColor = accentColor.replace('bg-', 'hover:bg-').replace('500', '50/50');
-            const borderColor = accentColor.replace('bg-', 'border-').replace('500', '200');
+
+            const colorIndex = (product.category?.name || product.name).charCodeAt(0) % colorMap.length;
+            const theme = colorMap[colorIndex];
 
             return (
               <div
                 key={product.id}
                 className={`
-                    group relative flex flex-col justify-between
-                    rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-200
-                    hover:shadow-md hover:border-primary/50 cursor-pointer overflow-hidden
-                    ${isOutOfStock ? 'opacity-60 grayscale' : 'hover:-translate-y-1'}
+                    group relative flex flex-col justify-between h-fit
+                    rounded-2xl border bg-card text-card-foreground shadow-sm transition-all duration-300
+                    hover:shadow-lg hover:-translate-y-1 cursor-pointer overflow-hidden
+                    ${isOutOfStock ? 'opacity-60 grayscale' : ''}
                 `}
                 onClick={() => !isOutOfStock && addToCart(product)}
               >
-                {/* Accent Bar */}
-                <div className={`absolute top-0 left-0 w-1 h-full ${accentColor} opacity-80`} />
+                {/* Top Visual Area */}
+                <div className={`h-24 w-full ${theme.bg} flex items-center justify-center relative overflow-hidden`}>
+                  {/* Decorative Elements */}
+                  <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${theme.iconBg} opacity-50 blur-2xl transition-transform duration-500 group-hover:scale-150`} />
+                  <div className={`absolute -left-6 -bottom-6 h-20 w-20 rounded-full ${theme.iconBg} opacity-50 blur-xl transition-transform duration-500 group-hover:scale-150`} />
 
-                <div className="p-3 pl-4 flex flex-col h-full gap-2">
-                  <div className="flex justify-between items-start">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground line-clamp-1">
+                  {/* Center Initial/Icon */}
+                  <div className={`relative z-10 h-12 w-12 rounded-full ${theme.bg} border-2 ${theme.border} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                    <span className={`text-lg font-bold ${theme.text}`}>
+                      {product.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Category Badge - Top Left */}
+                  <div className="absolute top-2 left-2 z-10">
+                    <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm shadow-sm text-[10px] font-normal px-2 h-5">
                       {product.category?.name || 'আইটেম'}
-                    </div>
-                    {isOutOfStock && (
-                      <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">আউট</Badge>
+                    </Badge>
+                  </div>
+
+                  {/* Stock Badge - Top Right */}
+                  <div className="absolute top-2 right-2 z-10">
+                    {isOutOfStock ? (
+                      <Badge variant="destructive" className="h-5 px-1.5 text-[10px] shadow-sm">স্টক আউট</Badge>
+                    ) : (
+                      <Badge variant="outline" className={`bg-background/80 backdrop-blur-md border-0 shadow-sm text-[10px] h-5 ${isLowStock ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                        {stock} {product.unit}
+                      </Badge>
                     )}
                   </div>
+                </div>
 
-                  <div className="font-semibold leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
-                    {product.name}
+                {/* Content Area */}
+                <div className="p-3 pb-4 flex flex-col gap-2 relative">
+                  <div className="min-h-[2.5rem] flex items-center">
+                    <h3 className="font-semibold leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors text-sm">
+                      {product.name}
+                    </h3>
                   </div>
 
-                  <div className="mt-auto pt-2 flex items-center justify-between border-t border-border/50">
-                    <div className="text-lg font-bold text-foreground">
-                      {formatCurrency(product.selling_price)}
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-1">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">দাম</span>
+                      <span className="text-lg font-bold text-foreground">
+                        {formatCurrency(product.selling_price)}
+                      </span>
                     </div>
-                    <div className={`text-xs font-medium px-2 py-0.5 rounded-full bg-secondary ${isLowStock && !isOutOfStock ? 'text-amber-600 bg-amber-100' : ''}`}>
-                      {stock} {product.unit}
+
+                    <div className={`h-8 w-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground shadow-sm ${isOutOfStock ? 'hidden' : ''}`}>
+                      <Plus className="h-4 w-4" />
                     </div>
                   </div>
                 </div>
@@ -220,19 +262,12 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
           <div className="space-y-4 flex-1">
             <div className="space-y-2">
               <Label>কাস্টমার (ঐচ্ছিক)</Label>
-              <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                <SelectTrigger>
-                  <SelectValue placeholder="ওয়াক-ইন কাস্টমার" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">ওয়াক-ইন কাস্টমার</SelectItem>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name} - {customer.phone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CustomerSelector
+                customers={customers}
+                value={selectedCustomer}
+                onChange={setSelectedCustomer}
+                placeholder="ওয়াক-ইন কাস্টমার"
+              />
             </div>
 
             <Separator />
@@ -331,6 +366,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
                     <SelectItem value="card">কার্ড</SelectItem>
                     <SelectItem value="upi">UPI</SelectItem>
                     <SelectItem value="bank_transfer">ব্যাংক ট্রান্সফার</SelectItem>
+                    <SelectItem value="due">বাকি (Due)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

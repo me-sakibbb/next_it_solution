@@ -20,6 +20,7 @@ interface DataTableProps<T> {
   searchPlaceholder?: string
   onRowClick?: (item: T) => void
   actions?: (item: T) => React.ReactNode
+  hideSearch?: boolean
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -28,6 +29,7 @@ export function DataTable<T extends Record<string, any>>({
   searchPlaceholder = 'Search...',
   onRowClick,
   actions,
+  hideSearch = false,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -45,20 +47,22 @@ export function DataTable<T extends Record<string, any>>({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={searchPlaceholder}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setCurrentPage(1)
-            }}
-            className="pl-9"
-          />
+      {!hideSearch && (
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={searchPlaceholder}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="pl-9"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="rounded-lg border bg-card">
         <Table>
