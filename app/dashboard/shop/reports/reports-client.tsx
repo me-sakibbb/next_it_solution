@@ -101,63 +101,63 @@ export function ReportsClient({ sales, products }: ReportsClientProps) {
     return sum + profit
   }, 0)
 
-  const lowStockProducts = products.filter(p => 
+  const lowStockProducts = products.filter(p =>
     (p.inventory?.[0]?.quantity || 0) <= p.min_stock_level
   )
 
   return (
     <Tabs defaultValue="overview" className="space-y-4">
       <TabsList>
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="sales">Sales Analytics</TabsTrigger>
-        <TabsTrigger value="inventory">Inventory Analytics</TabsTrigger>
+        <TabsTrigger value="overview">ওভারভিউ</TabsTrigger>
+        <TabsTrigger value="sales">বিক্রয় অ্যানালিটিক্স</TabsTrigger>
+        <TabsTrigger value="inventory">ইনভেন্টরি অ্যানালিটিক্স</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview" className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">মোট আয়</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground">All time</p>
+              <p className="text-xs text-muted-foreground">সর্বমোট</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
+              <CardTitle className="text-sm font-medium">মোট লাভ</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(totalProfit)}</div>
               <p className="text-xs text-muted-foreground">
-                {totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0}% margin
+                {totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0}% মার্জিন
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+              <CardTitle className="text-sm font-medium">মোট বিক্রয়</CardTitle>
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{sales.length}</div>
-              <p className="text-xs text-muted-foreground">Completed transactions</p>
+              <p className="text-xs text-muted-foreground">সম্পন্ন লেনদেন</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+              <CardTitle className="text-sm font-medium">লো স্টক</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">{lowStockProducts.length}</div>
-              <p className="text-xs text-muted-foreground">Items need restocking</p>
+              <p className="text-xs text-muted-foreground">পণ্য রিস্টক করা প্রয়োজন</p>
             </CardContent>
           </Card>
         </div>
@@ -180,31 +180,31 @@ export function ReportsClient({ sales, products }: ReportsClientProps) {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Total Products</CardTitle>
+              <CardTitle className="text-sm">মোট পণ্য</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{products.length}</div>
               <p className="text-xs text-muted-foreground">
-                {products.filter(p => p.is_active).length} active
+                {products.filter(p => p.is_active).length} সক্রিয়
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Low Stock Items</CardTitle>
+              <CardTitle className="text-sm">লো স্টক পণ্য</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">
                 {lowStockProducts.length}
               </div>
-              <p className="text-xs text-muted-foreground">Needs restocking</p>
+              <p className="text-xs text-muted-foreground">রিস্টক করা প্রয়োজন</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Total Stock Value</CardTitle>
+              <CardTitle className="text-sm">মোট স্টক মূল্য</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -213,7 +213,7 @@ export function ReportsClient({ sales, products }: ReportsClientProps) {
                   return sum + (qty * Number(p.cost_price))
                 }, 0).toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground">At cost price</p>
+              <p className="text-xs text-muted-foreground">ক্রয় মূল্যে</p>
             </CardContent>
           </Card>
         </div>

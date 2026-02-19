@@ -34,7 +34,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
 
     try {
       const formData = new FormData(e.currentTarget)
-      
+
       if (product) {
         const updated = await updateProduct(product.id, formData)
         onSuccess(updated)
@@ -53,14 +53,14 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+          <DialogTitle>{product ? 'পণ্য এডিট করুন' : 'নতুন পণ্য যোগ করুন'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Essential Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Product Name *</Label>
+              <Label htmlFor="name">পণ্যের নাম *</Label>
               <Input
                 id="name"
                 name="name"
@@ -70,13 +70,13 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category_id">Category</Label>
+              <Label htmlFor="category_id">ক্যাটাগরি</Label>
               <Select name="category_id" defaultValue={product?.category_id || 'none'}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="ক্যাটাগরি নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Uncategorized</SelectItem>
+                  <SelectItem value="none">ক্যাটাগরি নেই</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
@@ -87,7 +87,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cost_price">Cost Price *</Label>
+              <Label htmlFor="cost_price">ক্রয় মূল্য *</Label>
               <Input
                 id="cost_price"
                 name="cost_price"
@@ -100,7 +100,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="selling_price">Selling Price *</Label>
+              <Label htmlFor="selling_price">বিক্রয় মূল্য *</Label>
               <Input
                 id="selling_price"
                 name="selling_price"
@@ -114,7 +114,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
 
             {!product && (
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="initial_quantity">Quantity *</Label>
+                <Label htmlFor="initial_quantity">পরিমাণ *</Label>
                 <Input
                   id="initial_quantity"
                   name="initial_quantity"
@@ -137,12 +137,12 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
             {showMoreOptions ? (
               <>
                 <ChevronUp className="h-4 w-4" />
-                Hide more options
+                আরও অপশন লুকান
               </>
             ) : (
               <>
                 <ChevronDown className="h-4 w-4" />
-                Show more options
+                আরও অপশন দেখুন
               </>
             )}
           </Button>
@@ -156,22 +156,22 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="barcode">Barcode</Label>
+                <Label htmlFor="barcode">বারকোড</Label>
                 <Input id="barcode" name="barcode" defaultValue={product?.barcode} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="brand">Brand</Label>
+                <Label htmlFor="brand">ব্র্যান্ড</Label>
                 <Input id="brand" name="brand" defaultValue={product?.brand} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="model">Model</Label>
+                <Label htmlFor="model">মডেল</Label>
                 <Input id="model" name="model" defaultValue={product?.model} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="mrp">MRP</Label>
+                <Label htmlFor="mrp">এমআরপি</Label>
                 <Input
                   id="mrp"
                   name="mrp"
@@ -183,7 +183,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tax_rate">Tax Rate (%)</Label>
+                <Label htmlFor="tax_rate">ট্যাক্স রেট (%)</Label>
                 <Input
                   id="tax_rate"
                   name="tax_rate"
@@ -196,23 +196,23 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="unit">Unit</Label>
+                <Label htmlFor="unit">ইউনিট</Label>
                 <Select name="unit" defaultValue={product?.unit || 'piece'}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="piece">Piece</SelectItem>
-                    <SelectItem value="box">Box</SelectItem>
-                    <SelectItem value="set">Set</SelectItem>
-                    <SelectItem value="kg">Kilogram</SelectItem>
-                    <SelectItem value="liter">Liter</SelectItem>
+                    <SelectItem value="piece">পিস</SelectItem>
+                    <SelectItem value="box">বক্স</SelectItem>
+                    <SelectItem value="set">সেট</SelectItem>
+                    <SelectItem value="kg">কেজি</SelectItem>
+                    <SelectItem value="liter">লিটার</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="min_stock_level">Min Stock Level</Label>
+                <Label htmlFor="min_stock_level">সর্বনিম্ন স্টক লেভেল</Label>
                 <Input
                   id="min_stock_level"
                   name="min_stock_level"
@@ -223,7 +223,7 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="warranty_period">Warranty (months)</Label>
+                <Label htmlFor="warranty_period">ওয়ারেন্টি (মাস)</Label>
                 <Input
                   id="warranty_period"
                   name="warranty_period"
@@ -234,17 +234,17 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="warranty_type">Warranty Type</Label>
+                <Label htmlFor="warranty_type">ওয়ারেন্টি ধরণ</Label>
                 <Input
                   id="warranty_type"
                   name="warranty_type"
                   defaultValue={product?.warranty_type}
-                  placeholder="e.g., Manufacturer, Store"
+                  placeholder="যেমন: ম্যানুফ্যাকচারার, দোকান"
                 />
               </div>
 
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">বিবরণ</Label>
                 <Textarea
                   id="description"
                   name="description"
@@ -268,11 +268,11 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Cancel
+              বাতিল
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {product ? 'Update Product' : 'Create Product'}
+              {product ? 'পণ্য আপডেট করুন' : 'পণ্য তৈরি করুন'}
             </Button>
           </div>
         </form>

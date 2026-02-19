@@ -104,46 +104,46 @@ export default function ShopTasksPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Tasks & Services</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">টাস্ক এবং সার্ভিস</h1>
                     <p className="text-muted-foreground">
-                        Manage repair jobs, services, and custom orders
+                        মেরামত কাজ, সার্ভিস এবং কাস্টম অর্ডার পরিচালনা করুন
                     </p>
                 </div>
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <DialogTrigger asChild>
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
-                            Create Task
+                            টাস্ক তৈরি করুন
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Create New Task</DialogTitle>
+                            <DialogTitle>নতুন টাস্ক তৈরি করুন</DialogTitle>
                             <DialogDescription>
-                                Add a new task or service request to track.
+                                ট্র্যাক করার জন্য একটি নতুন টাস্ক বা সার্ভিস রিকোয়েস্ট যোগ করুন।
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="title">Task Title</Label>
+                                <Label htmlFor="title">টাস্ক শিরোনাম</Label>
                                 <Input
                                     id="title"
-                                    placeholder="e.g., Laptop Screen Replacement"
+                                    placeholder="যেমন: ল্যাপটপ স্ক্রিন প্রতিস্থাপন"
                                     value={newTaskTitle}
                                     onChange={(e) => setNewTaskTitle(e.target.value)}
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="customer">Customer Name (Optional)</Label>
+                                <Label htmlFor="customer">কাস্টমারের নাম (ঐচ্ছিক)</Label>
                                 <Input
                                     id="customer"
-                                    placeholder="e.g., John Doe"
+                                    placeholder="যেমন: জন ডো"
                                     value={newTaskCustomer}
                                     onChange={(e) => setNewTaskCustomer(e.target.value)}
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="price">Price</Label>
+                                <Label htmlFor="price">মূল্য</Label>
                                 <Input
                                     id="price"
                                     type="number"
@@ -153,7 +153,7 @@ export default function ShopTasksPage() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="dueDate">Due Date (Optional)</Label>
+                                <Label htmlFor="dueDate">নির্ধারিত তারিখ (ঐচ্ছিক)</Label>
                                 <Input
                                     id="dueDate"
                                     type="date"
@@ -162,10 +162,10 @@ export default function ShopTasksPage() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="description">Description (Optional)</Label>
+                                <Label htmlFor="description">বিবরণ (ঐচ্ছিক)</Label>
                                 <Textarea
                                     id="description"
-                                    placeholder="Details about the task..."
+                                    placeholder="টাস্ক সম্পর্কে বিস্তারিত..."
                                     value={newTaskDescription}
                                     onChange={(e) => setNewTaskDescription(e.target.value)}
                                 />
@@ -173,9 +173,9 @@ export default function ShopTasksPage() {
                         </div>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                                Cancel
+                                বাতিল
                             </Button>
-                            <Button onClick={handleCreateTask}>Create Task</Button>
+                            <Button onClick={handleCreateTask}>টাস্ক তৈরি করুন</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -185,37 +185,37 @@ export default function ShopTasksPage() {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+                        <CardTitle className="text-sm font-medium">অপেক্ষমান টাস্ক</CardTitle>
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{pendingCount}</div>
                         <p className="text-xs text-muted-foreground">
-                            Tasks waiting to be completed
+                            যে টাস্কগুলো সম্পন্ন হওয়ার অপেক্ষায় আছে
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Value</CardTitle>
+                        <CardTitle className="text-sm font-medium">অপেক্ষমান মূল্য</CardTitle>
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatCurrency(pendingValue)}</div>
                         <p className="text-xs text-muted-foreground">
-                            Potential revenue from pending tasks
+                            অপেক্ষমান টাস্ক থেকে সম্ভাব্য আয়
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Completed Tasks</CardTitle>
+                        <CardTitle className="text-sm font-medium">সম্পন্ন টাস্ক</CardTitle>
                         <CheckCircle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{completedCount}</div>
                         <p className="text-xs text-muted-foreground">
-                            Total tasks completed
+                            মোট সম্পন্ন টাস্ক
                         </p>
                     </CardContent>
                 </Card>
@@ -226,7 +226,7 @@ export default function ShopTasksPage() {
                 <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search tasks..."
+                        placeholder="টাস্ক খুঁজুন..."
                         className="pl-8"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -237,12 +237,12 @@ export default function ShopTasksPage() {
                     onValueChange={(value: 'all' | TaskStatus) => setStatusFilter(value)}
                 >
                     <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter by status" />
+                        <SelectValue placeholder="স্টেটাস অনুযায়ী ফিল্টার করুন" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="all">সকল স্টেটাস</SelectItem>
+                        <SelectItem value="pending">অপেক্ষমান</SelectItem>
+                        <SelectItem value="completed">সম্পন্ন</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -252,25 +252,25 @@ export default function ShopTasksPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Task</TableHead>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Due Date</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead>টাস্ক</TableHead>
+                            <TableHead>কাস্টমার</TableHead>
+                            <TableHead>নির্ধারিত তারিখ</TableHead>
+                            <TableHead>মূল্য</TableHead>
+                            <TableHead>স্টেটাস</TableHead>
+                            <TableHead className="text-right">অ্যাকশন</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center">
-                                    Loading tasks...
+                                    টাস্ক লোড হচ্ছে...
                                 </TableCell>
                             </TableRow>
                         ) : filteredTasks.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center">
-                                    No tasks found
+                                    কোনো টাস্ক পাওয়া যায়নি
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -291,7 +291,7 @@ export default function ShopTasksPage() {
                                     <TableCell>{formatCurrency(task.price)}</TableCell>
                                     <TableCell>
                                         <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
-                                            {task.status === 'completed' ? 'Completed' : 'Pending'}
+                                            {task.status === 'completed' ? 'সম্পন্ন' : 'অপেক্ষমান'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -302,7 +302,7 @@ export default function ShopTasksPage() {
                                                     size="sm"
                                                     onClick={() => updateStatus(task.id, 'completed')}
                                                 >
-                                                    Complete
+                                                    সম্পন্ন করুন
                                                 </Button>
                                             )}
                                             {task.status === 'completed' && (
@@ -311,7 +311,7 @@ export default function ShopTasksPage() {
                                                     size="sm"
                                                     onClick={() => updateStatus(task.id, 'pending')}
                                                 >
-                                                    Mark Pending
+                                                    অপেক্ষমান হিসেবে চিহ্নিত করুন
                                                 </Button>
                                             )}
                                             <Button

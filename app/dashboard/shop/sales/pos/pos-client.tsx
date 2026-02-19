@@ -93,7 +93,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
-      setError('Cart is empty')
+      setError('কার্ট খালি')
       return
     }
 
@@ -136,14 +136,14 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
       {/* Left Panel - Products */}
       <div className="flex-1 space-y-4">
         <div>
-          <h1 className="text-3xl font-bold">Point of Sale</h1>
-          <p className="text-muted-foreground">Scan or search products</p>
+          <h1 className="text-3xl font-bold">পয়েন্ট অফ সেল</h1>
+          <p className="text-muted-foreground">পণ্য স্ক্যান বা খুঁজুন</p>
         </div>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name, SKU, or barcode..."
+            placeholder="নাম, SKU বা বারকোড দিয়ে খুঁজুন..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -182,10 +182,10 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
                 <div className="p-3 pl-4 flex flex-col h-full gap-2">
                   <div className="flex justify-between items-start">
                     <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground line-clamp-1">
-                      {product.category?.name || 'Item'}
+                      {product.category?.name || 'আইটেম'}
                     </div>
                     {isOutOfStock && (
-                      <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">Out</Badge>
+                      <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">আউট</Badge>
                     )}
                   </div>
 
@@ -213,19 +213,19 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Cart ({cart.length})
+            কার্ট ({cart.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col">
           <div className="space-y-4 flex-1">
             <div className="space-y-2">
-              <Label>Customer (Optional)</Label>
+              <Label>কাস্টমার (ঐচ্ছিক)</Label>
               <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Walk-in customer" />
+                  <SelectValue placeholder="ওয়াক-ইন কাস্টমার" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Walk-in customer</SelectItem>
+                  <SelectItem value="none">ওয়াক-ইন কাস্টমার</SelectItem>
                   {customers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.name} - {customer.phone}
@@ -241,7 +241,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
             <div className="space-y-2 overflow-y-auto max-h-64">
               {cart.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Cart is empty
+                  কার্ট খালি
                 </div>
               ) : (
                 cart.map((item) => (
@@ -292,15 +292,15 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
             {/* Totals */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal:</span>
+                <span className="text-muted-foreground">সাবটোটাল:</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax:</span>
+                <span className="text-muted-foreground">ট্যাক্স:</span>
                 <span>${taxAmount.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="discount" className="text-sm text-muted-foreground">Discount:</Label>
+                <Label htmlFor="discount" className="text-sm text-muted-foreground">ডিসকাউন্ট:</Label>
                 <Input
                   id="discount"
                   type="number"
@@ -313,7 +313,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
               </div>
               <Separator />
               <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
+                <span>মোট:</span>
                 <span>${totalAmount.toFixed(2)}</span>
               </div>
             </div>
@@ -321,22 +321,22 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
             {/* Payment */}
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="payment_method">Payment Method</Label>
+                <Label htmlFor="payment_method">পেমেন্ট মেথড</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="cash">নগদ</SelectItem>
+                    <SelectItem value="card">কার্ড</SelectItem>
                     <SelectItem value="upi">UPI</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="bank_transfer">ব্যাংক ট্রান্সফার</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="paid_amount">Amount Paid</Label>
+                <Label htmlFor="paid_amount">প্রদত্ত পরিমাণ</Label>
                 <Input
                   id="paid_amount"
                   type="number"
@@ -350,7 +350,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
 
               {Number(paidAmount) > totalAmount && (
                 <div className="rounded-lg bg-primary/10 p-3">
-                  <div className="text-sm text-muted-foreground">Change</div>
+                  <div className="text-sm text-muted-foreground">ফেরত</div>
                   <div className="text-lg font-bold text-primary">
                     ${(Number(paidAmount) - totalAmount).toFixed(2)}
                   </div>
@@ -371,7 +371,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
                 onClick={() => setCart([])}
                 disabled={loading || cart.length === 0}
               >
-                Clear
+                মুছুন
               </Button>
               <Button
                 className="flex-1"
@@ -379,7 +379,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
                 disabled={loading || cart.length === 0}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Complete Sale
+                বিক্রয় সম্পন্ন করুন
               </Button>
             </div>
           </div>

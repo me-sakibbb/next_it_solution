@@ -11,14 +11,14 @@ export default async function InventoryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Inventory Management</h1>
+        <h1 className="text-3xl font-bold">ইনভেন্টরি ম্যানেজমেন্ট</h1>
         <p className="text-muted-foreground">
-          Manage your products, stock levels, and categories
+          আপনার পণ্য, স্টকের পরিমাণ এবং ক্যাটাগরি ম্যানেজ করুন
         </p>
       </div>
 
-      <InventoryClient 
-        initialProducts={products} 
+      <InventoryClient
+        initialProducts={products}
         categories={categories}
         shopId={shop.id}
       />

@@ -32,12 +32,12 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
     try {
       const formData = new FormData(e.currentTarget)
       await createPayroll(shopId, formData)
-      toast.success('Payroll record created successfully')
+      toast.success('পে-রোল রেকর্ড সফলভাবে তৈরি হয়েছে')
       setOpen(false)
       e.currentTarget.reset()
       setSelectedStaff('')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create payroll')
+      toast.error(error.message || 'পে-রোল তৈরি করতে ব্যর্থ হয়েছে')
     } finally {
       setLoading(false)
     }
@@ -46,50 +46,50 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
   const handleMarkPaid = async (payrollId: string) => {
     try {
       await markPayrollPaid(payrollId)
-      toast.success('Payroll marked as paid')
+      toast.success('পে-রোল পরিশোধিত হিসেবে মার্ক করা হয়েছে')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to mark payroll as paid')
+      toast.error(error.message || 'পে-রোল পরিশোধিত হিসেবে মার্ক করতে ব্যর্থ হয়েছে')
     }
   }
   const columns = [
     {
       key: 'period',
-      label: 'Period',
+      label: 'সময়কাল',
       render: (p: any) => `${new Date(p.year, p.month - 1).toLocaleDateString('default', { month: 'long', year: 'numeric' })}`,
     },
     {
       key: 'staff',
-      label: 'Staff',
+      label: 'স্টাফ',
       render: (p: any) => p.staff?.name || p.staff?.employee_id || '-',
     },
     {
       key: 'base_salary',
-      label: 'Base',
+      label: 'মূল',
       render: (p: any) => formatCurrency(Number(p.base_salary || p.basic_salary)),
     },
     {
       key: 'allowances',
-      label: 'Allowances',
+      label: 'ভাতা',
       render: (p: any) => formatCurrency(Number(p.allowances || 0)),
     },
     {
       key: 'bonus',
-      label: 'Bonus',
+      label: 'বোনাস',
       render: (p: any) => formatCurrency(Number(p.bonus || 0)),
     },
     {
       key: 'deductions',
-      label: 'Deductions',
+      label: 'কর্তন',
       render: (p: any) => formatCurrency(Number(p.deductions || 0)),
     },
     {
       key: 'net_salary',
-      label: 'Net Salary',
+      label: 'নিট বেতন',
       render: (p: any) => formatCurrency(Number(p.net_salary)),
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'অবস্থা',
       render: (p: any) => {
         const status = p.status || p.payment_status
         const statusMap: Record<string, 'default' | 'secondary' | 'destructive'> = {
@@ -107,7 +107,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: 'অ্যাকশন',
       render: (p: any) => {
         const status = p.status || p.payment_status
         return status !== 'paid' ? (
@@ -117,7 +117,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
             onClick={() => handleMarkPaid(p.id)}
           >
             <CheckCircle className="h-4 w-4 mr-1" />
-            Mark Paid
+            পরিশোধ হিসেবে মার্ক করুন
           </Button>
         ) : null
       },
@@ -135,27 +135,27 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Payroll Management</h1>
-          <p className="text-muted-foreground">Process salaries, advances, and deductions</p>
+          <h1 className="text-3xl font-bold">পে-রোল ম্যানেজমেন্ট</h1>
+          <p className="text-muted-foreground">বেতন, অগ্রিম এবং কর্তন প্রসেস করুন</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Create Payroll
+              পে-রোল তৈরি করুন
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create Payroll Record</DialogTitle>
+              <DialogTitle>পে-রোল রেকর্ড তৈরি করুন</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreatePayroll} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="staff_id">Staff Member *</Label>
+                  <Label htmlFor="staff_id">স্টাফ মেম্বার *</Label>
                   <Select name="staff_id" value={selectedStaff} onValueChange={setSelectedStaff} required>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select staff" />
+                      <SelectValue placeholder="স্টাফ নির্বাচন করুন" />
                     </SelectTrigger>
                     <SelectContent>
                       {staff.map((s) => (
@@ -168,7 +168,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="month">Month *</Label>
+                  <Label htmlFor="month">মাস *</Label>
                   <Select name="month" defaultValue={String(currentMonth)} required>
                     <SelectTrigger>
                       <SelectValue />
@@ -184,7 +184,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="year">Year *</Label>
+                  <Label htmlFor="year">বছর *</Label>
                   <Input
                     id="year"
                     name="year"
@@ -195,7 +195,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="base_salary">Base Salary *</Label>
+                  <Label htmlFor="base_salary">মূল বেতন *</Label>
                   <Input
                     id="base_salary"
                     name="base_salary"
@@ -207,7 +207,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="allowances">Allowances</Label>
+                  <Label htmlFor="allowances">ভাতা</Label>
                   <Input
                     id="allowances"
                     name="allowances"
@@ -219,7 +219,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="deductions">Deductions</Label>
+                  <Label htmlFor="deductions">কর্তন</Label>
                   <Input
                     id="deductions"
                     name="deductions"
@@ -231,7 +231,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="overtime_hours">Overtime Hours</Label>
+                  <Label htmlFor="overtime_hours">ওভারটাইম ঘণ্টা</Label>
                   <Input
                     id="overtime_hours"
                     name="overtime_hours"
@@ -243,7 +243,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="overtime_pay">Overtime Pay</Label>
+                  <Label htmlFor="overtime_pay">ওভারটাইম পেমেন্ট</Label>
                   <Input
                     id="overtime_pay"
                     name="overtime_pay"
@@ -255,7 +255,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bonus">Bonus</Label>
+                  <Label htmlFor="bonus">বোনাস</Label>
                   <Input
                     id="bonus"
                     name="bonus"
@@ -267,7 +267,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="payment_date">Payment Date</Label>
+                  <Label htmlFor="payment_date">পেমেন্টের তারিখ</Label>
                   <Input
                     id="payment_date"
                     name="payment_date"
@@ -276,37 +276,37 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="payment_method">Payment Method</Label>
+                  <Label htmlFor="payment_method">পেমেন্ট মেথড</Label>
                   <Select name="payment_method">
                     <SelectTrigger>
-                      <SelectValue placeholder="Select method" />
+                      <SelectValue placeholder="মেথড নির্বাচন করুন" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="check">Check</SelectItem>
-                      <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                      <SelectItem value="bank_transfer">ব্যাংক ট্রান্সফার</SelectItem>
+                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="check">চেক</SelectItem>
+                      <SelectItem value="mobile_money">মোবাইল মানি</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes">নোট</Label>
                 <Textarea
                   id="notes"
                   name="notes"
-                  placeholder="Additional notes..."
+                  placeholder="অতিরিক্ত নোট..."
                   rows={3}
                 />
               </div>
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
+                  বাতিল
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? 'Creating...' : 'Create Payroll'}
+                  {loading ? 'তৈরি হচ্ছে...' : 'পে-রোল তৈরি করুন'}
                 </Button>
               </div>
             </form>
@@ -316,21 +316,21 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
 
       <div className="grid gap-4 md:grid-cols-4">
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">Total Payroll</div>
+          <div className="text-sm text-muted-foreground">মোট পে-রোল</div>
           <div className="text-2xl font-bold">{formatCurrency(totalPayroll)}</div>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">Total Records</div>
+          <div className="text-sm text-muted-foreground">মোট রেকর্ড</div>
           <div className="text-2xl font-bold">{payroll?.length || 0}</div>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">Pending</div>
+          <div className="text-sm text-muted-foreground">অপেক্ষমান</div>
           <div className="text-2xl font-bold">
             {pendingCount}
           </div>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">Paid</div>
+          <div className="text-sm text-muted-foreground">পরিশোধিত</div>
           <div className="text-2xl font-bold">
             {paidCount}
           </div>
@@ -340,7 +340,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
       <DataTable
         data={payroll || []}
         columns={columns}
-        searchPlaceholder="Search payroll..."
+        searchPlaceholder="পে-রোল খুঁজুন..."
       />
     </div>
   )

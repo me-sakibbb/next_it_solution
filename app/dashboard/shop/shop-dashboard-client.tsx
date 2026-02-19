@@ -66,20 +66,20 @@ export function ShopDashboardClient({
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{shopName}</h1>
                     <p className="text-muted-foreground">
-                        Overview of your business performance
+                        আপনার ব্যবসার পারফরমেন্সের সারসংক্ষেপ
                     </p>
                 </div>
                 <div className="flex gap-2">
                     <Link href="/dashboard/shop/sales">
                         <Button>
                             <ShoppingCart className="mr-2 h-4 w-4" />
-                            New Sale
+                            নতুন বিক্রয়
                         </Button>
                     </Link>
                     <Link href="/dashboard/shop/tasks">
                         <Button variant="secondary">
                             <ClipboardList className="mr-2 h-4 w-4" />
-                            New Task
+                            নতুন কাজ
                         </Button>
                     </Link>
                 </div>
@@ -90,7 +90,7 @@ export function ShopDashboardClient({
                 <Card className="border-l-4 border-l-primary">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Revenue
+                            মোট আয়
                         </CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
@@ -99,11 +99,11 @@ export function ShopDashboardClient({
                         <div className="text-xs text-muted-foreground mt-1">
                             <span className="text-green-600 font-medium">
                                 +{formatCurrency(salesRevenue)}
-                            </span> sales
+                            </span> বিক্রয়
                             <span className="mx-1">•</span>
                             <span className="text-blue-600 font-medium">
                                 +{formatCurrency(tasksRevenue)}
-                            </span> tasks
+                            </span> কাজ
                         </div>
                     </CardContent>
                 </Card>
@@ -111,14 +111,14 @@ export function ShopDashboardClient({
                 <Card className="border-l-4 border-l-blue-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Active Tasks
+                            চলমান কাজ
                         </CardTitle>
                         <ClipboardList className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{activeTasksCount}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Pending completion
+                            সম্পন্ন হওয়ার অপেক্ষায়
                         </p>
                     </CardContent>
                 </Card>
@@ -126,14 +126,14 @@ export function ShopDashboardClient({
                 <Card className="border-l-4 border-l-green-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Total Sales
+                            মোট বিক্রয়
                         </CardTitle>
                         <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{salesCount}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Lifetime transactions
+                            মোট লেনদেন
                         </p>
                     </CardContent>
                 </Card>
@@ -141,7 +141,7 @@ export function ShopDashboardClient({
                 <Card className={lowStockProducts > 0 ? "border-l-4 border-l-destructive" : "border-l-4 border-l-orange-500"}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Low Stock Alerts
+                            স্বল্প স্টকের সতর্কতা
                         </CardTitle>
                         <AlertTriangle className={`h-4 w-4 ${lowStockProducts > 0 ? "text-destructive" : "text-muted-foreground"}`} />
                     </CardHeader>
@@ -150,7 +150,7 @@ export function ShopDashboardClient({
                             {lowStockProducts}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Products need restocking
+                            পণ্যের স্টক শেষ হয়ে যাচ্ছে
                         </p>
                     </CardContent>
                 </Card>
@@ -164,12 +164,12 @@ export function ShopDashboardClient({
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>Recent Sales</CardTitle>
-                                    <CardDescription>Latest transactions from your shop</CardDescription>
+                                    <CardTitle>সাম্প্রতিক বিক্রয়</CardTitle>
+                                    <CardDescription>আপনার দোকানের সর্বশেষ লেনদেন</CardDescription>
                                 </div>
                                 <Link href="/dashboard/shop/sales">
                                     <Button variant="ghost" size="sm" className="gap-1">
-                                        View All <ArrowRight className="h-4 w-4" />
+                                        সব দেখুন <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 </Link>
                             </div>
@@ -182,10 +182,10 @@ export function ShopDashboardClient({
                                             <div key={sale.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
                                                 <div className="space-y-1">
                                                     <p className="text-sm font-medium leading-none">
-                                                        {sale.customer?.name || 'Walk-in Customer'}
+                                                        {sale.customer?.name || 'সাধারণ কাস্টমার'}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {format(new Date(sale.created_at), 'MMM d, h:mm a')} • {sale.sale_items?.length || 0} items
+                                                        {format(new Date(sale.created_at), 'MMM d, h:mm a')} • {sale.sale_items?.length || 0} টি আইটেম
                                                     </p>
                                                 </div>
                                                 <div className="font-medium">
@@ -196,7 +196,7 @@ export function ShopDashboardClient({
                                     </div>
                                 ) : (
                                     <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-                                        No recent sales found
+                                        কোনো সাম্প্রতিক বিক্রয় পাওয়া যায়নি
                                     </div>
                                 )}
                             </ScrollArea>
@@ -209,7 +209,7 @@ export function ShopDashboardClient({
                             <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
                                 <CardContent className="flex flex-col items-center justify-center p-6 gap-2 text-center">
                                     <Package className="h-6 w-6 text-primary" />
-                                    <span className="text-sm font-medium">Inventory</span>
+                                    <span className="text-sm font-medium">ইনভেন্টরি</span>
                                 </CardContent>
                             </Card>
                         </Link>
@@ -217,7 +217,7 @@ export function ShopDashboardClient({
                             <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
                                 <CardContent className="flex flex-col items-center justify-center p-6 gap-2 text-center">
                                     <Users className="h-6 w-6 text-primary" />
-                                    <span className="text-sm font-medium">Customers</span>
+                                    <span className="text-sm font-medium">কাস্টমার</span>
                                 </CardContent>
                             </Card>
                         </Link>
@@ -225,7 +225,7 @@ export function ShopDashboardClient({
                             <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
                                 <CardContent className="flex flex-col items-center justify-center p-6 gap-2 text-center">
                                     <Users className="h-6 w-6 text-primary" />
-                                    <span className="text-sm font-medium">Staff</span>
+                                    <span className="text-sm font-medium">স্টাফ</span>
                                 </CardContent>
                             </Card>
                         </Link>
@@ -233,7 +233,7 @@ export function ShopDashboardClient({
                             <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
                                 <CardContent className="flex flex-col items-center justify-center p-6 gap-2 text-center">
                                     <TrendingUp className="h-6 w-6 text-primary" />
-                                    <span className="text-sm font-medium">Reports</span>
+                                    <span className="text-sm font-medium">রিপোর্ট</span>
                                 </CardContent>
                             </Card>
                         </Link>
@@ -247,12 +247,12 @@ export function ShopDashboardClient({
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>Pending Tasks</CardTitle>
-                                    <CardDescription>Work that needs attention</CardDescription>
+                                    <CardTitle>অপেক্ষমান কাজ</CardTitle>
+                                    <CardDescription>যে কাজগুলোতে মনোযোগ দেওয়া দরকার</CardDescription>
                                 </div>
                                 <Link href="/dashboard/shop/tasks">
                                     <Button variant="ghost" size="sm" className="gap-1">
-                                        View All <ArrowRight className="h-4 w-4" />
+                                        সব দেখুন <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 </Link>
                             </div>
@@ -268,11 +268,11 @@ export function ShopDashboardClient({
                                                         {task.title}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground line-clamp-1">
-                                                        {task.description || 'No description'}
+                                                        {task.description || 'বিবরণ নেই'}
                                                     </p>
                                                     {task.due_date && (
                                                         <Badge variant="outline" className="text-[10px] h-5">
-                                                            Due {format(new Date(task.due_date), 'MMM d')}
+                                                            মেয়াদ {format(new Date(task.due_date), 'MMM d')}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -286,11 +286,11 @@ export function ShopDashboardClient({
                                     <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
                                         <ClipboardList className="h-8 w-8 text-muted-foreground/30" />
                                         <div className="space-y-1">
-                                            <p className="text-sm font-medium text-muted-foreground">No pending tasks</p>
-                                            <p className="text-xs text-muted-foreground">Create a task to track service or repair jobs</p>
+                                            <p className="text-sm font-medium text-muted-foreground">কোনো কাজ অপেক্ষমান নেই</p>
+                                            <p className="text-xs text-muted-foreground">সার্ভিস বা মেরামতের কাজ ট্র্যাক করতে একটি টাস্ক তৈরি করুন</p>
                                         </div>
                                         <Link href="/dashboard/shop/tasks">
-                                            <Button variant="outline" size="sm">Create Task</Button>
+                                            <Button variant="outline" size="sm">টাস্ক তৈরি করুন</Button>
                                         </Link>
                                     </div>
                                 )}
@@ -302,7 +302,7 @@ export function ShopDashboardClient({
                     <Card>
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
-                                <CardTitle className="text-sm font-medium">Staff Overview</CardTitle>
+                                <CardTitle className="text-sm font-medium">স্টাফ ওভারভিউ</CardTitle>
                                 <Users className="h-4 w-4 text-muted-foreground" />
                             </div>
                         </CardHeader>
@@ -310,11 +310,11 @@ export function ShopDashboardClient({
                             <div className="flex items-center justify-between">
                                 <div>
                                     <div className="text-2xl font-bold">{activeStaff}</div>
-                                    <p className="text-xs text-muted-foreground">Active Members</p>
+                                    <p className="text-xs text-muted-foreground">সক্রিয় সদস্য</p>
                                 </div>
                                 <div className="text-right">
                                     <div className="text-lg font-semibold text-muted-foreground">{staffTotal}</div>
-                                    <p className="text-xs text-muted-foreground">Total Registered</p>
+                                    <p className="text-xs text-muted-foreground">মোট নিবন্ধিত</p>
                                 </div>
                             </div>
                         </CardContent>

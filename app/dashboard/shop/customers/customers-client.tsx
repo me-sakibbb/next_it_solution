@@ -21,22 +21,22 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
   const columns = [
     {
       key: 'name',
-      label: 'Name',
+      label: 'নাম',
       render: (customer: Customer) => (
         <div>
           <div className="font-medium">{customer.name}</div>
-          <div className="text-sm text-muted-foreground">{customer.email || 'No email'}</div>
+          <div className="text-sm text-muted-foreground">{customer.email || 'ইমেইল নেই'}</div>
         </div>
       ),
     },
     {
       key: 'phone',
-      label: 'Phone',
+      label: 'ফোন',
       render: (customer: Customer) => customer.phone || '-',
     },
     {
       key: 'customer_type',
-      label: 'Type',
+      label: 'ধরণ',
       render: (customer: Customer) => (
         <Badge variant="secondary" className="capitalize">
           {customer.customer_type}
@@ -45,7 +45,7 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
     },
     {
       key: 'address',
-      label: 'Location',
+      label: 'লোকেশন',
       render: (customer: Customer) => {
         const parts = [customer.city, customer.state].filter(Boolean)
         return parts.length > 0 ? parts.join(', ') : '-'
@@ -53,7 +53,7 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
     },
     {
       key: 'credit_limit',
-      label: 'Credit Limit',
+      label: 'ক্রেডিট লিমিট',
       render: (customer: Customer) => `$${Number(customer.credit_limit).toFixed(2)}`,
     },
   ]
@@ -62,21 +62,21 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Total Customers: {customers.length}
+          মোট কাস্টমার: {customers.length}
         </div>
         <Button onClick={() => {
           setSelectedCustomer(null)
           setShowDialog(true)
         }}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Customer
+          কাস্টমার যোগ করুন
         </Button>
       </div>
 
       <DataTable
         data={customers}
         columns={columns}
-        searchPlaceholder="Search customers..."
+        searchPlaceholder="কাস্টমার খুঁজুন..."
         onRowClick={(customer) => {
           setSelectedCustomer(customer)
           setShowDialog(true)
@@ -90,7 +90,7 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
               setShowDialog(true)
             }}
           >
-            Edit
+            এডিট
           </Button>
         )}
       />

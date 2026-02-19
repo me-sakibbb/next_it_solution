@@ -21,7 +21,7 @@ export default function ShopDashboardPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading shop dashboard...</p>
+          <p className="text-muted-foreground">দোকানের ড্যাশবোর্ড লোড হচ্ছে...</p>
         </div>
       </div>
     )
@@ -31,7 +31,7 @@ export default function ShopDashboardPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">
-          <p className="text-destructive">Failed to load shop data</p>
+          <p className="text-destructive">দোকানের তথ্য লোড করতে ব্যর্থ হয়েছে</p>
         </div>
       </div>
     )

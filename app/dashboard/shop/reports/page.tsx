@@ -28,65 +28,65 @@ export default async function ReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Reports & Analytics</h1>
+        <h1 className="text-3xl font-bold">রিপোর্ট এবং অ্যানালিটিক্স</h1>
         <p className="text-muted-foreground">
-          Comprehensive business intelligence and reporting with visual charts
+          ভিজ্যুয়াল চার্ট সহ বিস্তারিত বিজনেস ইন্টেলিজেন্স এবং রিপোর্টিং
         </p>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="overview">ওভারভিউ</TabsTrigger>
+          <TabsTrigger value="sales">বিক্রয়</TabsTrigger>
+          <TabsTrigger value="inventory">ইনভেন্টরি</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <CardTitle className="text-sm font-medium">মোট আয়</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-                <p className="text-xs text-muted-foreground">All time</p>
+                <p className="text-xs text-muted-foreground">সর্বমোট</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
+                <CardTitle className="text-sm font-medium">মোট লাভ</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(totalProfit)}</div>
                 <p className="text-xs text-muted-foreground">
-                  {totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0.00'}% margin
+                  {totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0.00'}% মার্জিন
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                <CardTitle className="text-sm font-medium">মোট বিক্রয়</CardTitle>
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{sales.length}</div>
-                <p className="text-xs text-muted-foreground">Completed transactions</p>
+                <p className="text-xs text-muted-foreground">সম্পন্ন লেনদেন</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Products</CardTitle>
+                <CardTitle className="text-sm font-medium">পণ্য</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{products.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {lowStockProducts.length} low stock
+                  {lowStockProducts.length} লো স্টক
                 </p>
               </CardContent>
             </Card>
@@ -97,7 +97,7 @@ export default async function ReportsPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Average Sale Value</CardTitle>
+                <CardTitle className="text-sm">গড় বিক্রয় মূল্য</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -108,12 +108,12 @@ export default async function ReportsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Total Items Sold</CardTitle>
+                <CardTitle className="text-sm">মোট বিক্রিত পণ্য</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {sales.reduce((sum, sale) => 
-                    sum + (sale.sale_items?.reduce((itemSum: number, item: any) => 
+                  {sales.reduce((sum, sale) =>
+                    sum + (sale.sale_items?.reduce((itemSum: number, item: any) =>
                       itemSum + item.quantity, 0) || 0), 0
                   )}
                 </div>
@@ -122,16 +122,16 @@ export default async function ReportsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Paid Sales</CardTitle>
+                <CardTitle className="text-sm">পরিশোধিত বিক্রয়</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {sales.filter(s => s.payment_status === 'paid').length}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {sales.length > 0 
-                    ? ((sales.filter(s => s.payment_status === 'paid').length / sales.length) * 100).toFixed(0) 
-                    : '0'}% payment rate
+                  {sales.length > 0
+                    ? ((sales.filter(s => s.payment_status === 'paid').length / sales.length) * 100).toFixed(0)
+                    : '0'}% পেমেন্ট রেট
                 </p>
               </CardContent>
             </Card>
@@ -142,31 +142,31 @@ export default async function ReportsPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Total Products</CardTitle>
+                <CardTitle className="text-sm">মোট পণ্য</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{products.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {products.filter(p => p.is_active).length} active
+                  {products.filter(p => p.is_active).length} সক্রিয়
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Low Stock Items</CardTitle>
+                <CardTitle className="text-sm">লো স্টক পণ্য</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-destructive">
                   {lowStockProducts.length}
                 </div>
-                <p className="text-xs text-muted-foreground">Needs restocking</p>
+                <p className="text-xs text-muted-foreground">রিস্টক করা প্রয়োজন</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Total Stock Value</CardTitle>
+                <CardTitle className="text-sm">মোট স্টক মূল্য</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -175,7 +175,7 @@ export default async function ReportsPage() {
                     return sum + (qty * Number(p.cost_price))
                   }, 0).toFixed(2)}
                 </div>
-                <p className="text-xs text-muted-foreground">At cost price</p>
+                <p className="text-xs text-muted-foreground">ক্রয় মূল্যে</p>
               </CardContent>
             </Card>
           </div>

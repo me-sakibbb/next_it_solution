@@ -29,7 +29,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
 
     try {
       const formData = new FormData(e.currentTarget)
-      
+
       if (staff) {
         const updated = await updateStaff(staff.id, formData)
         onSuccess(updated)
@@ -48,14 +48,14 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{staff ? 'Edit Staff' : 'Add New Staff'}</DialogTitle>
+          <DialogTitle>{staff ? 'স্টাফ এডিট করুন' : 'নতুন স্টাফ যোগ করুন'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Essential Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
-              <Label htmlFor="name">Full Name *</Label>
+              <Label htmlFor="name">পুরো নাম *</Label>
               <Input
                 id="name"
                 name="name"
@@ -65,7 +65,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone *</Label>
+              <Label htmlFor="phone">ফোন *</Label>
               <Input
                 id="phone"
                 name="phone"
@@ -76,7 +76,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="designation">Designation *</Label>
+              <Label htmlFor="designation">পদবী *</Label>
               <Input
                 id="designation"
                 name="designation"
@@ -86,7 +86,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="base_salary">Base Salary *</Label>
+              <Label htmlFor="base_salary">মূল বেতন *</Label>
               <Input
                 id="base_salary"
                 name="base_salary"
@@ -99,7 +99,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date_of_joining">Date of Joining *</Label>
+              <Label htmlFor="date_of_joining">যোগদানের তারিখ *</Label>
               <Input
                 id="date_of_joining"
                 name="date_of_joining"
@@ -120,12 +120,12 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
             {showMoreOptions ? (
               <>
                 <ChevronUp className="h-4 w-4" />
-                Hide more options
+                আরও অপশন লুকান
               </>
             ) : (
               <>
                 <ChevronDown className="h-4 w-4" />
-                Show more options
+                আরও অপশন দেখুন
               </>
             )}
           </Button>
@@ -134,7 +134,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
           {showMoreOptions && (
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">ইমেইল</Label>
                 <Input
                   id="email"
                   name="email"
@@ -144,7 +144,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="employee_id">Employee ID</Label>
+                <Label htmlFor="employee_id">এমপ্লয়ি আইডি</Label>
                 <Input
                   id="employee_id"
                   name="employee_id"
@@ -153,7 +153,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
+                <Label htmlFor="department">বিভাগ</Label>
                 <Input
                   id="department"
                   name="department"
@@ -162,26 +162,26 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="employment_type">Employment Type</Label>
+                <Label htmlFor="employment_type">চাকরির ধরন</Label>
                 <Select name="employment_type" defaultValue={staff?.employment_type || 'full_time'}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="full_time">Full Time</SelectItem>
-                    <SelectItem value="part_time">Part Time</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="intern">Intern</SelectItem>
+                    <SelectItem value="full_time">ফুল টাইম</SelectItem>
+                    <SelectItem value="part_time">পার্ট টাইম</SelectItem>
+                    <SelectItem value="contract">চুক্তিভিত্তিক</SelectItem>
+                    <SelectItem value="intern">ইন্টার্ন</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2 col-span-2">
-                <h3 className="font-medium text-sm">Emergency Contact</h3>
+                <h3 className="font-medium text-sm">জরুরি যোগাযোগ</h3>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="emergency_contact_name">Contact Name</Label>
+                <Label htmlFor="emergency_contact_name">যোগাযোগের নাম</Label>
                 <Input
                   id="emergency_contact_name"
                   name="emergency_contact_name"
@@ -190,7 +190,7 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="emergency_contact_phone">Contact Phone</Label>
+                <Label htmlFor="emergency_contact_phone">যোগাযোগের ফোন</Label>
                 <Input
                   id="emergency_contact_phone"
                   name="emergency_contact_phone"
@@ -214,11 +214,11 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Cancel
+              বাতিল
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {staff ? 'Update Staff' : 'Add Staff'}
+              {staff ? 'স্টাফ আপডেট করুন' : 'স্টাফ যোগ করুন'}
             </Button>
           </div>
         </form>

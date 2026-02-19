@@ -55,7 +55,7 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onS
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Adjust Stock: {product.name}</DialogTitle>
+          <DialogTitle>স্টক সমন্বয় করুন: {product.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -63,7 +63,7 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onS
             <div className="flex items-center gap-3">
               <Package className="h-8 w-8 text-muted-foreground" />
               <div>
-                <div className="text-sm text-muted-foreground">Current Stock</div>
+                <div className="text-sm text-muted-foreground">বর্তমান স্টক</div>
                 <div className="text-2xl font-bold">{currentStock} {product.unit}</div>
               </div>
             </div>
@@ -77,7 +77,7 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onS
                 className="flex-1"
                 onClick={() => setAdjustmentType('add')}
               >
-                Add Stock
+                স্টক যোগ করুন
               </Button>
               <Button
                 type="button"
@@ -85,12 +85,12 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onS
                 className="flex-1"
                 onClick={() => setAdjustmentType('remove')}
               >
-                Remove Stock
+                স্টক কমান
               </Button>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity *</Label>
+              <Label htmlFor="quantity">পরিমাণ *</Label>
               <Input
                 id="quantity"
                 name="quantity"
@@ -101,29 +101,29 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onS
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">Reason *</Label>
+              <Label htmlFor="type">কারণ *</Label>
               <Select name="type" required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select reason" />
+                  <SelectValue placeholder="কারণ নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="purchase">Purchase</SelectItem>
-                  <SelectItem value="return">Return</SelectItem>
-                  <SelectItem value="adjustment">Adjustment</SelectItem>
-                  <SelectItem value="damage">Damage</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                  <SelectItem value="transfer">Transfer</SelectItem>
+                  <SelectItem value="purchase">ক্রয়</SelectItem>
+                  <SelectItem value="return">ফেরত</SelectItem>
+                  <SelectItem value="adjustment">সমন্বয়</SelectItem>
+                  <SelectItem value="damage">ক্ষতি</SelectItem>
+                  <SelectItem value="expired">মেয়াদোত্তীর্ণ</SelectItem>
+                  <SelectItem value="transfer">স্থানান্তর</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">নোট</Label>
               <Textarea
                 id="notes"
                 name="notes"
                 rows={3}
-                placeholder="Add any additional notes..."
+                placeholder="অতিরিক্ত কোনো নোট যোগ করুন..."
               />
             </div>
 
@@ -140,11 +140,11 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onS
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
-                Cancel
+                বাতিল
               </Button>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Adjust Stock
+                স্টক সমন্বয় করুন
               </Button>
             </div>
           </form>

@@ -40,17 +40,17 @@ export function StaffList({ staff: initialStaff, shopId }: StaffListProps) {
   const columns = [
     {
       key: 'name',
-      label: 'Name',
+      label: 'নাম',
       render: (s: any) => s.name || '-',
     },
     {
       key: 'employee_id',
-      label: 'Employee ID',
+      label: 'এমপ্লয়ি আইডি',
       render: (s: any) => s.employee_id || '-',
     },
     {
       key: 'contact',
-      label: 'Contact',
+      label: 'যোগাযোগ',
       render: (s: any) => (
         <div className="text-sm">
           <div>{s.phone || '-'}</div>
@@ -60,17 +60,17 @@ export function StaffList({ staff: initialStaff, shopId }: StaffListProps) {
     },
     {
       key: 'department',
-      label: 'Department',
+      label: 'বিভাগ',
       render: (s: any) => s.department || '-',
     },
     {
       key: 'designation',
-      label: 'Designation',
+      label: 'পদবী',
       render: (s: any) => s.designation || '-',
     },
     {
       key: 'employment_type',
-      label: 'Type',
+      label: 'ধরন',
       render: (s: any) => (
         <Badge variant="secondary" className="capitalize">
           {s.employment_type?.replace('_', ' ')}
@@ -79,12 +79,12 @@ export function StaffList({ staff: initialStaff, shopId }: StaffListProps) {
     },
     {
       key: 'base_salary',
-      label: 'Salary',
+      label: 'বেতন',
       render: (s: any) => formatCurrency(Number(s.base_salary)),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: 'অ্যাকশন',
       render: (s: any) => (
         <Button
           variant="ghost"
@@ -101,18 +101,18 @@ export function StaffList({ staff: initialStaff, shopId }: StaffListProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Total Staff: {staff.length}
+          মোট স্টাফ: {staff.length}
         </div>
         <Button onClick={handleAddNew}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Staff
+          স্টাফ যোগ করুন
         </Button>
       </div>
-      
+
       <DataTable
         data={staff}
         columns={columns}
-        searchPlaceholder="Search staff..."
+        searchPlaceholder="স্টাফ খুঁজুন..."
       />
 
       <StaffDialog

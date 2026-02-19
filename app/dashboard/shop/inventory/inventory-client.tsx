@@ -38,34 +38,34 @@ export function InventoryClient({ initialProducts, categories, shopId }: Invento
     setProducts(updated)
   }, `shop_id=eq.${shopId}`)
 
-  const lowStockProducts = products.filter(p => 
+  const lowStockProducts = products.filter(p =>
     p.inventory?.[0]?.quantity <= p.min_stock_level
   )
 
   const columns = [
     {
       key: 'name',
-      label: 'Product',
+      label: 'পণ্য',
       render: (product: any) => (
         <div>
           <div className="font-medium">{product.name}</div>
-          <div className="text-sm text-muted-foreground">{product.sku || 'No SKU'}</div>
+          <div className="text-sm text-muted-foreground">{product.sku || 'SKU নেই'}</div>
         </div>
       ),
     },
     {
       key: 'category',
-      label: 'Category',
-      render: (product: any) => product.category?.name || 'Uncategorized',
+      label: 'ক্যাটাগরি',
+      render: (product: any) => product.category?.name || 'ক্যাটাগরি নেই',
     },
     {
       key: 'selling_price',
-      label: 'Price',
+      label: 'দাম',
       render: (product: any) => formatCurrency(product.selling_price),
     },
     {
       key: 'stock',
-      label: 'Stock',
+      label: 'স্টক',
       render: (product: any) => {
         const quantity = product.inventory?.[0]?.quantity || 0
         const isLow = quantity <= product.min_stock_level
@@ -81,12 +81,12 @@ export function InventoryClient({ initialProducts, categories, shopId }: Invento
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'অবস্থা',
       render: (product: any) => {
         const quantity = product.inventory?.[0]?.quantity || 0
-        if (quantity === 0) return <Badge variant="destructive">Out of Stock</Badge>
-        if (quantity <= product.min_stock_level) return <Badge variant="secondary">Low Stock</Badge>
-        return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">In Stock</Badge>
+        if (quantity === 0) return <Badge variant="destructive">স্টক শেষ</Badge>
+        if (quantity <= product.min_stock_level) return <Badge variant="secondary">লো স্টক</Badge>
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">স্টক আছে</Badge>
       },
     },
   ]
@@ -98,9 +98,9 @@ export function InventoryClient({ initialProducts, categories, shopId }: Invento
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-destructive" />
             <div>
-              <h3 className="font-semibold text-destructive">Low Stock Alert</h3>
+              <h3 className="font-semibold text-destructive">লো স্টক অ্যালার্ট</h3>
               <p className="text-sm text-destructive/80">
-                {lowStockProducts.length} product{lowStockProducts.length !== 1 ? 's' : ''} below minimum stock level
+                {lowStockProducts.length} টি পণ্যের স্টক সর্বনিম্ব লেভেলের নিচে
               </p>
             </div>
           </div>
@@ -114,22 +114,22 @@ export function InventoryClient({ initialProducts, categories, shopId }: Invento
             setShowProductDialog(true)
           }}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Product
+            পণ্য যোগ করুন
           </Button>
           <Button variant="outline" onClick={() => setShowCategoryDialog(true)}>
             <Package className="h-4 w-4 mr-2" />
-            Manage Categories
+            ক্যাটাগরি ম্যানেজ করুন
           </Button>
         </div>
         <div className="text-sm text-muted-foreground">
-          Total Products: {products.length}
+          মোট পণ্য: {products.length}
         </div>
       </div>
 
       <DataTable
         data={products}
         columns={columns}
-        searchPlaceholder="Search products..."
+        searchPlaceholder="পণ্য খুঁজুন..."
         onRowClick={(product) => {
           setSelectedProduct(product)
           setShowStockDialog(true)

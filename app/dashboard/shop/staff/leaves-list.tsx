@@ -39,12 +39,12 @@ export function LeavesList({ leaves, staff, shopId }: LeavesListProps) {
   const columns = [
     {
       key: 'staff',
-      label: 'Staff',
+      label: 'স্টাফ',
       render: (l: any) => l.staff?.employee_id || '-',
     },
     {
       key: 'leave_type',
-      label: 'Type',
+      label: 'ধরন',
       render: (l: any) => (
         <Badge variant="secondary" className="capitalize">
           {l.leave_type}
@@ -53,22 +53,22 @@ export function LeavesList({ leaves, staff, shopId }: LeavesListProps) {
     },
     {
       key: 'dates',
-      label: 'Dates',
+      label: 'তারিখ',
       render: (l: any) => (
         <div className="text-sm">
           {format(new Date(l.from_date), 'MMM dd')} - {format(new Date(l.to_date), 'MMM dd')}
-          <div className="text-muted-foreground">{l.days} days</div>
+          <div className="text-muted-foreground">{l.days} দিন</div>
         </div>
       ),
     },
     {
       key: 'reason',
-      label: 'Reason',
+      label: 'কারণ',
       render: (l: any) => l.reason || '-',
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'অবস্থা',
       render: (l: any) => {
         const statusMap: Record<string, 'default' | 'secondary' | 'destructive'> = {
           pending: 'secondary',
@@ -88,9 +88,9 @@ export function LeavesList({ leaves, staff, shopId }: LeavesListProps) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-semibold">Leave Requests</h3>
+          <h3 className="text-lg font-semibold">ছুটির আবেদন</h3>
           <p className="text-sm text-muted-foreground">
-            Manage employee leave requests and approvals
+            কর্মচারী ছুটির আবেদন এবং অনুমোদন পরিচালনা করুন
           </p>
         </div>
         <LeaveDialog staff={staff} shopId={shopId} />
@@ -98,7 +98,7 @@ export function LeavesList({ leaves, staff, shopId }: LeavesListProps) {
       <DataTable
         data={leaves}
         columns={columns}
-        searchPlaceholder="Search leaves..."
+        searchPlaceholder="ছুটি খুঁজুন..."
         actions={(leave) =>
           leave.status === 'pending' ? (
             <div className="flex gap-2">

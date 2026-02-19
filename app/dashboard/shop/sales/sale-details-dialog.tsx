@@ -44,10 +44,10 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Sale Details - {sale.sale_number}</DialogTitle>
+            <DialogTitle>বিক্রয় বিবরণ - {sale.sale_number}</DialogTitle>
             <Button onClick={handleDownloadPDF} size="sm" variant="outline">
               <FileDown className="mr-2 h-4 w-4" />
-              Download PDF
+              পিডিএফ ডাউনলোড করুন
             </Button>
           </div>
         </DialogHeader>
@@ -56,23 +56,23 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
           {/* Header Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-sm text-muted-foreground">Date</div>
+              <div className="text-sm text-muted-foreground">তারিখ</div>
               <div className="font-medium">
                 {format(new Date(sale.sale_date), 'MMM dd, yyyy HH:mm')}
               </div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Customer</div>
-              <div className="font-medium">{sale.customer?.name || 'Walk-in'}</div>
+              <div className="text-sm text-muted-foreground">কাস্টমার</div>
+              <div className="font-medium">{sale.customer?.name || 'ওয়াক-ইন'}</div>
             </div>
             {sale.customer?.phone && (
               <div>
-                <div className="text-sm text-muted-foreground">Phone</div>
+                <div className="text-sm text-muted-foreground">ফোন</div>
                 <div className="font-medium">{sale.customer.phone}</div>
               </div>
             )}
             <div>
-              <div className="text-sm text-muted-foreground">Status</div>
+              <div className="text-sm text-muted-foreground">অবস্থা</div>
               <div className="font-medium capitalize">{sale.status}</div>
             </div>
           </div>
@@ -81,7 +81,7 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
 
           {/* Items */}
           <div>
-            <h3 className="font-semibold mb-3">Items</h3>
+            <h3 className="font-semibold mb-3">আইটেম</h3>
             <div className="space-y-2">
               {sale.sale_items?.map((item: any) => (
                 <div key={item.id} className="flex items-center justify-between rounded-lg border p-3">
@@ -97,7 +97,7 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
                     </div>
                     {item.tax_rate > 0 && (
                       <div className="text-sm text-muted-foreground">
-                        +{item.tax_rate}% tax
+                        +{item.tax_rate}% ট্যাক্স
                       </div>
                     )}
                   </div>

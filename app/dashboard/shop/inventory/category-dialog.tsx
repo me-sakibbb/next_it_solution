@@ -42,15 +42,15 @@ export function CategoryDialog({ open, onOpenChange, categories, shopId }: Categ
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Manage Categories</DialogTitle>
+          <DialogTitle>ক্যাটাগরি ম্যানেজ করুন</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <h3 className="font-medium mb-2">Existing Categories</h3>
+            <h3 className="font-medium mb-2">বিদ্যমান ক্যাটাগরি</h3>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {categories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No categories yet</p>
+                <p className="text-sm text-muted-foreground">এখনও কোন ক্যাটাগরি নেই</p>
               ) : (
                 categories.map((cat) => (
                   <div key={cat.id} className="rounded-lg border p-3">
@@ -65,15 +65,15 @@ export function CategoryDialog({ open, onOpenChange, categories, shopId }: Categ
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 border-t pt-4">
-            <h3 className="font-medium">Add New Category</h3>
-            
+            <h3 className="font-medium">নতুন ক্যাটাগরি যোগ করুন</h3>
+
             <div className="space-y-2">
-              <Label htmlFor="name">Category Name *</Label>
+              <Label htmlFor="name">ক্যাটাগরির নাম *</Label>
               <Input id="name" name="name" required />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">বিবরণ</Label>
               <Input id="description" name="description" />
             </div>
 
@@ -86,7 +86,7 @@ export function CategoryDialog({ open, onOpenChange, categories, shopId }: Categ
             <Button type="submit" disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Plus className="mr-2 h-4 w-4" />
-              Add Category
+              ক্যাটাগরি যোগ করুন
             </Button>
           </form>
         </div>

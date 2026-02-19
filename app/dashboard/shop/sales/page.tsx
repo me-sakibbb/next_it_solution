@@ -10,9 +10,9 @@ export default async function SalesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Sales & POS</h1>
+        <h1 className="text-3xl font-bold">বিক্রয় এবং পিওএস</h1>
         <p className="text-muted-foreground">
-          Point of sale, invoices, and sales tracking
+          পয়েন্ট অফ সেল, ইনভয়েস এবং বিক্রয় ট্র্যাকিং
         </p>
       </div>
 

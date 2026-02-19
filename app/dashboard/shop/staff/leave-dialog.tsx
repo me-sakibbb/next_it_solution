@@ -68,23 +68,23 @@ export function LeaveDialog({ staff, shopId }: LeaveDialogProps) {
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          Request Leave
+          ছুটির আবেদন করুন
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Request Leave</DialogTitle>
+            <DialogTitle>ছুটির আবেদন করুন</DialogTitle>
             <DialogDescription>
-              Submit a leave request for an employee.
+              একজন কর্মচারীর জন্য ছুটির আবেদন জমা দিন।
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="staff_id">Staff Member *</Label>
+              <Label htmlFor="staff_id">স্টাফ মেম্বার *</Label>
               <Select name="staff_id" required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select staff" />
+                  <SelectValue placeholder="স্টাফ নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
                   {staff.map((s) => (
@@ -97,26 +97,26 @@ export function LeaveDialog({ staff, shopId }: LeaveDialogProps) {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="leave_type">Leave Type *</Label>
+              <Label htmlFor="leave_type">ছুটির ধরন *</Label>
               <Select name="leave_type" required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select leave type" />
+                  <SelectValue placeholder="ছুটির ধরন নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sick">Sick Leave</SelectItem>
-                  <SelectItem value="casual">Casual Leave</SelectItem>
-                  <SelectItem value="annual">Annual Leave</SelectItem>
-                  <SelectItem value="maternity">Maternity Leave</SelectItem>
-                  <SelectItem value="paternity">Paternity Leave</SelectItem>
-                  <SelectItem value="unpaid">Unpaid Leave</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="sick">অসুস্থতা জনিত ছুটি</SelectItem>
+                  <SelectItem value="casual">নৈমিত্তিক ছুটি</SelectItem>
+                  <SelectItem value="annual">বার্ষিক ছুটি</SelectItem>
+                  <SelectItem value="maternity">মাতৃত্বকালীন ছুটি</SelectItem>
+                  <SelectItem value="paternity">পিতৃত্বকালীন ছুটি</SelectItem>
+                  <SelectItem value="unpaid">বেতনহীন ছুটি</SelectItem>
+                  <SelectItem value="other">অন্যান্য</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="from_date">From Date *</Label>
+                <Label htmlFor="from_date">শুরুর তারিখ *</Label>
                 <Input
                   id="from_date"
                   name="from_date"
@@ -127,7 +127,7 @@ export function LeaveDialog({ staff, shopId }: LeaveDialogProps) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="to_date">To Date *</Label>
+                <Label htmlFor="to_date">শেষের তারিখ *</Label>
                 <Input
                   id="to_date"
                   name="to_date"
@@ -139,11 +139,11 @@ export function LeaveDialog({ staff, shopId }: LeaveDialogProps) {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="reason">Reason *</Label>
+              <Label htmlFor="reason">কারণ *</Label>
               <Textarea
                 id="reason"
                 name="reason"
-                placeholder="Please provide a reason for the leave request..."
+                placeholder="অনুগ্রহ করে ছুটির আবেদনের কারণ প্রদান করুন..."
                 className="min-h-[100px]"
                 required
               />
@@ -156,10 +156,10 @@ export function LeaveDialog({ staff, shopId }: LeaveDialogProps) {
               onClick={() => setOpen(false)}
               disabled={loading}
             >
-              Cancel
+              বাতিল
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Submitting...' : 'Submit Request'}
+              {loading ? 'জমা হচ্ছে...' : 'আবেদন জমা দিন'}
             </Button>
           </DialogFooter>
         </form>

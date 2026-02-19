@@ -24,14 +24,14 @@ interface ShopSidebarProps {
 }
 
 const shopMenuItems = [
-  { name: 'Shop Overview', href: '/dashboard/shop', icon: Store },
-  { name: 'Sales & POS', href: '/dashboard/shop/sales', icon: ShoppingCart },
-  { name: 'Inventory', href: '/dashboard/shop/inventory', icon: Package },
-  { name: 'Customers', href: '/dashboard/shop/customers', icon: UserCircle },
-  { name: 'Staff', href: '/dashboard/shop/staff', icon: Users },
-  { name: 'Payroll', href: '/dashboard/shop/payroll', icon: DollarSign },
-  { name: 'Reports', href: '/dashboard/shop/reports', icon: TrendingUp },
-  { name: 'Tasks', href: '/dashboard/shop/tasks', icon: ClipboardList },
+  { name: 'দোকান ওভারভিউ', href: '/dashboard/shop', icon: Store },
+  { name: 'বিক্রয় ও পিওএস', href: '/dashboard/shop/sales', icon: ShoppingCart },
+  { name: 'ইনভেন্টরি', href: '/dashboard/shop/inventory', icon: Package },
+  { name: 'কাস্টমার', href: '/dashboard/shop/customers', icon: UserCircle },
+  { name: 'স্টাফ', href: '/dashboard/shop/staff', icon: Users },
+  { name: 'বেতন', href: '/dashboard/shop/payroll', icon: DollarSign },
+  { name: 'রিপোর্ট', href: '/dashboard/shop/reports', icon: TrendingUp },
+  { name: 'কাজ', href: '/dashboard/shop/tasks', icon: ClipboardList },
 ]
 
 export function ShopSidebar({ user, profile }: ShopSidebarProps) {
@@ -44,7 +44,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Store className="h-5 w-5" />
           </div>
-          <span className="font-semibold text-foreground">Shop Management</span>
+          <span className="font-semibold text-foreground">দোকান ব্যবস্থাপনা</span>
         </Link>
       </div>
 
@@ -53,7 +53,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
         <Link href="/dashboard">
           <Button variant="outline" className="w-full justify-start" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            ড্যাশবোর্ডে ফিরে যান
           </Button>
         </Link>
       </div>

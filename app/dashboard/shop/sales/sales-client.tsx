@@ -25,39 +25,39 @@ export function SalesClient({ sales, shopId }: SalesClientProps) {
   const columns = [
     {
       key: 'sale_number',
-      label: 'Sale #',
+      label: 'বিক্রয় #',
       render: (sale: any) => (
         <div className="font-medium">{sale.sale_number}</div>
       ),
     },
     {
       key: 'sale_date',
-      label: 'Date',
+      label: 'তারিখ',
       render: (sale: any) => format(new Date(sale.sale_date), 'MMM dd, yyyy HH:mm'),
     },
     {
       key: 'customer',
-      label: 'Customer',
-      render: (sale: any) => sale.customer?.name || 'Walk-in',
+      label: 'কাস্টমার',
+      render: (sale: any) => sale.customer?.name || 'ওয়াক-ইন',
     },
     {
       key: 'items',
-      label: 'Items',
+      label: 'আইটেম',
       render: (sale: any) => sale.sale_items?.length || 0,
     },
     {
       key: 'total_amount',
-      label: 'Amount',
+      label: 'পরিমাণ',
       render: (sale: any) => formatCurrency(Number(sale.total_amount)),
     },
     {
       key: 'payment_status',
-      label: 'Payment',
+      label: 'পেমেন্ট',
       render: (sale: any) => {
         const statusMap = {
-          paid: { label: 'Paid', variant: 'default' as const },
-          partial: { label: 'Partial', variant: 'secondary' as const },
-          pending: { label: 'Pending', variant: 'secondary' as const },
+          paid: { label: 'পরিশোধিত', variant: 'default' as const },
+          partial: { label: 'আংশিক', variant: 'secondary' as const },
+          pending: { label: 'অপেক্ষমান', variant: 'secondary' as const },
         }
         const status = statusMap[sale.payment_status as keyof typeof statusMap] || statusMap.pending
         return <Badge variant={status.variant}>{status.label}</Badge>
@@ -65,12 +65,12 @@ export function SalesClient({ sales, shopId }: SalesClientProps) {
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'অবস্থা',
       render: (sale: any) => {
         const statusMap = {
-          completed: { label: 'Completed', variant: 'default' as const },
-          draft: { label: 'Draft', variant: 'secondary' as const },
-          cancelled: { label: 'Cancelled', variant: 'destructive' as const },
+          completed: { label: 'সম্পন্ন', variant: 'default' as const },
+          draft: { label: 'ড্রাফট', variant: 'secondary' as const },
+          cancelled: { label: 'বাতিল', variant: 'destructive' as const },
         }
         const status = statusMap[sale.status as keyof typeof statusMap] || statusMap.draft
         return <Badge variant={status.variant}>{status.label}</Badge>
@@ -82,15 +82,15 @@ export function SalesClient({ sales, shopId }: SalesClientProps) {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">Total Sales</div>
+          <div className="text-sm text-muted-foreground">মোট বিক্রয়</div>
           <div className="text-2xl font-bold">{formatCurrency(totalSales)}</div>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">Completed Sales</div>
+          <div className="text-sm text-muted-foreground">সম্পন্ন বিক্রয়</div>
           <div className="text-2xl font-bold">{totalCompleted}</div>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">Average Sale</div>
+          <div className="text-sm text-muted-foreground">গড় বিক্রয়</div>
           <div className="text-2xl font-bold">
             ${sales.length > 0 ? (totalSales / sales.length).toFixed(2) : '0.00'}
           </div>
@@ -98,11 +98,11 @@ export function SalesClient({ sales, shopId }: SalesClientProps) {
       </div>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Recent Sales</h2>
+        <h2 className="text-xl font-semibold">সাম্প্রতিক বিক্রয়</h2>
         <Link href="/dashboard/shop/sales/pos">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            New Sale
+            নতুন বিক্রয়
           </Button>
         </Link>
       </div>
@@ -110,7 +110,7 @@ export function SalesClient({ sales, shopId }: SalesClientProps) {
       <DataTable
         data={sales}
         columns={columns}
-        searchPlaceholder="Search sales..."
+        searchPlaceholder="বিক্রয় খুঁজুন..."
         onRowClick={(sale) => {
           setSelectedSale(sale)
           setShowDetailsDialog(true)

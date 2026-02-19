@@ -15,27 +15,27 @@ export function AttendanceList({ attendance, staff, shopId }: AttendanceListProp
   const columns = [
     {
       key: 'date',
-      label: 'Date',
+      label: 'তারিখ',
       render: (a: any) => format(new Date(a.date), 'MMM dd, yyyy'),
     },
     {
       key: 'staff',
-      label: 'Staff',
+      label: 'স্টাফ',
       render: (a: any) => a.staff?.employee_id || '-',
     },
     {
       key: 'check_in',
-      label: 'Check In',
+      label: 'চেক ইন',
       render: (a: any) => a.check_in ? format(new Date(a.check_in), 'HH:mm') : '-',
     },
     {
       key: 'check_out',
-      label: 'Check Out',
+      label: 'চেক আউট',
       render: (a: any) => a.check_out ? format(new Date(a.check_out), 'HH:mm') : '-',
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'অবস্থা',
       render: (a: any) => {
         const statusMap: Record<string, 'default' | 'secondary' | 'destructive'> = {
           present: 'default',
@@ -57,9 +57,9 @@ export function AttendanceList({ attendance, staff, shopId }: AttendanceListProp
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-semibold">Attendance Records</h3>
+          <h3 className="text-lg font-semibold">উপস্থিতির রেকর্ড</h3>
           <p className="text-sm text-muted-foreground">
-            Track daily attendance for all staff members
+            সকল স্টাফ সদস্যদের দৈনিক উপস্থিতি ট্র্যাক করুন
           </p>
         </div>
         <AttendanceDialog staff={staff} shopId={shopId} />
@@ -67,7 +67,7 @@ export function AttendanceList({ attendance, staff, shopId }: AttendanceListProp
       <DataTable
         data={attendance}
         columns={columns}
-        searchPlaceholder="Search attendance..."
+        searchPlaceholder="উপস্থিতি খুঁজুন..."
       />
     </div>
   )

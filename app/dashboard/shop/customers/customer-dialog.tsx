@@ -32,7 +32,7 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
 
     try {
       const formData = new FormData(e.currentTarget)
-      
+
       if (customer) {
         const updated = await updateCustomer(customer.id, formData)
         onSuccess(updated)
@@ -51,13 +51,13 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{customer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
+          <DialogTitle>{customer ? 'কাস্টমার এডিট করুন' : 'নতুন কাস্টমার যোগ করুন'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">নাম *</Label>
               <Input
                 id="name"
                 name="name"
@@ -67,7 +67,7 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">ফোন</Label>
               <Input
                 id="phone"
                 name="phone"
@@ -76,7 +76,7 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
 
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">ইমেইল</Label>
               <Input
                 id="email"
                 name="email"
@@ -86,21 +86,21 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="customer_type">Customer Type</Label>
+              <Label htmlFor="customer_type">কাস্টমারের ধরণ</Label>
               <Select name="customer_type" defaultValue={customer?.customer_type || 'retail'}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="retail">Retail</SelectItem>
-                  <SelectItem value="wholesale">Wholesale</SelectItem>
-                  <SelectItem value="vip">VIP</SelectItem>
+                  <SelectItem value="retail">খুচরা</SelectItem>
+                  <SelectItem value="wholesale">পাইকারি</SelectItem>
+                  <SelectItem value="vip">ভিআইপি</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="credit_limit">Credit Limit</Label>
+              <Label htmlFor="credit_limit">ক্রেডিট লিমিট</Label>
               <Input
                 id="credit_limit"
                 name="credit_limit"
@@ -112,7 +112,7 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
 
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address">ঠিকানা</Label>
               <Textarea
                 id="address"
                 name="address"
@@ -122,7 +122,7 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
+              <Label htmlFor="city">শহর</Label>
               <Input
                 id="city"
                 name="city"
@@ -131,7 +131,7 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
+              <Label htmlFor="state">বিভাগ/রাজ্য</Label>
               <Input
                 id="state"
                 name="state"
@@ -140,7 +140,7 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="zip_code">ZIP Code</Label>
+              <Label htmlFor="zip_code">জিপ কোড</Label>
               <Input
                 id="zip_code"
                 name="zip_code"
@@ -149,7 +149,7 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
+              <Label htmlFor="country">দেশ</Label>
               <Input
                 id="country"
                 name="country"
@@ -171,11 +171,11 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Cancel
+              বাতিল
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {customer ? 'Update Customer' : 'Create Customer'}
+              {customer ? 'কাস্টমার আপডেট করুন' : 'কাস্টমার তৈরি করুন'}
             </Button>
           </div>
         </form>
