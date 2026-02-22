@@ -225,7 +225,8 @@ export async function markPayrollPaid(payrollId: string) {
     await createSystemExpense(
       payroll.shop_id,
       Number(payroll.net_salary),
-      'Payroll',
+      'স্টাফ বেতন প্রদান',
+      'পে-রোল',
       'payroll',
       payrollId
     )

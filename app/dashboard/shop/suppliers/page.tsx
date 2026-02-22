@@ -1,7 +1,8 @@
-import { Metadata } from 'next'
+import { getUserShop } from '@/lib/get-user-shop'
 import { SuppliersClient } from './suppliers-client'
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+
+import { Metadata } from 'next'
 
 export const metadata: Metadata = {
     title: 'সাপ্লায়ার - Shop Area',
@@ -9,29 +10,13 @@ export const metadata: Metadata = {
 }
 
 export default async function SuppliersPage() {
+    const { shop } = await getUserShop()
+
     const supabase = await createClient()
-
-    // Verify auth
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        redirect('/auth/login')
-    }
-
-    // Verify shop context
-    const { data: shopMember } = await supabase
-        .from('shop_members')
-        .select('shop_id')
-        .eq('user_id', user.id)
-        .single()
-
-    if (!shopMember?.shop_id) {
-        redirect('/dashboard')
-    }
-
     const { data: suppliers } = await supabase
         .from('suppliers')
         .select('*')
-        .eq('shop_id', shopMember.shop_id)
+        .eq('shop_id', shop.id)
         .eq('is_active', true)
         .order('name')
 
@@ -46,7 +31,7 @@ export default async function SuppliersPage() {
 
             <SuppliersClient
                 initialSuppliers={suppliers || []}
-                shopId={shopMember.shop_id}
+                shopId={shop.id}
             />
         </div>
     )

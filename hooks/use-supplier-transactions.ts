@@ -41,7 +41,7 @@ export function useSupplierTransactions(shopId: string) {
         // Get current due
         const { data: supplier, error: supError } = await supabase
             .from('suppliers')
-            .select('due')
+            .select('due, name')
             .eq('id', supplierId)
             .single()
 
@@ -89,7 +89,8 @@ export function useSupplierTransactions(shopId: string) {
                 await createSystemExpense(
                     shopId,
                     amount,
-                    'Supplier Payment',
+                    `সাপ্লায়ার পেমেন্ট - ${supplier.name}`,
+                    'সাপ্লায়ার পেমেন্ট',
                     'supplier_payment',
                     transData.id
                 )

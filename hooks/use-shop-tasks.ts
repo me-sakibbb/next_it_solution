@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ShopTask, TaskStatus } from '@/lib/types'
 import { getShopTasks, createShopTask, updateShopTaskStatus, deleteShopTask } from '@/actions/shop/tasks'
 import { toast } from 'sonner'
@@ -67,9 +67,20 @@ export function useShopTasks(shopId?: string) {
         }
     }
 
+    // Computed stats
+    const pendingCount = useMemo(() => tasks.filter(t => t.status === 'pending').length, [tasks])
+    const completedCount = useMemo(() => tasks.filter(t => t.status === 'completed').length, [tasks])
+    const pendingValue = useMemo(
+        () => tasks.filter(t => t.status === 'pending').reduce((sum, t) => sum + Number(t.price), 0),
+        [tasks]
+    )
+
     return {
         tasks,
         loading,
+        pendingCount,
+        completedCount,
+        pendingValue,
         refreshTasks: loadTasks,
         createTask,
         updateStatus,

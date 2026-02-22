@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { supplierSchema } from '@/lib/validations'
 
@@ -12,10 +12,11 @@ export function useSuppliers(shopId: string) {
     useEffect(() => {
         if (!shopId) return
 
+        const supabase = createClient()
+
         async function fetchSuppliers() {
             try {
                 setLoading(true)
-                const supabase = createClient()
                 const { data, error } = await supabase
                     .from('suppliers')
                     .select('*')
@@ -35,7 +36,6 @@ export function useSuppliers(shopId: string) {
 
         fetchSuppliers()
 
-        const supabase = createClient()
         const channel = supabase
             .channel('suppliers-changes')
             .on(
@@ -50,7 +50,7 @@ export function useSuppliers(shopId: string) {
         }
     }, [shopId])
 
-    const createSupplier = async (formData: FormData) => {
+    const createSupplier = useCallback(async (formData: FormData) => {
         const supabase = createClient()
 
         const supplierData = {
@@ -81,9 +81,9 @@ export function useSuppliers(shopId: string) {
 
         if (error) throw error
         return data
-    }
+    }, [shopId])
 
-    const updateSupplier = async (id: string, formData: FormData) => {
+    const updateSupplier = useCallback(async (id: string, formData: FormData) => {
         const supabase = createClient()
 
         const supplierData = {
@@ -112,9 +112,9 @@ export function useSuppliers(shopId: string) {
 
         if (error) throw error
         return data
-    }
+    }, [shopId])
 
-    const deleteSupplier = async (id: string) => {
+    const deleteSupplier = useCallback(async (id: string) => {
         const supabase = createClient()
 
         const { error } = await supabase
@@ -123,7 +123,7 @@ export function useSuppliers(shopId: string) {
             .eq('id', id)
 
         if (error) throw error
-    }
+    }, [shopId])
 
     return {
         suppliers,

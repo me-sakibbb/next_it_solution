@@ -11,10 +11,11 @@ export function useStaff(shopId: string) {
     useEffect(() => {
         if (!shopId) return
 
+        const supabase = createClient()
+
         async function fetchStaff() {
             try {
                 setLoading(true)
-                const supabase = createClient()
 
                 const { data, error } = await supabase
                     .from('staff')
@@ -44,7 +45,6 @@ export function useStaff(shopId: string) {
         fetchStaff()
 
         // Real-time subscription
-        const supabase = createClient()
         const channel = supabase
             .channel('staff-changes')
             .on(

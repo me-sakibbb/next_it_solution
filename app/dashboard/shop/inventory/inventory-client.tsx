@@ -348,9 +348,10 @@ export function InventoryClient({ initialProducts, categories, suppliers, shopId
         onOpenChange={setShowStockDialog}
         product={selectedProduct}
         shopId={shopId}
-        onSuccess={() => {
+        onSuccess={async () => {
           setShowStockDialog(false)
-          window.location.reload()
+          const updated = await getProducts(shopId)
+          setProducts(updated)
         }}
       />
     </div>

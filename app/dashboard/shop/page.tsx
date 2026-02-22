@@ -1,24 +1,36 @@
 'use client'
 
-import { useShop } from '@/hooks/use-shop'
-import { useSales } from '@/hooks/use-sales'
-import { useProducts } from '@/hooks/use-products'
-import { useStaff } from '@/hooks/use-staff'
+import { useDashboardStats } from '@/hooks/use-dashboard-stats'
 import { ShopDashboardClient } from './shop-dashboard-client'
-import { useExpenses } from '@/hooks/use-expenses'
-
-import { useShopTasks } from '@/hooks/use-shop-tasks'
 
 export default function ShopDashboardPage() {
-  const { user, shop, loading: shopLoading } = useShop()
-  const { sales, loading: salesLoading } = useSales(shop?.id || '')
-  const { products, loading: productsLoading } = useProducts(shop?.id || '')
-  const { staff, loading: staffLoading } = useStaff(shop?.id || '')
-  const { tasks, loading: tasksLoading } = useShopTasks(shop?.id || '')
-  const { expenses, loading: expensesLoading } = useExpenses(shop?.id || '')
+  const {
+    user,
+    shop,
+    loading,
+    totalRevenue,
+    todayRevenue,
+    salesRevenue,
+    tasksRevenue,
+    totalExpenses,
+    todayExpenses,
+    netProfit,
+    todayProfit,
+    totalDue,
+    activeProducts,
+    lowStockProducts,
+    activeStaff,
+    salesCount,
+    activeTasksCount,
+    productsTotal,
+    staffTotal,
+    recentSales,
+    pendingTasks,
+    recentExpenses,
+    lowStockProductsList,
+  } = useDashboardStats()
 
-  // Show loading state while fetching initial data
-  if (shopLoading || salesLoading || productsLoading || staffLoading || tasksLoading || expensesLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">
@@ -39,49 +51,30 @@ export default function ShopDashboardPage() {
     )
   }
 
-  const salesRevenue = sales.reduce((sum, sale) => sum + Number(sale.total_amount), 0)
-  const tasksRevenue = tasks
-    .filter((task) => task.status === 'completed')
-    .reduce((sum, task) => sum + Number(task.price), 0)
-
-  const totalRevenue = salesRevenue + tasksRevenue
-
-  const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0)
-
-  const netProfit = totalRevenue - totalExpenses
-
-  const activeProducts = products.filter((p) => p.is_active).length
-  const lowStockProducts = products.filter((p) => p.available_quantity <= p.min_stock_level).length
-  const activeStaff = staff?.filter((s) => s.is_active).length || 0
-  const activeTasks = tasks.filter((t) => t.status === 'pending').length
-
-  // Get recent 5 sales
-  const recentSales = sales.slice(0, 5)
-
-  // Get recent 5 pending tasks
-  const pendingTasks = tasks
-    .filter((t) => t.status === 'pending')
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) // oldest first
-    .slice(0, 5)
-
   return (
     <ShopDashboardClient
       totalRevenue={totalRevenue}
+      todayRevenue={todayRevenue}
       salesRevenue={salesRevenue}
       tasksRevenue={tasksRevenue}
       totalExpenses={totalExpenses}
+      todayExpenses={todayExpenses}
       netProfit={netProfit}
+      todayProfit={todayProfit}
+      totalDue={totalDue}
       activeProducts={activeProducts}
       lowStockProducts={lowStockProducts}
       activeStaff={activeStaff}
-      salesCount={sales.length}
-      activeTasksCount={activeTasks}
+      salesCount={salesCount}
+      activeTasksCount={activeTasksCount}
       shopName={shop.name}
-      productsTotal={products.length}
-      staffTotal={staff?.length || 0}
+      productsTotal={productsTotal}
+      staffTotal={staffTotal}
       userEmail={user.email}
       recentSales={recentSales}
       pendingTasks={pendingTasks}
+      recentExpenses={recentExpenses}
+      lowStockProductsList={lowStockProductsList}
       currency={shop.currency}
     />
   )

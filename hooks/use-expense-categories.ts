@@ -12,6 +12,7 @@ export function useExpenseCategories(shopId: string) {
             if (!shopId) return
 
             try {
+                setLoading(true)
                 const data = await getExpenseCategories(shopId)
                 setCategories(data)
             } catch (error) {

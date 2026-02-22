@@ -10,20 +10,32 @@ import {
     Activity,
     ClipboardList,
     AlertTriangle,
-    ArrowRight
+    ArrowRight,
+    Wallet,
+    CalendarDays,
+    ArrowDownRight,
+    ArrowUpRight,
+    CreditCard,
+    Receipt,
+    PlusCircle
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
+import { formatCurrency } from '@/lib/utils'
 
 interface ShopDashboardClientProps {
     totalRevenue: number
+    todayRevenue: number
     salesRevenue: number
     tasksRevenue: number
     totalExpenses: number
+    todayExpenses: number
     netProfit: number
+    todayProfit: number
+    totalDue: number
     activeProducts: number
     lowStockProducts: number
     activeStaff: number
@@ -35,15 +47,21 @@ interface ShopDashboardClientProps {
     userEmail: string | undefined
     recentSales: any[]
     pendingTasks: any[]
+    recentExpenses: any[]
+    lowStockProductsList: any[]
     currency: string
 }
 
 export function ShopDashboardClient({
     totalRevenue,
+    todayRevenue,
     salesRevenue,
     tasksRevenue,
     totalExpenses,
+    todayExpenses,
     netProfit,
+    todayProfit,
+    totalDue,
     activeProducts,
     lowStockProducts,
     activeStaff,
@@ -54,184 +72,215 @@ export function ShopDashboardClient({
     staffTotal,
     recentSales,
     pendingTasks,
+    recentExpenses,
+    lowStockProductsList,
     currency
 }: ShopDashboardClientProps) {
-    const formatCurrency = (amount: number) => {
-        return `৳${new Intl.NumberFormat('en-BD', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(amount)}`
-    }
+
 
     return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+        <div className="space-y-8 animate-fade-in">
+            {/* Header / Dynamic Hero Section */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-primary/5 via-transparent to-transparent p-6 rounded-2xl border border-primary/10">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{shopName}</h1>
-                    <p className="text-muted-foreground">
-                        আপনার ব্যবসার পারফরমেন্সের সারসংক্ষেপ
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                            <Activity className="w-6 h-6" />
+                        </div>
+                        {shopName}
+                    </h1>
+                    <p className="text-muted-foreground mt-2">
+                        আপনার দোকানের দৈনন্দিন ব্যবসার ওভারভিউ এবং দ্রুত অ্যাকশন প্যানেল
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <Link href="/dashboard/shop/sales">
-                        <Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button asChild size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]">
+                        <Link href="/dashboard/shop/sales/pos">
                             <ShoppingCart className="mr-2 h-4 w-4" />
-                            নতুন বিক্রয়
-                        </Button>
-                    </Link>
-                    <Link href="/dashboard/shop/tasks">
-                        <Button variant="secondary">
-                            <ClipboardList className="mr-2 h-4 w-4" />
-                            নতুন কাজ
-                        </Button>
-                    </Link>
+                            নতুন বিক্রয় (POS)
+                        </Link>
+                    </Button>
+                    <Button asChild size="lg" variant="secondary" className="transition-all hover:scale-[1.02]">
+                        <Link href="/dashboard/shop/expenses">
+                            <Receipt className="mr-2 h-4 w-4" />
+                            খরচ এন্ট্রি
+                        </Link>
+                    </Button>
                 </div>
             </div>
 
-            {/* Hero Stats */}
+            {/* Quick Links Section */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {[
+                    { title: 'ইনভেন্টরি', icon: Package, href: '/dashboard/shop/inventory', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                    { title: 'কাস্টমার', icon: Users, href: '/dashboard/shop/customers', color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+                    { title: 'সাপ্লায়ার', icon: ArrowUpRight, href: '/dashboard/shop/suppliers', color: 'text-orange-500', bg: 'bg-orange-500/10' },
+                    { title: 'স্টাফ', icon: Users, href: '/dashboard/shop/staff', color: 'text-purple-500', bg: 'bg-purple-500/10' },
+                    { title: 'সার্ভিস কাজ', icon: ClipboardList, href: '/dashboard/shop/tasks', color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+                    { title: 'রিপোর্ট', icon: TrendingUp, href: '/dashboard/shop/reports', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                ].map((link, i) => (
+                    <Link key={i} href={link.href} className="block group">
+                        <Card className="h-full border-border/50 hover:border-primary/50 hover:shadow-md transition-all duration-300">
+                            <CardContent className="p-4 flex items-center gap-3">
+                                <div className={`p-2.5 rounded-lg ${link.bg} ${link.color} group-hover:scale-110 transition-transform`}>
+                                    <link.icon className="w-4 h-4" />
+                                </div>
+                                <span className="text-sm font-medium">{link.title}</span>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                ))}
+            </div>
+
+            {/* Stats Grid */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-l-4 border-l-primary">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            মোট আয়
-                        </CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                {/* 1. আজকের বিক্রি */}
+                <Card className="relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 w-24 h-24 bg-green-500/10 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">আজকের আয়</CardTitle>
+                        <CalendarDays className="h-4 w-4 text-green-500" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                            <span className="text-green-600 font-medium">
-                                +{formatCurrency(salesRevenue)}
-                            </span> বিক্রয়
-                            <span className="mx-1">•</span>
-                            <span className="text-blue-600 font-medium">
-                                +{formatCurrency(tasksRevenue)}
-                            </span> কাজ
+                    <CardContent className="z-10">
+                        <div className="text-3xl font-bold flex items-center gap-2">
+                            {formatCurrency(todayRevenue)}
                         </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-l-4 border-l-destructive">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            মোট খরচ (সাপ্লায়ার পেমেন্ট)
-                        </CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground rotate-180" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            সাপ্লায়ারকে দেওয়া পেমেন্ট
+                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                            <span className="text-green-600 bg-green-500/10 px-1 py-0.5 rounded text-[10px] font-medium">+আজকের হিসাব</span>
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-blue-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            চলমান কাজ
-                        </CardTitle>
-                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                {/* 2. আজকের খরচ */}
+                <Card className="relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 w-24 h-24 bg-red-500/10 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">আজকের খরচ</CardTitle>
+                        <ArrowDownRight className="h-4 w-4 text-red-500" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{activeTasksCount}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            সম্পন্ন হওয়ার অপেক্ষায়
+                    <CardContent className="z-10">
+                        <div className="text-3xl font-bold text-red-600 flex items-center gap-2">
+                            {formatCurrency(todayExpenses)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            দৈনন্দিন, সাপ্লায়ার ও পারিশ্রমিক
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-green-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            মোট বিক্রয়
-                        </CardTitle>
-                        <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                {/* 3. আজকের লাভ */}
+                <Card className="relative overflow-hidden group shadow-sm bg-gradient-to-br from-background to-primary/5">
+                    <div className="absolute right-0 top-0 w-24 h-24 bg-primary/10 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">আজকের লাভ</CardTitle>
+                        <DollarSign className="h-4 w-4 text-primary" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{salesCount}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            মোট লেনদেন
+                    <CardContent className="z-10">
+                        <div className={`text-3xl font-bold ${todayProfit >= 0 ? "text-primary" : "text-destructive"}`}>
+                            {todayProfit < 0 ? "-" : ""}{formatCurrency(Math.abs(todayProfit))}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            আজকের বিক্রি - আজকের খরচ
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className={lowStockProducts > 0 ? "border-l-4 border-l-destructive" : "border-l-4 border-l-orange-500"}>
+                {/* 4. মোট বাকি টাকা */}
+                <Card className="relative overflow-hidden group border-orange-200 dark:border-orange-900/50">
+                    <div className="absolute right-0 top-0 w-24 h-24 bg-orange-500/10 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">মোট বাকি টাকা</CardTitle>
+                        <CreditCard className="h-4 w-4 text-orange-500" />
+                    </CardHeader>
+                    <CardContent className="z-10">
+                        <div className="text-3xl font-bold text-orange-600">
+                            {formatCurrency(totalDue)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 flex justify-between items-center">
+                            কাস্টমারদের কাছে পাওনা
+                            <Link href="/dashboard/shop/sales?status=partial" className="text-primary hover:underline font-medium">দেখুন</Link>
+                        </p>
+                    </CardContent>
+                </Card>
+
+                {/* 5. স্বল্প স্টকের সতর্কতা */}
+                <Card className={lowStockProducts > 0 ? "border-l-4 border-l-destructive shadow-sm" : "border-l-4 border-l-orange-400"}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            স্বল্প স্টকের সতর্কতা
-                        </CardTitle>
-                        <AlertTriangle className={`h-4 w-4 ${lowStockProducts > 0 ? "text-destructive" : "text-muted-foreground"}`} />
+                        <CardTitle className="text-sm font-medium">স্বল্প স্টকের সতর্কতা</CardTitle>
+                        <AlertTriangle className={`h-4 w-4 ${lowStockProducts > 0 ? "text-destructive" : "text-orange-500"}`} />
                     </CardHeader>
                     <CardContent>
                         <div className={`text-2xl font-bold ${lowStockProducts > 0 ? "text-destructive" : ""}`}>
-                            {lowStockProducts}
+                            {lowStockProducts} <span className="text-sm font-normal text-muted-foreground">টি আইটেম</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            পণ্যের স্টক শেষ হয়ে যাচ্ছে
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">স্টক দ্রুত রিস্টক করুন</p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-l-4 border-l-green-600">
+                {/* 6. চলমান কাজ */}
+                <Card className="border-l-4 border-l-blue-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            নিট লাভ (আয় - খরচ)
-                        </CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">চলমান কাজ</CardTitle>
+                        <ClipboardList className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className={`text-2xl font-bold ${netProfit >= 0 ? "text-green-600" : "text-destructive"}`}>
-                            {formatCurrency(netProfit)}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            সামগ্রিক লাভ
-                        </p>
+                        <div className="text-2xl font-bold text-blue-600">{activeTasksCount}</div>
+                        <p className="text-xs text-muted-foreground mt-1">পেন্ডিং সার্ভিস/মেরামত</p>
                     </CardContent>
                 </Card>
+
+
             </div>
 
+            {/* Main Content Area */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6">
-                {/* Left Column: Recent Activity & Quick Actions (4 cols) */}
+
+                {/* Left Column (4 cols) */}
                 <div className="lg:col-span-4 space-y-6">
-                    {/* Recent Sales */}
-                    <Card className="h-[400px] flex flex-col">
-                        <CardHeader>
+                    {/* Recent Sales List */}
+                    <Card className="flex flex-col shadow-sm border-border/50">
+                        <CardHeader className="bg-muted/30 border-b pb-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>সাম্প্রতিক বিক্রয়</CardTitle>
-                                    <CardDescription>আপনার দোকানের সর্বশেষ লেনদেন</CardDescription>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <ShoppingCart className="w-5 h-5 text-green-600" />
+                                        সাম্প্রতিক বিক্রয়
+                                    </CardTitle>
                                 </div>
-                                <Link href="/dashboard/shop/sales">
-                                    <Button variant="ghost" size="sm" className="gap-1">
-                                        সব দেখুন <ArrowRight className="h-4 w-4" />
-                                    </Button>
-                                </Link>
+                                <Button asChild variant="outline" size="sm" className="h-8">
+                                    <Link href="/dashboard/shop/sales">সব দেখুন</Link>
+                                </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-hidden">
-                            <ScrollArea className="h-full pr-4">
-                                {recentSales.length > 0 ? (
-                                    <div className="space-y-4">
+                        <CardContent className="p-0">
+                            <ScrollArea className="h-[320px]">
+                                {recentSales?.length > 0 ? (
+                                    <div className="divide-y">
                                         {recentSales.map((sale) => (
-                                            <div key={sale.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
-                                                <div className="space-y-1">
-                                                    <p className="text-sm font-medium leading-none">
-                                                        {sale.customer?.name || 'সাধারণ কাস্টমার'}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {format(new Date(sale.created_at), 'MMM d, h:mm a')} • {sale.sale_items?.length || 0} টি আইটেম
-                                                    </p>
+                                            <div key={sale.id} className="p-4 hover:bg-muted/50 transition-colors flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                                        {(sale.customer?.name || 'C').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-semibold">{sale.customer?.name || 'সাধারণ কাস্টমার'}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {format(new Date(sale.created_at), 'MMM d, h:mm a')} • {sale.sale_items?.length || 0} আইটেম
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div className="font-medium">
-                                                    {formatCurrency(sale.total_amount)}
+                                                <div className="text-right">
+                                                    <p className="font-bold text-foreground">{formatCurrency(sale.total_amount)}</p>
+                                                    <Badge variant={sale.payment_status === 'paid' ? 'default' : 'secondary'} className="text-[10px] mt-1 h-5">
+                                                        {sale.payment_status === 'paid' ? 'পরিশোধিত' : 'বাকি'}
+                                                    </Badge>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+                                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm p-6">
+                                        <ShoppingCart className="w-8 h-8 opacity-20 mb-2" />
                                         কোনো সাম্প্রতিক বিক্রয় পাওয়া যায়নি
                                     </div>
                                 )}
@@ -239,122 +288,164 @@ export function ShopDashboardClient({
                         </CardContent>
                     </Card>
 
-                    {/* Quick Links Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <Link href="/dashboard/shop/inventory" className="block">
-                            <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
-                                <CardContent className="flex flex-col items-center justify-center p-6 gap-2 text-center">
-                                    <Package className="h-6 w-6 text-primary" />
-                                    <span className="text-sm font-medium">ইনভেন্টরি</span>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                        <Link href="/dashboard/shop/customers" className="block">
-                            <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
-                                <CardContent className="flex flex-col items-center justify-center p-6 gap-2 text-center">
-                                    <Users className="h-6 w-6 text-primary" />
-                                    <span className="text-sm font-medium">কাস্টমার</span>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                        <Link href="/dashboard/shop/staff" className="block">
-                            <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
-                                <CardContent className="flex flex-col items-center justify-center p-6 gap-2 text-center">
-                                    <Users className="h-6 w-6 text-primary" />
-                                    <span className="text-sm font-medium">স্টাফ</span>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                        <Link href="/dashboard/shop/reports" className="block">
-                            <Card className="hover:bg-accent transition-colors cursor-pointer h-full">
-                                <CardContent className="flex flex-col items-center justify-center p-6 gap-2 text-center">
-                                    <TrendingUp className="h-6 w-6 text-primary" />
-                                    <span className="text-sm font-medium">রিপোর্ট</span>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    </div>
-                </div>
-
-                {/* Right Column: Pending Tasks & Staff (3 cols) */}
-                <div className="lg:col-span-3 space-y-6">
-                    {/* Pending Tasks */}
-                    <Card className="h-[400px] flex flex-col">
-                        <CardHeader>
+                    {/* Recent Expenses List */}
+                    <Card className="flex flex-col shadow-sm border-border/50">
+                        <CardHeader className="bg-muted/30 border-b pb-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>অপেক্ষমান কাজ</CardTitle>
-                                    <CardDescription>যে কাজগুলোতে মনোযোগ দেওয়া দরকার</CardDescription>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <ArrowDownRight className="w-5 h-5 text-red-500" />
+                                        সাম্প্রতিক খরচ
+                                    </CardTitle>
                                 </div>
-                                <Link href="/dashboard/shop/tasks">
-                                    <Button variant="ghost" size="sm" className="gap-1">
-                                        সব দেখুন <ArrowRight className="h-4 w-4" />
-                                    </Button>
-                                </Link>
+                                <Button asChild variant="outline" size="sm" className="h-8">
+                                    <Link href="/dashboard/shop/expenses">সব দেখুন</Link>
+                                </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-hidden">
-                            <ScrollArea className="h-full pr-4">
-                                {pendingTasks.length > 0 ? (
-                                    <div className="space-y-4">
-                                        {pendingTasks.map((task) => (
-                                            <div key={task.id} className="flex items-start justify-between border-b pb-4 last:border-0 last:pb-0">
+                        <CardContent className="p-0">
+                            <ScrollArea className="h-[250px]">
+                                {recentExpenses?.length > 0 ? (
+                                    <div className="divide-y">
+                                        {recentExpenses.map((exp) => (
+                                            <div key={exp.id} className="p-4 hover:bg-muted/50 transition-colors flex items-center justify-between">
                                                 <div className="space-y-1">
-                                                    <p className="text-sm font-medium leading-none">
-                                                        {task.title}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground line-clamp-1">
-                                                        {task.description || 'বিবরণ নেই'}
-                                                    </p>
-                                                    {task.due_date && (
-                                                        <Badge variant="outline" className="text-[10px] h-5">
-                                                            মেয়াদ {format(new Date(task.due_date), 'MMM d')}
+                                                    <p className="text-sm font-medium">{exp.title}</p>
+                                                    <div className="flex gap-2 items-center">
+                                                        <Badge variant="outline" className="text-[10px] font-normal tracking-wide">
+                                                            {exp.expense_categories?.name || exp.reference_type || 'অন্যান্য'}
                                                         </Badge>
-                                                    )}
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {format(new Date(exp.expense_date || exp.created_at), 'MMM d, yy')}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div className="font-medium text-blue-600">
-                                                    {formatCurrency(task.price)}
+                                                <div className="font-semibold text-red-600">
+                                                    {formatCurrency(exp.amount)}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
-                                        <ClipboardList className="h-8 w-8 text-muted-foreground/30" />
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-medium text-muted-foreground">কোনো কাজ অপেক্ষমান নেই</p>
-                                            <p className="text-xs text-muted-foreground">সার্ভিস বা মেরামতের কাজ ট্র্যাক করতে একটি টাস্ক তৈরি করুন</p>
+                                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm p-6">
+                                        <Receipt className="w-8 h-8 opacity-20 mb-2" />
+                                        কোনো খরচ এন্ট্রি নেই
+                                    </div>
+                                )}
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Right Column (3 cols) */}
+                <div className="lg:col-span-3 space-y-6">
+
+                    {/* Low Stock Warning Panel - High Priority! */}
+                    {lowStockProductsList?.length > 0 && (
+                        <Card className="border-destructive/30 shadow-sm bg-destructive/5">
+                            <CardHeader className="pb-3 border-b border-destructive/10">
+                                <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                                    <AlertTriangle className="w-5 h-5" />
+                                    স্টক সতর্কতা ({lowStockProductsList.length})
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <ScrollArea className="h-[180px]">
+                                    <div className="divide-y divide-destructive/10">
+                                        {lowStockProductsList.map((product) => (
+                                            <div key={product.id} className="p-3 flex items-center justify-between">
+                                                <div className="overflow-hidden pr-2">
+                                                    <p className="text-sm font-medium truncate">{product.name}</p>
+                                                    <p className="text-[10px] text-muted-foreground">Min: {product.min_stock_level} {product.unit}</p>
+                                                </div>
+                                                <div className="shrink-0 bg-destructive/10 text-destructive px-2 py-1 rounded-md flex flex-col items-center">
+                                                    <span className="font-bold leading-none">{product.available_quantity}</span>
+                                                    <span className="text-[10px]">{product.unit}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            </CardContent>
+                            <div className="p-2 border-t border-destructive/10 text-center">
+                                <Button asChild variant="link" size="sm" className="text-destructive w-full h-auto py-1">
+                                    <Link href="/dashboard/shop/inventory">ইনভেন্টরি আপডেট করুন</Link>
+                                </Button>
+                            </div>
+                        </Card>
+                    )}
+
+                    {/* Pending Tasks Panel */}
+                    <Card className="flex flex-col shadow-sm border-border/50">
+                        <CardHeader className="bg-muted/30 border-b pb-4">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <ClipboardList className="w-5 h-5 text-blue-500" />
+                                    অপেক্ষমান সার্ভিস/কাজ
+                                </CardTitle>
+                                <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-blue-500">
+                                    <Link href="/dashboard/shop/tasks"><PlusCircle className="w-4 h-4" /></Link>
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <ScrollArea className="h-[250px]">
+                                {pendingTasks?.length > 0 ? (
+                                    <div className="divide-y">
+                                        {pendingTasks.map((task) => (
+                                            <div key={task.id} className="p-4 hover:bg-muted/50 transition-colors">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h4 className="text-sm font-semibold line-clamp-1">{task.title}</h4>
+                                                    <span className="text-sm font-bold text-foreground">{formatCurrency(task.price)}</span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                                                    {task.description || task.customer_name || 'কোনো বিবরণ নেই'}
+                                                </p>
+                                                {task.due_date && (
+                                                    <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 hover:bg-blue-500/20">
+                                                        মেয়াদ: {format(new Date(task.due_date), 'dd MMM')}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-6">
+                                        <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-3">
+                                            <ClipboardList className="w-6 h-6 text-blue-500" />
                                         </div>
-                                        <Link href="/dashboard/shop/tasks">
-                                            <Button variant="outline" size="sm">টাস্ক তৈরি করুন</Button>
-                                        </Link>
+                                        <p className="text-sm font-medium">কোনো পেন্ডিং কাজ নেই</p>
                                     </div>
                                 )}
                             </ScrollArea>
                         </CardContent>
                     </Card>
 
-                    {/* Staff Stats Card */}
-                    <Card>
+                    {/* Staff & Company Snapshot */}
+                    <Card className="bg-gradient-to-br from-background to-muted/20 border-border/50 shadow-sm">
                         <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-sm font-medium">স্টাফ ওভারভিউ</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </div>
+                            <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                <Users className="w-4 h-4" />
+                                স্টাফ ও কর্মী ওভারভিউ
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <div className="text-2xl font-bold">{activeStaff}</div>
-                                    <p className="text-xs text-muted-foreground">সক্রিয় সদস্য</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-background rounded-lg p-3 border shadow-sm flex flex-col items-center justify-center">
+                                    <span className="text-2xl font-bold text-primary">{activeStaff}</span>
+                                    <span className="text-xs text-muted-foreground mt-1 text-center">অ্যাক্টিভ স্টাফ</span>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-lg font-semibold text-muted-foreground">{staffTotal}</div>
-                                    <p className="text-xs text-muted-foreground">মোট নিবন্ধিত</p>
+                                <div className="bg-background rounded-lg p-3 border shadow-sm flex flex-col items-center justify-center">
+                                    <span className="text-2xl font-bold text-foreground">{staffTotal}</span>
+                                    <span className="text-xs text-muted-foreground mt-1 text-center">সর্বমোট স্টাফ</span>
                                 </div>
                             </div>
+                            <Button asChild variant="outline" className="w-full mt-4 h-9">
+                                <Link href="/dashboard/shop/staff">স্টাফ তালিকা দেখুন</Link>
+                            </Button>
                         </CardContent>
                     </Card>
+
                 </div>
             </div>
         </div>

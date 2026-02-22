@@ -37,6 +37,7 @@ import { format } from 'date-fns'
 import { Plus, Search, Trash2, CheckCircle, Clock } from 'lucide-react'
 import { TaskStatus } from '@/lib/types'
 import { toast } from 'sonner'
+import { formatCurrency } from '@/lib/utils'
 import { CustomerSelector } from '@/components/dashboard/shop/customer-selector'
 
 interface TasksClientProps {
@@ -45,7 +46,7 @@ interface TasksClientProps {
 
 export function TasksClient({ customers }: TasksClientProps) {
     const { shop } = useShop()
-    const { tasks, loading, createTask, updateStatus, deleteTask } = useShopTasks(shop?.id)
+    const { tasks, loading, pendingCount, completedCount, pendingValue, createTask, updateStatus, deleteTask } = useShopTasks(shop?.id)
 
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
@@ -70,7 +71,7 @@ export function TasksClient({ customers }: TasksClientProps) {
                 title: newTaskTitle,
                 description: newTaskDescription,
                 price: parseFloat(newTaskPrice),
-                customer_name: newTaskCustomer, // We still use the name for now as the schema expects it
+                customer_name: newTaskCustomer,
                 due_date: newTaskDueDate ? new Date(newTaskDueDate).toISOString() : undefined,
             })
             setIsCreateOpen(false)
@@ -93,19 +94,7 @@ export function TasksClient({ customers }: TasksClientProps) {
         return matchesSearch && matchesStatus
     })
 
-    // Calculate stats
-    const pendingCount = tasks.filter(t => t.status === 'pending').length
-    const completedCount = tasks.filter(t => t.status === 'completed').length
-    const pendingValue = tasks
-        .filter(t => t.status === 'pending')
-        .reduce((sum, t) => sum + Number(t.price), 0)
 
-    const formatCurrency = (amount: number) => {
-        return `৳${new Intl.NumberFormat('en-BD', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(amount)}`
-    }
 
     return (
         <div className="space-y-6">

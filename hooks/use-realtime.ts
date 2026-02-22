@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
@@ -14,7 +14,7 @@ export function useRealtimeTable<T>(
 
   useEffect(() => {
     const supabase = createClient()
-    
+
     const channelConfig: any = {
       event: '*',
       schema: 'public',
@@ -28,8 +28,6 @@ export function useRealtimeTable<T>(
     const newChannel = supabase
       .channel(`${table}-changes`)
       .on('postgres_changes', channelConfig, (payload) => {
-        console.log('[v0] Realtime update:', payload)
-        
         if (payload.eventType === 'INSERT') {
           setData((current) => [...current, payload.new as T])
         } else if (payload.eventType === 'UPDATE') {
@@ -61,9 +59,14 @@ export function useRealtimeUpdates(
   onUpdate: (payload: any) => void,
   filter?: string
 ) {
+  // Use a ref for the callback to avoid infinite re-subscribe
+  // when the caller doesn't memoize the onUpdate function
+  const onUpdateRef = useRef(onUpdate)
+  onUpdateRef.current = onUpdate
+
   useEffect(() => {
     const supabase = createClient()
-    
+
     const channelConfig: any = {
       event: '*',
       schema: 'public',
@@ -76,11 +79,13 @@ export function useRealtimeUpdates(
 
     const channel = supabase
       .channel(`${table}-updates`)
-      .on('postgres_changes', channelConfig, onUpdate)
+      .on('postgres_changes', channelConfig, (payload) => {
+        onUpdateRef.current(payload)
+      })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [table, filter, onUpdate])
+  }, [table, filter])
 }

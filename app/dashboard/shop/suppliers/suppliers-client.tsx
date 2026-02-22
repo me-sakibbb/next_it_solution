@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { SupplierDialog } from './supplier-dialog'
 import { DuePaymentDialog } from './due-payment-dialog'
 import { formatCurrency } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 interface SuppliersClientProps {
     initialSuppliers: any[]
@@ -21,6 +22,17 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
     const [showSupplierDialog, setShowSupplierDialog] = useState(false)
     const [showDueDialog, setShowDueDialog] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+
+    const refreshSuppliers = useCallback(async () => {
+        const supabase = createClient()
+        const { data } = await supabase
+            .from('suppliers')
+            .select('*')
+            .eq('shop_id', shopId)
+            .eq('is_active', true)
+            .order('name')
+        if (data) setSuppliers(data)
+    }, [shopId])
 
     const filteredSuppliers = suppliers.filter(item =>
         item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -197,7 +209,7 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
                 shopId={shopId}
                 onSuccess={() => {
                     setShowDueDialog(false)
-                    window.location.reload() // Or you can refetch and update specific state
+                    refreshSuppliers()
                 }}
             />
         </div>

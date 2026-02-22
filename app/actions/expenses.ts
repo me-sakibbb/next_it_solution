@@ -86,6 +86,7 @@ export async function createSystemExpense(
     shopId: string,
     amount: number,
     title: string,
+    categoryName: string,
     type: 'supplier_payment' | 'payroll' | 'shop_task_expense',
     referenceId: string
 ) {
@@ -97,7 +98,7 @@ export async function createSystemExpense(
         .from('expense_categories')
         .select('id')
         .eq('shop_id', shopId)
-        .eq('name', title)
+        .eq('name', categoryName)
         .eq('is_system', true)
         .single()
 
@@ -107,8 +108,8 @@ export async function createSystemExpense(
             .from('expense_categories')
             .insert({
                 shop_id: shopId,
-                name: title,
-                description: `System generated category for ${title}`,
+                name: categoryName,
+                description: `System generated category for ${categoryName}`,
                 is_system: true,
                 is_active: true
             })

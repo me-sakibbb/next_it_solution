@@ -4,9 +4,8 @@ import { getCustomers } from '@/app/actions/sales'
 
 export default async function CustomersPage() {
   const { shop } = await getUserShop()
-  const currentShop = shop; // Declare the currentShop variable
 
-  const customers = await getCustomers(currentShop.id)
+  const customers = await getCustomers(shop.id)
 
   return (
     <div className="space-y-6">

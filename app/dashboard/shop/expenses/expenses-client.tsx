@@ -39,7 +39,7 @@ interface ExpensesClientProps {
 }
 
 export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
-    const { expenses, loading } = useExpenses(shopId)
+    const { expenses, loading, totalAmount, todayAmount, thisMonthAmount, refresh } = useExpenses(shopId)
     const { categories } = useExpenseCategories(shopId)
     const { toast } = useToast()
 
@@ -62,6 +62,7 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
             }
             setIsOpen(false)
             setEditingExpense(null)
+            refresh()
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'কিছু একটা ভুল হয়েছে!' })
         } finally {
@@ -79,6 +80,7 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
         try {
             await deleteExpense(id)
             toast({ title: 'Success', description: 'খরচ ডিলিট করা হয়েছে' })
+            refresh()
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'কিছু একটা ভুল হয়েছে!' })
         }
@@ -99,10 +101,6 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
     }
 
     if (loading) return <div>Data Loading...</div>
-
-    const totalAmount = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0)
-    const manualAmount = expenses.filter(e => e.reference_type === 'manual').reduce((sum, exp) => sum + Number(exp.amount), 0)
-    const systemAmount = expenses.filter(e => e.reference_type !== 'manual').reduce((sum, exp) => sum + Number(exp.amount), 0)
 
     return (
         <div className="space-y-4">
@@ -205,21 +203,21 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">ম্যানুয়াল খরচ</CardTitle>
+                        <CardTitle className="text-sm font-medium">আজকের খরচ</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(manualAmount)}</div>
-                        <p className="text-xs text-muted-foreground">ব্যবহারকারী দ্বারা যোগ করা</p>
+                        <div className="text-2xl font-bold text-orange-600">{formatCurrency(todayAmount)}</div>
+                        <p className="text-xs text-muted-foreground">আজকের সর্বমোট</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">অটো-সিস্টেম খরচ</CardTitle>
+                        <CardTitle className="text-sm font-medium">এই মাসের খরচ</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-orange-600">{formatCurrency(systemAmount)}</div>
-                        <p className="text-xs text-muted-foreground">সাপ্লায়ার বা পে-রোল থেকে</p>
+                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(thisMonthAmount)}</div>
+                        <p className="text-xs text-muted-foreground">চলতি মাসের সর্বমোট</p>
                     </CardContent>
                 </Card>
             </div>

@@ -11,10 +11,11 @@ export function useProducts(shopId: string) {
     useEffect(() => {
         if (!shopId) return
 
+        const supabase = createClient()
+
         async function fetchProducts() {
             try {
                 setLoading(true)
-                const supabase = createClient()
 
                 const { data, error } = await supabase
                     .from('products')
@@ -40,7 +41,6 @@ export function useProducts(shopId: string) {
         fetchProducts()
 
         // Real-time subscription
-        const supabase = createClient()
         const channel = supabase
             .channel('products-changes')
             .on(
