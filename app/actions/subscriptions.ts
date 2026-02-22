@@ -5,12 +5,12 @@ import { revalidatePath } from 'next/cache'
 
 export async function getSubscription(userId: string) {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('subscriptions')
     .select('*')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('[v0] Get subscription error:', error)
@@ -22,7 +22,7 @@ export async function getSubscription(userId: string) {
 
 export async function createTrialSubscription(userId: string) {
   const supabase = await createClient()
-  
+
   const trialStartDate = new Date()
   const trialEndDate = new Date()
   trialEndDate.setDate(trialEndDate.getDate() + 14) // 14 day trial
@@ -55,7 +55,7 @@ export async function updateSubscription(
   status: string
 ) {
   const supabase = await createClient()
-  
+
   const subscriptionStartDate = new Date()
   const subscriptionEndDate = new Date()
   subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1) // 1 month
@@ -83,17 +83,17 @@ export async function updateSubscription(
 
 export async function checkSubscriptionStatus(userId: string) {
   const subscription = await getSubscription(userId)
-  
+
   if (!subscription) {
     return { isActive: false, needsTrial: true }
   }
 
   const now = new Date()
-  const endDate = subscription.trial_end_date 
+  const endDate = subscription.trial_end_date
     ? new Date(subscription.trial_end_date)
-    : subscription.subscription_end_date 
-    ? new Date(subscription.subscription_end_date)
-    : null
+    : subscription.subscription_end_date
+      ? new Date(subscription.subscription_end_date)
+      : null
 
   if (!endDate) {
     return { isActive: false, needsTrial: false }
@@ -101,10 +101,10 @@ export async function checkSubscriptionStatus(userId: string) {
 
   const isActive = subscription.status === 'active' && now < endDate
 
-  return { 
-    isActive, 
+  return {
+    isActive,
     needsTrial: false,
     daysRemaining: Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-    subscription 
+    subscription
   }
 }

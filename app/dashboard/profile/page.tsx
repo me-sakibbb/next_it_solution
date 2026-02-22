@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { User, Bell, Shield, CreditCard, Mail, Check } from "lucide-react";
 import { getSubscription } from "@/app/actions/subscriptions";
 import { AccountOverview } from "@/components/dashboard/account-overview";
+import { ProfileForm } from "@/components/dashboard/profile-form";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -67,40 +68,10 @@ export default async function ProfilePage() {
     },
   ];
 
-  const settings = [
-    {
-      name: "Profile",
-      description: "Manage your personal information",
-      icon: User,
-    },
-    {
-      name: "Notifications",
-      description: "Configure notification preferences",
-      icon: Bell,
-    },
-    {
-      name: "Security",
-      description: "Password and authentication settings",
-      icon: Shield,
-    },
-    {
-      name: "Subscription",
-      description: "Manage your plan and billing",
-      icon: CreditCard,
-    },
-    {
-      name: "Email Settings",
-      description: "Configure email templates and SMTP",
-      icon: Mail,
-    },
-  ];
-
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          My Profile
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
         <p className="text-muted-foreground">
           View your account details, balance, and subscription plans.
         </p>
@@ -108,55 +79,37 @@ export default async function ProfilePage() {
 
       <AccountOverview user={user} profile={profile} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">
-              Email
-            </div>
-            <div className="text-foreground">{user.email}</div>
-          </div>
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">
-              Role
-            </div>
-            <div className="text-foreground capitalize">
-              {profile?.role || "User"}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">
-              Account Status
-            </div>
-            <div className="text-foreground">
-              {profile?.is_active ? (
-                <span className="text-green-600">Active</span>
-              ) : (
-                <span className="text-destructive">Inactive</span>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="mt-10">
+        <h2 className="text-2xl font-bold tracking-tight mb-6">
+          Personal details
+        </h2>
+        <ProfileForm profile={profile} email={user.email} />
+      </div>
 
       <div className="mt-10">
-        <h2 className="text-2xl font-bold tracking-tight mb-6">Subscription Plans</h2>
+        <h2 className="text-2xl font-bold tracking-tight mb-6">
+          Subscription Plans
+        </h2>
         <div className="grid gap-6 md:grid-cols-3">
           {plans.map((plan) => (
-            <Card key={plan.name} className={`flex flex-col relative overflow-hidden ${plan.popular ? 'border-primary shadow-md' : ''}`}>
+            <Card
+              key={plan.name}
+              className={`flex flex-col relative overflow-hidden ${plan.popular ? "border-primary shadow-md" : ""}`}
+            >
               {plan.popular && (
                 <div className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium text-center relative z-10 w-full">
                   Most Popular
                 </div>
               )}
-              <CardHeader className={plan.popular ? 'pt-4' : ''}>
+              <CardHeader className={plan.popular ? "pt-4" : ""}>
                 <CardTitle className="text-xl">{plan.name}</CardTitle>
                 <div className="mt-2">
-                  <span className="text-3xl font-bold text-foreground">${plan.price}</span>
-                  {plan.price > 0 && <span className="text-muted-foreground">/month</span>}
+                  <span className="text-3xl font-bold text-foreground">
+                    ${plan.price}
+                  </span>
+                  {plan.price > 0 && (
+                    <span className="text-muted-foreground">/month</span>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
@@ -171,41 +124,19 @@ export default async function ProfilePage() {
               </CardContent>
               <CardFooter>
                 <Button
-                  variant={plan.popular ? 'default' : 'outline'}
+                  variant={plan.popular ? "default" : "outline"}
                   className="w-full"
-                  disabled={subscription?.plan_type === plan.name.toLowerCase() || (plan.name === 'Free' && !subscription)}
+                  disabled={
+                    subscription?.plan_type === plan.name.toLowerCase() ||
+                    (plan.name === "Free" && !subscription)
+                  }
                 >
-                  {subscription?.plan_type === plan.name.toLowerCase() || (plan.name === 'Free' && !subscription)
-                    ? 'Current Plan'
+                  {subscription?.plan_type === plan.name.toLowerCase() ||
+                  (plan.name === "Free" && !subscription)
+                    ? "Current Plan"
                     : `Upgrade to ${plan.name}`}
                 </Button>
               </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-10">
-        <h2 className="text-2xl font-bold tracking-tight mb-6">Account Settings</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          {settings.map((setting) => (
-            <Card
-              key={setting.name}
-              className="transition-shadow hover:shadow-md cursor-pointer border-muted"
-            >
-              <CardContent className="flex items-start gap-4 p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <setting.icon className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">
-                    {setting.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {setting.description}
-                  </p>
-                </div>
-              </CardContent>
             </Card>
           ))}
         </div>

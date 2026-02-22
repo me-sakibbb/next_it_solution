@@ -24,17 +24,26 @@ interface ShopSidebarProps {
   profile: any
 }
 
-const shopMenuItems = [
+// Primary Operations
+const primaryMenuItems = [
   { name: 'দোকান ওভারভিউ', href: '/dashboard/shop', icon: Store },
   { name: 'বিক্রয় ও পিওএস', href: '/dashboard/shop/sales', icon: ShoppingCart },
   { name: 'ইনভেন্টরি', href: '/dashboard/shop/inventory', icon: Package },
+  { name: 'কাজ / সার্ভিস', href: '/dashboard/shop/tasks', icon: ClipboardList },
+]
+
+// Entities & People
+const entitiesMenuItems = [
   { name: 'কাস্টমার', href: '/dashboard/shop/customers', icon: UserCircle },
-  { name: 'স্টাফ', href: '/dashboard/shop/staff', icon: Users },
   { name: 'সাপ্লায়ার', href: '/dashboard/shop/suppliers', icon: Users },
+  { name: 'স্টাফ', href: '/dashboard/shop/staff', icon: Users },
+]
+
+// Financials & Reporting
+const financeMenuItems = [
   { name: 'বেতন', href: '/dashboard/shop/payroll', icon: DollarSign },
   { name: 'খরচ', href: '/dashboard/shop/expenses', icon: Receipt },
   { name: 'রিপোর্ট', href: '/dashboard/shop/reports', icon: TrendingUp },
-  { name: 'কাজ', href: '/dashboard/shop/tasks', icon: ClipboardList },
 ]
 
 export function ShopSidebar({ user, profile }: ShopSidebarProps) {
@@ -61,27 +70,79 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-        {shopMenuItems.map((item) => {
-          const Icon = item.icon
-          const isActive = pathname === item.href
+      <nav className="flex-1 space-y-4 overflow-y-auto p-4">
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              {item.name}
-            </Link>
-          )
-        })}
+        {/* Primary Operations */}
+        <div className="space-y-1">
+          {primaryMenuItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                )}
+              >
+                <Icon className={cn("w-5 h-5", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                {item.name}
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Entities */}
+        <div className="space-y-1">
+          <p className="px-3 text-xs font-semibold uppercase text-muted-foreground/60 tracking-wider mb-2">নেটওয়ার্ক</p>
+          {entitiesMenuItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                )}
+              >
+                <Icon className={cn("w-4 h-4", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                {item.name}
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Finance and Reports */}
+        <div className="space-y-1">
+          <p className="px-3 text-xs font-semibold uppercase text-muted-foreground/60 tracking-wider mb-2">অর্থ ও রিপোর্ট</p>
+          {financeMenuItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+                )}
+              >
+                <Icon className={cn("w-4 h-4", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                {item.name}
+              </Link>
+            )
+          })}
+        </div>
+
       </nav>
 
       <div className="border-t p-4">

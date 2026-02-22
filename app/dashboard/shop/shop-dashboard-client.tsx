@@ -340,50 +340,15 @@ export function ShopDashboardClient({
                 {/* Right Column (3 cols) */}
                 <div className="lg:col-span-3 space-y-6">
 
-                    {/* Low Stock Warning Panel - High Priority! */}
-                    {lowStockProductsList?.length > 0 && (
-                        <Card className="border-destructive/30 shadow-sm bg-destructive/5">
-                            <CardHeader className="pb-3 border-b border-destructive/10">
-                                <CardTitle className="text-base flex items-center gap-2 text-destructive">
-                                    <AlertTriangle className="w-5 h-5" />
-                                    স্টক সতর্কতা ({lowStockProductsList.length})
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <ScrollArea className="h-[180px]">
-                                    <div className="divide-y divide-destructive/10">
-                                        {lowStockProductsList.map((product) => (
-                                            <div key={product.id} className="p-3 flex items-center justify-between">
-                                                <div className="overflow-hidden pr-2">
-                                                    <p className="text-sm font-medium truncate">{product.name}</p>
-                                                    <p className="text-[10px] text-muted-foreground">Min: {product.min_stock_level} {product.unit}</p>
-                                                </div>
-                                                <div className="shrink-0 bg-destructive/10 text-destructive px-2 py-1 rounded-md flex flex-col items-center">
-                                                    <span className="font-bold leading-none">{product.available_quantity}</span>
-                                                    <span className="text-[10px]">{product.unit}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </ScrollArea>
-                            </CardContent>
-                            <div className="p-2 border-t border-destructive/10 text-center">
-                                <Button asChild variant="link" size="sm" className="text-destructive w-full h-auto py-1">
-                                    <Link href="/dashboard/shop/inventory">ইনভেন্টরি আপডেট করুন</Link>
-                                </Button>
-                            </div>
-                        </Card>
-                    )}
-
                     {/* Pending Tasks Panel */}
                     <Card className="flex flex-col shadow-sm border-border/50">
                         <CardHeader className="bg-muted/30 border-b pb-4">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-base flex items-center gap-2">
                                     <ClipboardList className="w-5 h-5 text-blue-500" />
-                                    অপেক্ষমান সার্ভিস/কাজ
+                                    অপেক্ষমান কাজ
                                 </CardTitle>
-                                <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-blue-500">
+                                <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:bg-blue-500/10 hover:text-blue-600">
                                     <Link href="/dashboard/shop/tasks"><PlusCircle className="w-4 h-4" /></Link>
                                 </Button>
                             </div>
@@ -391,18 +356,18 @@ export function ShopDashboardClient({
                         <CardContent className="p-0">
                             <ScrollArea className="h-[250px]">
                                 {pendingTasks?.length > 0 ? (
-                                    <div className="divide-y">
+                                    <div className="divide-y divide-border/50">
                                         {pendingTasks.map((task) => (
-                                            <div key={task.id} className="p-4 hover:bg-muted/50 transition-colors">
+                                            <div key={task.id} className="p-4 hover:bg-muted/50 transition-colors group">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <h4 className="text-sm font-semibold line-clamp-1">{task.title}</h4>
+                                                    <h4 className="text-sm font-semibold line-clamp-1 group-hover:text-primary transition-colors">{task.title}</h4>
                                                     <span className="text-sm font-bold text-foreground">{formatCurrency(task.price)}</span>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                                                <p className="text-xs text-muted-foreground line-clamp-1 mb-2.5">
                                                     {task.description || task.customer_name || 'কোনো বিবরণ নেই'}
                                                 </p>
                                                 {task.due_date && (
-                                                    <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 hover:bg-blue-500/20">
+                                                    <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 font-medium">
                                                         মেয়াদ: {format(new Date(task.due_date), 'dd MMM')}
                                                     </Badge>
                                                 )}
@@ -421,26 +386,68 @@ export function ShopDashboardClient({
                         </CardContent>
                     </Card>
 
+                    {/* Low Stock Warning Panel - Secondary Priority */}
+                    {lowStockProductsList?.length > 0 && (
+                        <Card className="border-destructive/30 shadow-sm bg-destructive/5">
+                            <CardHeader className="pb-3 border-b border-destructive/10">
+                                <CardTitle className="text-base flex items-center justify-between text-destructive">
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle className="w-5 h-5" />
+                                        স্টক সতর্কতা
+                                    </div>
+                                    <Badge variant="destructive" className="ml-2 bg-destructive/20 text-destructive hover:bg-destructive/30 border-none transition-colors">
+                                        {lowStockProductsList.length} আইটেম
+                                    </Badge>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <ScrollArea className="h-[180px]">
+                                    <div className="divide-y divide-destructive/10">
+                                        {lowStockProductsList.map((product) => (
+                                            <div key={product.id} className="p-3.5 flex items-center justify-between hover:bg-destructive/10 transition-colors">
+                                                <div className="overflow-hidden pr-3">
+                                                    <p className="text-sm font-medium truncate">{product.name}</p>
+                                                    <p className="text-[10.5px] text-muted-foreground mt-0.5">Min: {product.min_stock_level} {product.unit}</p>
+                                                </div>
+                                                <div className="shrink-0 bg-destructive/10 text-destructive px-2.5 py-1.5 rounded-md flex flex-col items-center border border-destructive/20">
+                                                    <span className="font-bold leading-none">{product.available_quantity}</span>
+                                                    <span className="text-[10px] mt-0.5 opacity-80">{product.unit}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            </CardContent>
+                            <div className="p-2 border-t border-destructive/10 text-center bg-destructive/5 rounded-b-lg">
+                                <Button asChild variant="link" size="sm" className="text-destructive w-full h-auto py-1 font-semibold hover:text-destructive/80">
+                                    <Link href="/dashboard/shop/inventory">ইনভেন্টরি দেখুন <ArrowRight className="w-3.5 h-3.5 ml-1" /></Link>
+                                </Button>
+                            </div>
+                        </Card>
+                    )}
+
                     {/* Staff & Company Snapshot */}
-                    <Card className="bg-gradient-to-br from-background to-muted/20 border-border/50 shadow-sm">
-                        <CardHeader className="pb-2">
+                    <Card className="bg-gradient-to-br from-background to-muted/30 border-border/50 shadow-sm relative overflow-hidden">
+                        <div className="absolute right-0 bottom-0 w-32 h-32 bg-primary/5 rounded-tl-full pointer-events-none" />
+
+                        <CardHeader className="pb-3 border-b border-border/30">
                             <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                <Users className="w-4 h-4" />
+                                <Users className="w-4 h-4 text-primary" />
                                 স্টাফ ও কর্মী ওভারভিউ
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-4 relative z-10">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-background rounded-lg p-3 border shadow-sm flex flex-col items-center justify-center">
+                                <div className="bg-background/80 backdrop-blur-sm rounded-lg p-3.5 border shadow-sm flex flex-col items-center justify-center transform transition-transform hover:-translate-y-0.5 hover:shadow-md">
                                     <span className="text-2xl font-bold text-primary">{activeStaff}</span>
-                                    <span className="text-xs text-muted-foreground mt-1 text-center">অ্যাক্টিভ স্টাফ</span>
+                                    <span className="text-xs text-muted-foreground mt-1 text-center font-medium">অ্যাক্টিভ স্টাফ</span>
                                 </div>
-                                <div className="bg-background rounded-lg p-3 border shadow-sm flex flex-col items-center justify-center">
+                                <div className="bg-background/80 backdrop-blur-sm rounded-lg p-3.5 border shadow-sm flex flex-col items-center justify-center transform transition-transform hover:-translate-y-0.5 hover:shadow-md">
                                     <span className="text-2xl font-bold text-foreground">{staffTotal}</span>
-                                    <span className="text-xs text-muted-foreground mt-1 text-center">সর্বমোট স্টাফ</span>
+                                    <span className="text-xs text-muted-foreground mt-1 text-center font-medium">সর্বমোট স্টাফ</span>
                                 </div>
                             </div>
-                            <Button asChild variant="outline" className="w-full mt-4 h-9">
+                            <Button asChild variant="outline" className="w-full mt-5 h-9 bg-background/50 backdrop-blur-sm hover:bg-accent">
                                 <Link href="/dashboard/shop/staff">স্টাফ তালিকা দেখুন</Link>
                             </Button>
                         </CardContent>
