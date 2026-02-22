@@ -1,41 +1,46 @@
-'use client'
+"use client";
 
-import { useShop } from '@/hooks/use-shop'
-import { useSales } from '@/hooks/use-sales'
-import { useProducts } from '@/hooks/use-products'
-import { useStaff } from '@/hooks/use-staff'
-import { DashboardClient } from './dashboard-client'
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useShop } from "@/hooks/use-shop";
+import { useSales } from "@/hooks/use-sales";
+import { useProducts } from "@/hooks/use-products";
+import { useStaff } from "@/hooks/use-staff";
+import { DashboardClient } from "./dashboard-client";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
-import { getUserOrders } from '@/actions/services'
+import { getUserOrders, getAvailableServices } from "@/actions/services";
 
 export default function DashboardPage() {
-  const { user, shop, loading: shopLoading } = useShop()
-  const { sales, loading: salesLoading } = useSales(shop?.id || '')
-  const { products, loading: productsLoading } = useProducts(shop?.id || '')
-  const { staff, loading: staffLoading } = useStaff(shop?.id || '')
-  const [profile, setProfile] = useState<any>(null)
-  const [orders, setOrders] = useState<any[]>([])
+  const { user, shop, loading: shopLoading } = useShop();
+  const { sales, loading: salesLoading } = useSales(shop?.id || "");
+  const { products, loading: productsLoading } = useProducts(shop?.id || "");
+  const { staff, loading: staffLoading } = useStaff(shop?.id || "");
+  const [profile, setProfile] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [premiumServices, setPremiumServices] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchProfile() {
       if (user) {
-        const supabase = createClient()
+        const supabase = createClient();
         const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        setProfile(data)
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        setProfile(data);
 
         // Fetch orders
-        const userOrders = await getUserOrders()
-        setOrders(userOrders || [])
+        const userOrders = await getUserOrders();
+        setOrders(userOrders || []);
+
+        // Fetch premium services
+        const services = await getAvailableServices();
+        setPremiumServices(services || []);
       }
     }
-    fetchProfile()
-  }, [user])
+    fetchProfile();
+  }, [user]);
 
   // Show loading state while fetching initial data
   if (shopLoading || salesLoading || productsLoading || staffLoading) {
@@ -46,7 +51,7 @@ export default function DashboardPage() {
           <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!shop || !user) {
@@ -56,12 +61,15 @@ export default function DashboardPage() {
           <p className="text-destructive">Failed to load shop data</p>
         </div>
       </div>
-    )
+    );
   }
 
-  const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.total_amount), 0)
-  const activeProducts = products.filter((p) => p.is_active).length
-  const activeStaff = staff?.filter((s) => s.is_active).length || 0
+  const totalRevenue = sales.reduce(
+    (sum, sale) => sum + Number(sale.total_amount),
+    0,
+  );
+  const activeProducts = products.filter((p) => p.is_active).length;
+  const activeStaff = staff?.filter((s) => s.is_active).length || 0;
 
   return (
     <DashboardClient
@@ -76,6 +84,7 @@ export default function DashboardPage() {
       user={user}
       profile={profile}
       orders={orders}
+      premiumServices={premiumServices}
     />
-  )
+  );
 }

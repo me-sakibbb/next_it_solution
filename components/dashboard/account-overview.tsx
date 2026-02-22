@@ -87,7 +87,7 @@ export function AccountOverview({ user, profile }: AccountOverviewProps) {
 
                         <div className="w-full md:w-auto flex flex-col gap-3">
                             <Button asChild className="w-full md:w-auto shadow-lg shadow-primary/20">
-                                <Link href="/dashboard/settings">
+                                <Link href="/dashboard/profile">
                                     Upgrade Plan <ArrowRight className="w-4 h-4 ml-2" />
                                 </Link>
                             </Button>
