@@ -17,10 +17,11 @@ import type { Product, Category } from '@/lib/types'
 interface InventoryClientProps {
   initialProducts: any[]
   categories: Category[]
+  suppliers: any[]
   shopId: string
 }
 
-export function InventoryClient({ initialProducts, categories, shopId }: InventoryClientProps) {
+export function InventoryClient({ initialProducts, categories, suppliers, shopId }: InventoryClientProps) {
   const [products, setProducts] = useState(initialProducts)
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
   const [showProductDialog, setShowProductDialog] = useState(false)
@@ -323,6 +324,7 @@ export function InventoryClient({ initialProducts, categories, shopId }: Invento
         onOpenChange={setShowProductDialog}
         product={selectedProduct}
         categories={categories}
+        suppliers={suppliers}
         shopId={shopId}
         onSuccess={(updatedProduct) => {
           if (selectedProduct) {

@@ -22,6 +22,8 @@ interface ShopDashboardClientProps {
     totalRevenue: number
     salesRevenue: number
     tasksRevenue: number
+    totalExpenses: number
+    netProfit: number
     activeProducts: number
     lowStockProducts: number
     activeStaff: number
@@ -40,6 +42,8 @@ export function ShopDashboardClient({
     totalRevenue,
     salesRevenue,
     tasksRevenue,
+    totalExpenses,
+    netProfit,
     activeProducts,
     lowStockProducts,
     activeStaff,
@@ -108,6 +112,21 @@ export function ShopDashboardClient({
                     </CardContent>
                 </Card>
 
+                <Card className="border-l-4 border-l-destructive">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            মোট খরচ (সাপ্লায়ার পেমেন্ট)
+                        </CardTitle>
+                        <TrendingUp className="h-4 w-4 text-muted-foreground rotate-180" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            সাপ্লায়ারকে দেওয়া পেমেন্ট
+                        </p>
+                    </CardContent>
+                </Card>
+
                 <Card className="border-l-4 border-l-blue-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
@@ -151,6 +170,23 @@ export function ShopDashboardClient({
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             পণ্যের স্টক শেষ হয়ে যাচ্ছে
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-green-600">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            নিট লাভ (আয় - খরচ)
+                        </CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className={`text-2xl font-bold ${netProfit >= 0 ? "text-green-600" : "text-destructive"}`}>
+                            {formatCurrency(netProfit)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            সামগ্রিক লাভ
                         </p>
                     </CardContent>
                 </Card>

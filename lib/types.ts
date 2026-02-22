@@ -103,6 +103,7 @@ export interface Product {
   id: string
   shop_id: string
   category_id?: string
+  supplier_id?: string
   name: string
   description?: string
   sku?: string
@@ -162,6 +163,41 @@ export interface Customer {
   is_active: boolean
   created_at: string
   updated_at: string
+}
+
+export interface Supplier {
+  id: string
+  shop_id: string
+  name: string
+  contact_person?: string
+  email?: string
+  phone?: string
+  address?: string
+  city?: string
+  state?: string
+  zip_code?: string
+  country?: string
+  tax_id?: string
+  payment_terms?: string
+  credit_limit?: number
+  due: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type SupplierTransactionType = 'payment' | 'due_added' | 'adjustment'
+
+export interface SupplierTransaction {
+  id: string
+  shop_id: string
+  supplier_id: string
+  transaction_type: SupplierTransactionType
+  amount: number
+  notes?: string
+  reference_number?: string
+  created_by?: string
+  created_at: string
 }
 
 export interface Sale {

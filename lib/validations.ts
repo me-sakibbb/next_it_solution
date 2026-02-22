@@ -9,6 +9,7 @@ export const productSchema = z.object({
   brand: z.string().optional(),
   model: z.string().optional(),
   category_id: z.string().uuid().optional(),
+  supplier_id: z.string().uuid().optional(),
   cost_price: z.number().min(0, 'Cost price must be positive'),
   selling_price: z.number().min(0, 'Selling price must be positive'),
   mrp: z.number().min(0).optional(),

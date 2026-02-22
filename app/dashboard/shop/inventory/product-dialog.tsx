@@ -18,11 +18,12 @@ interface ProductDialogProps {
   onOpenChange: (open: boolean) => void
   product?: any
   categories: Category[]
+  suppliers?: any[]
   shopId: string
   onSuccess: (product: any) => void
 }
 
-export function ProductDialog({ open, onOpenChange, product, categories, shopId, onSuccess }: ProductDialogProps) {
+export function ProductDialog({ open, onOpenChange, product, categories, suppliers = [], shopId, onSuccess }: ProductDialogProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showMoreOptions, setShowMoreOptions] = useState(false)
@@ -80,6 +81,23 @@ export function ProductDialog({ open, onOpenChange, product, categories, shopId,
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier_id">সাপ্লায়ার</Label>
+              <Select name="supplier_id" defaultValue={product?.supplier_id || 'none'}>
+                <SelectTrigger>
+                  <SelectValue placeholder="সাপ্লায়ার নির্বাচন করুন" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">সাপ্লায়ার নেই</SelectItem>
+                  {suppliers.map((sup) => (
+                    <SelectItem key={sup.id} value={sup.id}>
+                      {sup.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

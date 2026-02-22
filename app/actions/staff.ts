@@ -2,10 +2,11 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { createSystemExpense } from '@/app/actions/expenses'
 
 export async function getStaff(shopId: string) {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('staff')
     .select('*')
@@ -19,7 +20,7 @@ export async function getStaff(shopId: string) {
 
 export async function getAttendance(shopId: string, staffId?: string, month?: number, year?: number) {
   const supabase = await createClient()
-  
+
   let query = supabase
     .from('attendance')
     .select('*, staff(*)')
@@ -27,7 +28,7 @@ export async function getAttendance(shopId: string, staffId?: string, month?: nu
     .order('date', { ascending: false })
 
   if (staffId) query = query.eq('staff_id', staffId)
-  
+
   const { data, error } = await query.limit(100)
   if (error) {
     console.error('Attendance error:', error)
@@ -38,7 +39,7 @@ export async function getAttendance(shopId: string, staffId?: string, month?: nu
 
 export async function createAttendance(shopId: string, formData: FormData) {
   const supabase = await createClient()
-  
+
   const attendanceData = {
     shop_id: shopId,
     staff_id: formData.get('staff_id'),
@@ -62,7 +63,7 @@ export async function createAttendance(shopId: string, formData: FormData) {
 
 export async function getLeaves(shopId: string) {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('leaves')
     .select('*, staff(*)')
@@ -75,7 +76,7 @@ export async function getLeaves(shopId: string) {
 
 export async function createLeave(shopId: string, formData: FormData) {
   const supabase = await createClient()
-  
+
   const fromDate = new Date(formData.get('from_date') as string)
   const toDate = new Date(formData.get('to_date') as string)
   const days = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
@@ -105,7 +106,7 @@ export async function createLeave(shopId: string, formData: FormData) {
 export async function approveLeave(leaveId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   const { error } = await supabase
     .from('leaves')
     .update({
@@ -122,7 +123,7 @@ export async function approveLeave(leaveId: string) {
 export async function rejectLeave(leaveId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   const { error } = await supabase
     .from('leaves')
     .update({
@@ -138,7 +139,7 @@ export async function rejectLeave(leaveId: string) {
 
 export async function getPayroll(shopId: string) {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('payroll')
     .select('*, staff(*)')
@@ -153,17 +154,17 @@ export async function getPayroll(shopId: string) {
 export async function createPayroll(shopId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   const baseSalary = Number(formData.get('base_salary'))
   const allowances = Number(formData.get('allowances') || 0)
   const deductions = Number(formData.get('deductions') || 0)
   const overtimePay = Number(formData.get('overtime_pay') || 0)
   const bonus = Number(formData.get('bonus') || 0)
-  
+
   // Calculate gross and net salary
   const grossSalary = baseSalary + allowances + overtimePay + bonus
   const netSalary = grossSalary - deductions
-  
+
   const payrollData = {
     shop_id: shopId,
     staff_id: formData.get('staff_id'),
@@ -199,22 +200,45 @@ export async function createPayroll(shopId: string, formData: FormData) {
 
 export async function markPayrollPaid(payrollId: string) {
   const supabase = await createClient()
-  
+
+  // Fetch the payroll record to get details for the expense
+  const { data: payroll, error: fetchError } = await supabase
+    .from('payroll')
+    .select('shop_id, net_salary')
+    .eq('id', payrollId)
+    .single()
+
+  if (fetchError) throw fetchError
+
   const { error } = await supabase
     .from('payroll')
-    .update({ 
+    .update({
       status: 'paid',
       payment_status: 'paid' // For backward compatibility
     })
     .eq('id', payrollId)
 
   if (error) throw error
+
+  // Auto log as expense
+  try {
+    await createSystemExpense(
+      payroll.shop_id,
+      Number(payroll.net_salary),
+      'Payroll',
+      'payroll',
+      payrollId
+    )
+  } catch (err) {
+    console.error('Failed to auto log payroll expense:', err)
+  }
+
   revalidatePath('/dashboard/shop/payroll')
 }
 
 export async function createStaff(shopId: string, formData: FormData) {
   const supabase = await createClient()
-  
+
   // Create staff record directly without user account
   const staffData = {
     shop_id: shopId,
@@ -230,13 +254,13 @@ export async function createStaff(shopId: string, formData: FormData) {
     emergency_contact_name: formData.get('emergency_contact_name') || undefined,
     emergency_contact_phone: formData.get('emergency_contact_phone') || undefined,
   }
-  
+
   const { data, error } = await supabase
     .from('staff')
     .insert(staffData)
     .select()
     .single()
-  
+
   if (error) throw error
   revalidatePath('/dashboard/shop/staff')
   return data
@@ -244,7 +268,7 @@ export async function createStaff(shopId: string, formData: FormData) {
 
 export async function updateStaff(staffId: string, formData: FormData) {
   const supabase = await createClient()
-  
+
   const staffData = {
     name: formData.get('name'),
     email: formData.get('email') || undefined,
@@ -258,14 +282,14 @@ export async function updateStaff(staffId: string, formData: FormData) {
     emergency_contact_name: formData.get('emergency_contact_name') || undefined,
     emergency_contact_phone: formData.get('emergency_contact_phone') || undefined,
   }
-  
+
   const { data, error } = await supabase
     .from('staff')
     .update(staffData)
     .eq('id', staffId)
     .select()
     .single()
-  
+
   if (error) throw error
   revalidatePath('/dashboard/shop/staff')
   return data

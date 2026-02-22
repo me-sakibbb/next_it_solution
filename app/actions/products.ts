@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 
 export async function getProducts(shopId: string) {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('products')
     .select(`
@@ -22,14 +22,14 @@ export async function getProducts(shopId: string) {
     console.error('getProducts error:', error)
     throw error
   }
-  
+
   console.log('Products with inventory:', JSON.stringify(data, null, 2))
   return data
 }
 
 export async function getProduct(id: string) {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('products')
     .select(`
@@ -46,9 +46,10 @@ export async function getProduct(id: string) {
 
 export async function createProduct(shopId: string, formData: FormData) {
   const supabase = await createClient()
-  
+
   const categoryId = formData.get('category_id')
-  
+  const supplierId = formData.get('supplier_id')
+
   const productData = {
     name: formData.get('name'),
     description: formData.get('description') || undefined,
@@ -57,6 +58,7 @@ export async function createProduct(shopId: string, formData: FormData) {
     brand: formData.get('brand') || undefined,
     model: formData.get('model') || undefined,
     category_id: categoryId && categoryId !== 'none' ? categoryId : undefined,
+    supplier_id: supplierId && supplierId !== 'none' ? supplierId : undefined,
     cost_price: Number(formData.get('cost_price')),
     selling_price: Number(formData.get('selling_price')),
     mrp: formData.get('mrp') ? Number(formData.get('mrp')) : undefined,
@@ -83,7 +85,7 @@ export async function createProduct(shopId: string, formData: FormData) {
   // Create inventory record - always create even if quantity is 0
   const initialQuantity = Number(formData.get('initial_quantity') || 0)
   console.log('Creating inventory:', { shopId, productId: product.id, initialQuantity })
-  
+
   const { data: inventoryData, error: inventoryError } = await supabase
     .from('inventory')
     .insert({
@@ -92,7 +94,7 @@ export async function createProduct(shopId: string, formData: FormData) {
       quantity: initialQuantity,
     })
     .select()
-  
+
   if (inventoryError) {
     console.error('Inventory creation error:', inventoryError)
     // Don't throw error, just log it - product is already created
@@ -106,9 +108,10 @@ export async function createProduct(shopId: string, formData: FormData) {
 
 export async function updateProduct(id: string, formData: FormData) {
   const supabase = await createClient()
-  
+
   const categoryId = formData.get('category_id')
-  
+  const supplierId = formData.get('supplier_id')
+
   const productData = {
     name: formData.get('name'),
     description: formData.get('description') || undefined,
@@ -117,6 +120,7 @@ export async function updateProduct(id: string, formData: FormData) {
     brand: formData.get('brand') || undefined,
     model: formData.get('model') || undefined,
     category_id: categoryId && categoryId !== 'none' ? categoryId : undefined,
+    supplier_id: supplierId && supplierId !== 'none' ? supplierId : undefined,
     cost_price: Number(formData.get('cost_price')),
     selling_price: Number(formData.get('selling_price')),
     mrp: formData.get('mrp') ? Number(formData.get('mrp')) : undefined,
@@ -144,7 +148,7 @@ export async function updateProduct(id: string, formData: FormData) {
 
 export async function deleteProduct(id: string) {
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('products')
     .update({ is_active: false })
@@ -157,7 +161,7 @@ export async function deleteProduct(id: string) {
 
 export async function getCategories(shopId: string) {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from('categories')
     .select('*')
@@ -171,9 +175,9 @@ export async function getCategories(shopId: string) {
 
 export async function createCategory(shopId: string, formData: FormData) {
   const supabase = await createClient()
-  
+
   const parentId = formData.get('parent_id')
-  
+
   const categoryData = {
     name: formData.get('name'),
     description: formData.get('description') || undefined,
@@ -199,10 +203,10 @@ export async function createCategory(shopId: string, formData: FormData) {
 
 export async function updateInventory(productId: string, shopId: string, adjustment: number, type: string, notes?: string) {
   const supabase = await createClient()
-  
+
   // Get current user
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   // Update inventory
   const { data: inventory, error: invError } = await supabase
     .from('inventory')
@@ -217,7 +221,7 @@ export async function updateInventory(productId: string, shopId: string, adjustm
 
   const { error: updateError } = await supabase
     .from('inventory')
-    .update({ 
+    .update({
       quantity: newQuantity,
       last_restocked_at: new Date().toISOString()
     })

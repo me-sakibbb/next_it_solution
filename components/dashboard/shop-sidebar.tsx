@@ -13,6 +13,7 @@ import {
   Home,
   ArrowLeft,
   ClipboardList,
+  Receipt,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { User } from '@supabase/supabase-js'
@@ -29,7 +30,9 @@ const shopMenuItems = [
   { name: 'ইনভেন্টরি', href: '/dashboard/shop/inventory', icon: Package },
   { name: 'কাস্টমার', href: '/dashboard/shop/customers', icon: UserCircle },
   { name: 'স্টাফ', href: '/dashboard/shop/staff', icon: Users },
+  { name: 'সাপ্লায়ার', href: '/dashboard/shop/suppliers', icon: Users },
   { name: 'বেতন', href: '/dashboard/shop/payroll', icon: DollarSign },
+  { name: 'খরচ', href: '/dashboard/shop/expenses', icon: Receipt },
   { name: 'রিপোর্ট', href: '/dashboard/shop/reports', icon: TrendingUp },
   { name: 'কাজ', href: '/dashboard/shop/tasks', icon: ClipboardList },
 ]

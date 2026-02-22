@@ -1,12 +1,21 @@
 import { getUserShop } from '@/lib/get-user-shop'
 import { InventoryClient } from './inventory-client'
 import { getProducts, getCategories } from '@/app/actions/products'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function InventoryPage() {
   const { shop } = await getUserShop()
 
   const products = await getProducts(shop.id)
   const categories = await getCategories(shop.id)
+
+  const supabase = await createClient()
+  const { data: suppliers } = await supabase
+    .from('suppliers')
+    .select('*')
+    .eq('shop_id', shop.id)
+    .eq('is_active', true)
+    .order('name')
 
   return (
     <div className="space-y-6">
@@ -18,8 +27,9 @@ export default async function InventoryPage() {
       </div>
 
       <InventoryClient
-        initialProducts={products}
-        categories={categories}
+        initialProducts={products || []}
+        categories={categories || []}
+        suppliers={suppliers || []}
         shopId={shop.id}
       />
     </div>

@@ -99,17 +99,6 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="credit_limit">ক্রেডিট লিমিট</Label>
-              <Input
-                id="credit_limit"
-                name="credit_limit"
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={customer?.credit_limit || 0}
-              />
-            </div>
 
             <div className="col-span-2 space-y-2">
               <Label htmlFor="address">ঠিকানা</Label>
