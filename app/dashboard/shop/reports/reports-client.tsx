@@ -33,12 +33,8 @@ import { format, subDays, startOfMonth, startOfDay, endOfDay, isWithinInterval }
 import { formatCurrency } from '@/lib/utils'
 
 const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  '#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6',
+  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
+  '#6366f1', '#14b8a6', '#f97316', '#ef4444', '#06b6d4',
 ]
 
 type DateRange = 'today' | '7days' | '30days' | 'this_month' | 'custom'
@@ -123,16 +119,20 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
     return s + (qty * Number(p.cost_price || 0))
   }, 0)
 
+  // --- Helper: get local date key from any date string ---
+  const toLocalDateKey = (dateStr: string) => format(new Date(dateStr), 'yyyy-MM-dd')
+  const toLocalMonthKey = (dateStr: string) => format(new Date(dateStr), 'yyyy-MM')
+
   // --- Chart data ---
   const dailySalesData = useMemo(() => {
     const dayCount = Math.max(1, Math.ceil((bounds.to.getTime() - bounds.from.getTime()) / 86400000))
     const days = [...Array(dayCount)].map((_, i) => {
       const d = new Date(bounds.from)
       d.setDate(d.getDate() + i)
-      return d.toISOString().split('T')[0]
+      return format(d, 'yyyy-MM-dd')
     })
     return days.map(date => {
-      const daySales = filteredSales.filter(s => (s.sale_date || s.created_at)?.startsWith(date))
+      const daySales = filteredSales.filter(s => toLocalDateKey(s.sale_date || s.created_at) === date)
       const revenue = daySales.reduce((s, sale) => s + Number(sale.total_amount || 0), 0)
       const profit = daySales.reduce((sum, sale) => {
         const p = sale.sale_items?.reduce((itemSum: number, item: any) => {
@@ -141,7 +141,7 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
         }, 0) || 0
         return sum + p
       }, 0)
-      const expense = filteredExpenses.filter(e => (e.expense_date || e.created_at)?.startsWith(date))
+      const expense = filteredExpenses.filter(e => toLocalDateKey(e.expense_date || e.created_at) === date)
         .reduce((s, e) => s + Number(e.amount || 0), 0)
       return {
         date: format(new Date(date), 'dd MMM'),
@@ -158,13 +158,13 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
       d.setMonth(d.getMonth() - (11 - i))
       return {
         month: format(d, 'MMM'),
-        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        key: format(d, 'yyyy-MM'),
       }
     })
     return months.map(({ month, key }) => {
-      const ms = sales.filter(s => (s.sale_date || s.created_at)?.startsWith(key))
+      const ms = sales.filter(s => toLocalMonthKey(s.sale_date || s.created_at) === key)
       const revenue = ms.reduce((s, sale) => s + Number(sale.total_amount || 0), 0)
-      const exp = expenses.filter(e => (e.expense_date || e.created_at)?.startsWith(key))
+      const exp = expenses.filter(e => toLocalMonthKey(e.expense_date || e.created_at) === key)
         .reduce((s, e) => s + Number(e.amount || 0), 0)
       return { month, আয়: revenue, খরচ: exp }
     })
@@ -394,8 +394,8 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
                   <AreaChart data={dailySalesData}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -407,7 +407,7 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip />
                     <Legend />
-                    <Area type="monotone" dataKey="আয়" stroke="hsl(var(--primary))" fill="url(#colorRevenue)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="আয়" stroke="#3b82f6" fill="url(#colorRevenue)" strokeWidth={2} />
                     <Area type="monotone" dataKey="খরচ" stroke="#ef4444" fill="url(#colorExpense)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -428,7 +428,7 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="আয়" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="আয়" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="খরচ" fill="#ef4444" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -466,7 +466,7 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
                     <XAxis type="number" tick={{ fontSize: 11 }} />
                     <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} />
                     <Tooltip />
-                    <Bar dataKey="qty" name="বিক্রয়" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="qty" name="বিক্রয়" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -515,8 +515,8 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="আয়" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="লাভ" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="আয়" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="লাভ" stroke="#10b981" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>

@@ -35,8 +35,8 @@ export function SalesChart({ data }: SalesChartProps) {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} />
-            <Line type="monotone" dataKey="profit" stroke="hsl(var(--chart-2))" strokeWidth={2} />
+            <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} />
+            <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </CardContent>
@@ -61,7 +61,7 @@ export function TopProductsChart({ data }: TopProductsChartProps) {
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="sales" fill="hsl(var(--primary))" />
+            <Bar dataKey="sales" fill="#3b82f6" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -74,11 +74,11 @@ interface CategoryDistributionProps {
 }
 
 const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+  '#3b82f6',
+  '#10b981',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
 ]
 
 export function CategoryDistributionChart({ data }: CategoryDistributionProps) {
@@ -129,7 +129,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
             <XAxis dataKey="month" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="revenue" fill="hsl(var(--primary))" />
+            <Bar dataKey="revenue" fill="#3b82f6" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
