@@ -13,6 +13,7 @@ import { createSale } from '@/app/actions/sales'
 import { useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
 import { CustomerSelector } from '@/components/dashboard/shop/customer-selector'
+import { CustomerDialog } from '@/app/dashboard/shop/customers/customer-dialog'
 
 interface CartItem {
   product_id: string
@@ -33,7 +34,9 @@ interface POSClientProps {
 export function POSClient({ products, customers, shopId }: POSClientProps) {
   const router = useRouter()
   const [cart, setCart] = useState<CartItem[]>([])
+  const [localCustomers, setLocalCustomers] = useState(customers)
   const [selectedCustomer, setSelectedCustomer] = useState<string>('')
+  const [showCustomerDialog, setShowCustomerDialog] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [paidAmount, setPaidAmount] = useState('')
@@ -263,9 +266,10 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
             <div className="space-y-2">
               <Label>কাস্টমার (ঐচ্ছিক)</Label>
               <CustomerSelector
-                customers={customers}
+                customers={localCustomers}
                 value={selectedCustomer}
                 onChange={setSelectedCustomer}
+                onAddCustomer={() => setShowCustomerDialog(true)}
                 placeholder="ওয়াক-ইন কাস্টমার"
               />
             </div>
@@ -421,6 +425,17 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
           </div>
         </CardContent>
       </Card>
+
+      <CustomerDialog
+        open={showCustomerDialog}
+        onOpenChange={setShowCustomerDialog}
+        shopId={shopId}
+        onSuccess={(customer) => {
+          setLocalCustomers([...localCustomers, customer])
+          setSelectedCustomer(customer.id)
+          setShowCustomerDialog(false)
+        }}
+      />
     </div>
   )
 }

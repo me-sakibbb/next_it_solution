@@ -173,6 +173,19 @@ export async function createCustomer(shopId: string, formData: FormData) {
 
   const validated = customerSchema.parse(customerData)
 
+  if (validated.phone) {
+    const { data: existingCustomer } = await supabase
+      .from('customers')
+      .select('id')
+      .eq('shop_id', shopId)
+      .eq('phone', validated.phone)
+      .maybeSingle()
+
+    if (existingCustomer) {
+      throw new Error(`এই মোবাইল নম্বরটি (${validated.phone}) ইতিমধ্যে অন্য একজন কাস্টমার ব্যবহার করছেন।`)
+    }
+  }
+
   const { data, error } = await supabase
     .from('customers')
     .insert({

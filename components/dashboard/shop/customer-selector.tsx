@@ -31,6 +31,7 @@ interface CustomerSelectorProps {
     value?: string | null
     onChange: (value: string) => void
     onSelectCustomer?: (customer: Customer | null) => void
+    onAddCustomer?: () => void
     placeholder?: string
 }
 
@@ -39,6 +40,7 @@ export function CustomerSelector({
     value,
     onChange,
     onSelectCustomer,
+    onAddCustomer,
     placeholder = "কাস্টমার নির্বাচন করুন...",
 }: CustomerSelectorProps) {
     const [open, setOpen] = React.useState(false)
@@ -121,6 +123,20 @@ export function CustomerSelector({
                                 </CommandItem>
                             ))}
                         </CommandGroup>
+                        {onAddCustomer && (
+                            <CommandGroup className="border-t">
+                                <CommandItem
+                                    onSelect={() => {
+                                        setOpen(false)
+                                        onAddCustomer()
+                                    }}
+                                    className="cursor-pointer text-primary"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    নতুন কাস্টমার যোগ করুন
+                                </CommandItem>
+                            </CommandGroup>
+                        )}
                     </CommandList>
                 </Command>
             </PopoverContent>
