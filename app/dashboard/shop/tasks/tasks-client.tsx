@@ -59,6 +59,7 @@ export function TasksClient({ customers }: TasksClientProps) {
     const [newTaskCustomer, setNewTaskCustomer] = useState('')
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('')
     const [newTaskDueDate, setNewTaskDueDate] = useState('')
+    const [newTaskCost, setNewTaskCost] = useState('')
 
     const handleCreateTask = async () => {
         if (!newTaskTitle || !newTaskPrice) {
@@ -71,6 +72,7 @@ export function TasksClient({ customers }: TasksClientProps) {
                 title: newTaskTitle,
                 description: newTaskDescription,
                 price: parseFloat(newTaskPrice),
+                cost: parseFloat(newTaskCost || '0'),
                 customer_name: newTaskCustomer,
                 due_date: newTaskDueDate ? new Date(newTaskDueDate).toISOString() : undefined,
             })
@@ -79,6 +81,7 @@ export function TasksClient({ customers }: TasksClientProps) {
             setNewTaskTitle('')
             setNewTaskDescription('')
             setNewTaskPrice('')
+            setNewTaskCost('')
             setNewTaskCustomer('')
             setSelectedCustomerId('')
             setNewTaskDueDate('')
@@ -155,15 +158,27 @@ export function TasksClient({ customers }: TasksClientProps) {
                                     />
                                 )}
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="price">মূল্য</Label>
-                                <Input
-                                    id="price"
-                                    type="number"
-                                    placeholder="0.00"
-                                    value={newTaskPrice}
-                                    onChange={(e) => setNewTaskPrice(e.target.value)}
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="price">মূল্য (বিক্রয়)</Label>
+                                    <Input
+                                        id="price"
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={newTaskPrice}
+                                        onChange={(e) => setNewTaskPrice(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="cost">খরচ (কেনা/খরচ)</Label>
+                                    <Input
+                                        id="cost"
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={newTaskCost}
+                                        onChange={(e) => setNewTaskCost(e.target.value)}
+                                    />
+                                </div>
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="dueDate">নির্ধারিত তারিখ (ঐচ্ছিক)</Label>
@@ -269,6 +284,7 @@ export function TasksClient({ customers }: TasksClientProps) {
                             <TableHead>কাস্টমার</TableHead>
                             <TableHead>নির্ধারিত তারিখ</TableHead>
                             <TableHead>মূল্য</TableHead>
+                            <TableHead>খরচ</TableHead>
                             <TableHead>স্টেটাস</TableHead>
                             <TableHead className="text-right">অ্যাকশন</TableHead>
                         </TableRow>
@@ -302,6 +318,7 @@ export function TasksClient({ customers }: TasksClientProps) {
                                         {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : '-'}
                                     </TableCell>
                                     <TableCell>{formatCurrency(task.price)}</TableCell>
+                                    <TableCell>{formatCurrency(task.cost || 0)}</TableCell>
                                     <TableCell>
                                         <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
                                             {task.status === 'completed' ? 'সম্পন্ন' : 'অপেক্ষমান'}

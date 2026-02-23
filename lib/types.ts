@@ -331,6 +331,7 @@ export interface ShopTask {
   title: string
   description?: string
   price: number
+  cost: number
   status: TaskStatus
   customer_name?: string
   due_date?: string

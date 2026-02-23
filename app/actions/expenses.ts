@@ -143,3 +143,15 @@ export async function createSystemExpense(
 
     if (expError) throw expError
 }
+export async function deleteSystemExpense(referenceId: string, type: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('reference_id', referenceId)
+        .eq('reference_type', type)
+
+    if (error) throw error
+    revalidatePath('/dashboard/shop/expenses')
+}

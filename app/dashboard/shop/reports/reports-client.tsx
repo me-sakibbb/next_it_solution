@@ -372,7 +372,7 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
         {/* ===== OVERVIEW TAB ===== */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            <StatCard title="মোট আয়" value={formatCurrency(totalRevenue)} icon={TrendingUp} color="text-green-600" subtitle={`${filteredSales.length} বিক্রয়`} />
+            <StatCard title="মোট বিক্রয়" value={formatCurrency(totalRevenue)} icon={TrendingUp} color="text-green-600" subtitle={`${filteredSales.length} বিক্রয়`} />
             <StatCard title="মোট খরচ" value={formatCurrency(totalExpensesAmount)} icon={ArrowDownRight} color="text-red-500" subtitle={`${filteredExpenses.length} এন্ট্রি`} />
             <StatCard title="গ্রস লাভ" value={formatCurrency(grossProfit)} icon={DollarSign} color="text-emerald-600" subtitle={`${totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(1) : 0}% মার্জিন`} />
             <StatCard title="নীট লাভ" value={formatCurrency(netProfit)} icon={DollarSign} color={netProfit >= 0 ? "text-primary" : "text-red-600"} subtitle="খরচ বাদে" />
@@ -447,7 +447,7 @@ export function ReportsClient({ sales, products, expenses, currency }: ReportsCl
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="মোট আয়" value={formatCurrency(totalRevenue)} icon={TrendingUp} color="text-green-600" />
+            <StatCard title="মোট বিক্রয়" value={formatCurrency(totalRevenue)} icon={TrendingUp} color="text-green-600" />
             <StatCard title="গড় বিক্রয় মূল্য" value={formatCurrency(avgSaleValue)} icon={ShoppingCart} color="text-blue-500" />
             <StatCard title="মোট বিক্রিত পণ্য" value={totalItemsSold} icon={Package} color="text-indigo-500" />
             <StatCard title="পেমেন্ট রেট" value={`${paymentRate.toFixed(0)}%`} icon={CreditCard} color="text-emerald-500" subtitle={`${paidSalesCount}/${filteredSales.length} পরিশোধিত`} />

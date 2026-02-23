@@ -84,26 +84,38 @@ export async function createProduct(shopId: string, formData: FormData) {
 
   // Create inventory record - always create even if quantity is 0
   const initialQuantity = Number(formData.get('initial_quantity') || 0)
-  console.log('Creating inventory:', { shopId, productId: product.id, initialQuantity })
 
-  const { data: inventoryData, error: inventoryError } = await supabase
+  const { error: inventoryError } = await supabase
     .from('inventory')
     .insert({
       shop_id: shopId,
       product_id: product.id,
       quantity: initialQuantity,
     })
-    .select()
 
   if (inventoryError) {
     console.error('Inventory creation error:', inventoryError)
-    // Don't throw error, just log it - product is already created
-  } else {
-    console.log('Inventory created successfully:', inventoryData)
+  }
+
+  // Fetch the complete product with relationships before returning
+  const { data: completeProduct, error: fetchError } = await supabase
+    .from('products')
+    .select(`
+      *,
+      category:categories(id, name),
+      inventory(quantity, available_quantity)
+    `)
+    .eq('id', product.id)
+    .single()
+
+  if (fetchError) {
+    console.error('Error fetching complete product:', fetchError)
+    // Fallback to simpler object if fetch fails
+    return product
   }
 
   revalidatePath('/dashboard/shop/inventory')
-  return product
+  return completeProduct
 }
 
 export async function updateProduct(id: string, formData: FormData) {
@@ -142,8 +154,24 @@ export async function updateProduct(id: string, formData: FormData) {
 
   if (error) throw error
 
+  // Fetch the complete product with relationships before returning
+  const { data: completeProduct, error: fetchError } = await supabase
+    .from('products')
+    .select(`
+       *,
+       category:categories(id, name),
+       inventory(quantity, available_quantity)
+     `)
+    .eq('id', id)
+    .single()
+
+  if (fetchError) {
+    console.error('Error fetching complete product after update:', fetchError)
+    return data
+  }
+
   revalidatePath('/dashboard/shop/inventory')
-  return data
+  return completeProduct
 }
 
 export async function deleteProduct(id: string) {
