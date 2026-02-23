@@ -17,8 +17,8 @@ interface DashboardClientProps {
   userEmail: string | undefined;
   user: any;
   profile: any;
-  orders: ServiceOrder[];
-  premiumServices: any[];
+  orders?: ServiceOrder[];
+  premiumServices?: any[];
 }
 
 export function DashboardClient({
@@ -32,8 +32,8 @@ export function DashboardClient({
   userEmail,
   user,
   profile,
-  orders,
-  premiumServices,
+  orders = [],
+  premiumServices = [],
 }: DashboardClientProps) {
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8 animate-fade-in">

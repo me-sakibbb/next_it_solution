@@ -1,12 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { 
-  getNotifications, 
-  markNotificationAsRead, 
-  markAllNotificationsAsRead,
-  deleteNotification 
-} from '@/app/actions/notifications'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface Notification {
@@ -22,23 +16,32 @@ export interface Notification {
 export function useNotifications(userId: string) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
+  const supabase = createClient()
 
-  async function loadNotifications() {
+  const loadNotifications = useCallback(async () => {
+    if (!userId) return
     try {
-      const data = await getNotifications(userId)
-      setNotifications(data)
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setNotifications(data || [])
     } catch (error) {
       console.error('Failed to load notifications:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, userId])
 
   useEffect(() => {
     loadNotifications()
-    
+
+    if (!userId) return
+
     // Subscribe to real-time notifications
-    const supabase = createClient()
     const channel = supabase
       .channel('notifications')
       .on(
@@ -58,33 +61,63 @@ export function useNotifications(userId: string) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [userId])
+  }, [userId, supabase, loadNotifications])
 
   const markAsRead = async (id: string) => {
     // Optimistic update
-    setNotifications(current => 
+    setNotifications(current =>
       current.map(n => n.id === id ? { ...n, is_read: true } : n)
     )
-    await markNotificationAsRead(id)
-    loadNotifications() // Re-fetch to ensure consistency
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id)
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error)
+      loadNotifications() // Revert on failure
+    }
   }
 
   const markAllAsRead = async () => {
     // Optimistic update
-    setNotifications(current => 
+    setNotifications(current =>
       current.map(n => ({ ...n, is_read: true }))
     )
-    await markAllNotificationsAsRead(userId)
-    loadNotifications()
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', userId)
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error)
+      loadNotifications()
+    }
   }
 
   const removeNotification = async (id: string) => {
     // Optimistic update
-    setNotifications(current => 
+    setNotifications(current =>
       current.filter(n => n.id !== id)
     )
-    await deleteNotification(id)
-    loadNotifications()
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Failed to delete notification:', error)
+      loadNotifications()
+    }
   }
 
   return {

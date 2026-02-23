@@ -11,7 +11,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { User, Bell, Shield, CreditCard, Mail, Check } from "lucide-react";
-import { getSubscription } from "@/app/actions/subscriptions";
 import { AccountOverview } from "@/components/dashboard/account-overview";
 import { ProfileForm } from "@/components/dashboard/profile-form";
 
@@ -29,7 +28,11 @@ export default async function ProfilePage() {
     .eq("id", user.id)
     .single();
 
-  const subscription = await getSubscription(user.id);
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   const plans = [
     {
@@ -132,7 +135,7 @@ export default async function ProfilePage() {
                   }
                 >
                   {subscription?.plan_type === plan.name.toLowerCase() ||
-                  (plan.name === "Free" && !subscription)
+                    (plan.name === "Free" && !subscription)
                     ? "Current Plan"
                     : `Upgrade to ${plan.name}`}
                 </Button>

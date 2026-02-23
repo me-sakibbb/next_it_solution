@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { updateInventory } from '@/app/actions/products'
 import { Loader2, Package } from 'lucide-react'
 
 interface StockAdjustmentDialogProps {
@@ -18,9 +17,10 @@ interface StockAdjustmentDialogProps {
   product: any
   shopId: string
   onSuccess: () => void
+  onUpdateInventory?: (productId: string, adjustment: number, type: string, notes?: string) => Promise<boolean>
 }
 
-export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onSuccess }: StockAdjustmentDialogProps) {
+export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onSuccess, onUpdateInventory }: StockAdjustmentDialogProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [adjustmentType, setAdjustmentType] = useState<'add' | 'remove'>('add')
@@ -42,7 +42,9 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, shopId, onS
 
       const adjustment = adjustmentType === 'add' ? quantity : -quantity
 
-      await updateInventory(product.id, shopId, adjustment, type, notes)
+      if (onUpdateInventory) {
+        await onUpdateInventory(product.id, adjustment, type, notes)
+      }
       onSuccess()
     } catch (err: any) {
       setError(err.message)

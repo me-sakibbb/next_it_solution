@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createCategory } from '@/app/actions/products'
 import { Loader2, Plus } from 'lucide-react'
 import type { Category } from '@/lib/types'
 
@@ -16,9 +15,10 @@ interface CategoryDialogProps {
   onOpenChange: (open: boolean) => void
   categories: Category[]
   shopId: string
+  onCreateCategory?: (name: string) => Promise<any>
 }
 
-export function CategoryDialog({ open, onOpenChange, categories, shopId }: CategoryDialogProps) {
+export function CategoryDialog({ open, onOpenChange, categories, shopId, onCreateCategory }: CategoryDialogProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -29,8 +29,11 @@ export function CategoryDialog({ open, onOpenChange, categories, shopId }: Categ
 
     try {
       const formData = new FormData(e.currentTarget)
-      await createCategory(shopId, formData)
-      window.location.reload()
+      const name = formData.get('name') as string
+      if (onCreateCategory) {
+        await onCreateCategory(name)
+      }
+      onOpenChange(false)
     } catch (err: any) {
       setError(err.message)
     } finally {

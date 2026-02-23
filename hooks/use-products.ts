@@ -3,12 +3,41 @@
 import { useServerPagination } from './use-server-pagination'
 import { createClient } from '@/lib/supabase/client'
 import { getPaginationRange, type PaginationParams } from '@/lib/pagination'
-import { useCallback } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { productSchema } from '@/lib/validations'
 
 export function useProducts(shopId: string, categoryId?: string) {
     const supabase = createClient()
+    const [categories, setCategories] = useState<any[]>([])
+    const [suppliers, setSuppliers] = useState<any[]>([])
+
+    const fetchCategories = useCallback(async () => {
+        if (!shopId) return
+        const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('shop_id', shopId)
+            .is('deleted_at', null)
+            .order('name')
+        if (!error) setCategories(data || [])
+    }, [supabase, shopId])
+
+    const fetchSuppliersList = useCallback(async () => {
+        if (!shopId) return
+        const { data, error } = await supabase
+            .from('suppliers')
+            .select('*')
+            .eq('shop_id', shopId)
+            .eq('is_active', true)
+            .order('name')
+        if (!error) setSuppliers(data || [])
+    }, [supabase, shopId])
+
+    useEffect(() => {
+        fetchCategories()
+        fetchSuppliersList()
+    }, [fetchCategories, fetchSuppliersList])
 
     const fetchProducts = useCallback(async (params: PaginationParams) => {
         const { from, to } = getPaginationRange(params.page, params.limit)
@@ -170,6 +199,23 @@ export function useProducts(shopId: string, categoryId?: string) {
         }
     }
 
+    const handleCreateCategory = async (name: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('categories')
+                .insert({ name, shop_id: shopId })
+                .select()
+                .single()
+            if (error) throw error
+            toast.success('Category created successfully')
+            fetchCategories()
+            return data
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to create category')
+            return null
+        }
+    }
+
     const handleUpdateInventory = async (productId: string, adjustment: number, type: string, notes?: string) => {
         try {
             const { data: { user } } = await supabase.auth.getUser()
@@ -218,6 +264,8 @@ export function useProducts(shopId: string, categoryId?: string) {
 
     return {
         products: pagination.data,
+        categories,
+        suppliers,
         total: pagination.total,
         loading: pagination.loading,
         error: pagination.error,
@@ -233,5 +281,6 @@ export function useProducts(shopId: string, categoryId?: string) {
         handleUpdateProduct,
         handleDeleteProduct,
         handleUpdateInventory,
+        handleCreateCategory,
     }
 }

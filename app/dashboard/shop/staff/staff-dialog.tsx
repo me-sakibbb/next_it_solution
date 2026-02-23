@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { createStaff, updateStaff } from '@/app/actions/staff'
 import { Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 
 interface StaffDialogProps {
   open: boolean
@@ -26,16 +27,43 @@ export function StaffDialog({ open, onOpenChange, staff, shopId, onSuccess }: St
     e.preventDefault()
     setLoading(true)
     setError('')
+    const supabase = createClient()
 
     try {
       const formData = new FormData(e.currentTarget)
+      const staffData = {
+        name: formData.get('name') as string,
+        phone: formData.get('phone') as string,
+        designation: formData.get('designation') as string,
+        base_salary: Number(formData.get('base_salary') || 0),
+        date_of_joining: formData.get('date_of_joining') as string,
+        email: formData.get('email') as string || undefined,
+        employee_id: formData.get('employee_id') as string || undefined,
+        department: formData.get('department') as string || undefined,
+        employment_type: formData.get('employment_type') as string || 'full_time',
+        emergency_contact_name: formData.get('emergency_contact_name') as string || undefined,
+        emergency_contact_phone: formData.get('emergency_contact_phone') as string || undefined,
+      }
 
       if (staff) {
-        const updated = await updateStaff(staff.id, formData)
-        onSuccess(updated)
+        const { data, error } = await supabase
+          .from('staff')
+          .update(staffData)
+          .eq('id', staff.id)
+          .select()
+          .single()
+        if (error) throw error
+        toast.success('স্টাফ আপডেট করা হয়েছে')
+        onSuccess(data)
       } else {
-        const created = await createStaff(shopId, formData)
-        onSuccess(created)
+        const { data, error } = await supabase
+          .from('staff')
+          .insert({ ...staffData, shop_id: shopId })
+          .select()
+          .single()
+        if (error) throw error
+        toast.success('নতুন স্টাফ যোগ করা হয়েছে')
+        onSuccess(data)
       }
     } catch (err: any) {
       setError(err.message)

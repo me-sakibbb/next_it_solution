@@ -13,13 +13,13 @@ import { formatCurrency } from '@/lib/utils'
 import { PlusCircle, CheckCircle } from 'lucide-react'
 import { usePayroll } from '@/hooks/use-payroll'
 interface PayrollClientProps {
-  staff: any[]
   shopId: string
 }
 
-export function PayrollClient({ staff, shopId }: PayrollClientProps) {
+export function PayrollClient({ shopId }: PayrollClientProps) {
   const {
     payroll,
+    staff,
     total,
     loading: pageLoading,
     page,

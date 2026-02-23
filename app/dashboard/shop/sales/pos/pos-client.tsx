@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +16,8 @@ import { CustomerDialog } from '@/app/dashboard/shop/customers/customer-dialog'
 import { Switch } from '@/components/ui/switch'
 import { generateInvoicePDF, type InvoiceSize } from '@/lib/pdf-export'
 import { useSales } from '@/hooks/use-sales'
+import { useProducts } from '@/hooks/use-products'
+import { useCustomers } from '@/hooks/use-customers'
 
 interface CartItem {
   product_id: string
@@ -28,16 +30,18 @@ interface CartItem {
 }
 
 interface POSClientProps {
-  products: any[]
-  customers: any[]
   shopId: string
+  currency: string
 }
 
-export function POSClient({ products, customers, shopId }: POSClientProps) {
+export function POSClient({ shopId, currency }: POSClientProps) {
   const router = useRouter()
   const { handleCreateSale, getSaleDetails } = useSales(shopId)
+  const { products, setSearch: setProductSearch, loading: productsLoading } = useProducts(shopId)
+  const { customers, handleCreateCustomer } = useCustomers(shopId)
+
   const [cart, setCart] = useState<CartItem[]>([])
-  const [localCustomers, setLocalCustomers] = useState(customers)
+  const [localCustomers, setLocalCustomers] = useState<any[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<string>('')
   const [showCustomerDialog, setShowCustomerDialog] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -49,11 +53,20 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
   const [generateInvoice, setGenerateInvoice] = useState(true)
   const [invoiceSize, setInvoiceSize] = useState<InvoiceSize>('POS')
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.barcode?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Sync products search
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val)
+    setProductSearch(val)
+  }
+
+  // Sync customers from hook
+  useEffect(() => {
+    if (customers?.length > 0) {
+      setLocalCustomers(customers)
+    }
+  }, [customers])
+
+  const filteredProducts = products
 
   const addToCart = (product: any) => {
     const existingItem = cart.find(item => item.product_id === product.id)
@@ -192,9 +205,14 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
           <Input
             placeholder="নাম, SKU বা বারকোড দিয়ে খুঁজুন..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9"
           />
+          {productsLoading && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 overflow-y-auto h-[calc(100vh-18rem)] pr-2 pb-2 content-start">

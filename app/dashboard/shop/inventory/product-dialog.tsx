@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { createProduct, updateProduct } from '@/app/actions/products'
 import { Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Category } from '@/lib/types'
 
@@ -21,9 +20,11 @@ interface ProductDialogProps {
   suppliers?: any[]
   shopId: string
   onSuccess: (product: any) => void
+  onCreateProduct?: (formData: FormData) => Promise<any>
+  onUpdateProduct?: (id: string, formData: FormData) => Promise<any>
 }
 
-export function ProductDialog({ open, onOpenChange, product, categories, suppliers = [], shopId, onSuccess }: ProductDialogProps) {
+export function ProductDialog({ open, onOpenChange, product, categories, suppliers = [], shopId, onSuccess, onCreateProduct, onUpdateProduct }: ProductDialogProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showMoreOptions, setShowMoreOptions] = useState(false)
@@ -37,11 +38,15 @@ export function ProductDialog({ open, onOpenChange, product, categories, supplie
       const formData = new FormData(e.currentTarget)
 
       if (product) {
-        const updated = await updateProduct(product.id, formData)
-        onSuccess(updated)
+        const updated = onUpdateProduct
+          ? await onUpdateProduct(product.id, formData)
+          : null
+        if (updated) onSuccess(updated)
       } else {
-        const created = await createProduct(shopId, formData)
-        onSuccess(created)
+        const created = onCreateProduct
+          ? await onCreateProduct(formData)
+          : null
+        if (created) onSuccess(created)
       }
     } catch (err: any) {
       setError(err.message)

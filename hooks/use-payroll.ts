@@ -13,6 +13,7 @@ export function usePayroll(shopId: string) {
         totalPending: 0,
         thisMonthTotal: 0
     })
+    const [staff, setStaff] = useState<any[]>([])
 
     const fetchStats = useCallback(async () => {
         if (!shopId) return
@@ -50,9 +51,20 @@ export function usePayroll(shopId: string) {
         })
     }, [supabase, shopId])
 
+    const fetchStaffList = useCallback(async () => {
+        if (!shopId) return
+        const { data, error } = await supabase
+            .from('staff')
+            .select('id, name, employee_id, base_salary')
+            .eq('shop_id', shopId)
+            .eq('is_active', true)
+        if (!error) setStaff(data || [])
+    }, [supabase, shopId])
+
     useEffect(() => {
         fetchStats()
-    }, [fetchStats])
+        fetchStaffList()
+    }, [fetchStats, fetchStaffList])
 
     const fetchPayroll = useCallback(async (params: PaginationParams) => {
         const { from, to } = getPaginationRange(params.page, params.limit)
@@ -221,6 +233,7 @@ export function usePayroll(shopId: string) {
 
     return {
         payroll: pagination.data,
+        staff,
         total: pagination.total,
         loading: pagination.loading,
         page: pagination.page,

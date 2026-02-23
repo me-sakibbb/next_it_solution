@@ -26,14 +26,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
 
 import { useExpenseCategories } from '@/hooks/use-expense-categories'
-import { createExpenseCategory, updateExpenseCategory, deleteExpenseCategory } from '@/app/actions/expense-categories'
 
 interface CategoriesClientProps {
     shopId: string
 }
 
 export function CategoriesClient({ shopId }: CategoriesClientProps) {
-    const { categories, loading } = useExpenseCategories(shopId)
+    const {
+        categories,
+        loading,
+        handleCreateCategory,
+        handleUpdateCategory,
+        handleDeleteCategory
+    } = useExpenseCategories(shopId)
     const { toast } = useToast()
 
     const [isOpen, setIsOpen] = useState(false)
@@ -46,11 +51,13 @@ export function CategoriesClient({ shopId }: CategoriesClientProps) {
 
         try {
             const formData = new FormData(e.currentTarget)
+            const name = formData.get('name') as string
+
             if (editingCategory) {
-                await updateExpenseCategory(editingCategory.id, formData)
+                await handleUpdateCategory(editingCategory.id, name)
                 toast({ title: 'Success', description: 'ক্যাটাগরি আপডেট হয়েছে' })
             } else {
-                await createExpenseCategory(shopId, formData)
+                await handleCreateCategory(name)
                 toast({ title: 'Success', description: 'নতুন ক্যাটাগরি তৈরি হয়েছে' })
             }
             setIsOpen(false)
@@ -70,7 +77,7 @@ export function CategoriesClient({ shopId }: CategoriesClientProps) {
         if (!confirm('আপনি কি নিশ্চিত?')) return
 
         try {
-            await deleteExpenseCategory(id)
+            await handleDeleteCategory(id)
             toast({ title: 'Success', description: 'ক্যাটাগরি মুছে ফেলা হয়েছে' })
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'ডিলিট করতে সমস্যা হয়েছে' })
@@ -91,7 +98,7 @@ export function CategoriesClient({ shopId }: CategoriesClientProps) {
         setEditingCategory(null)
     }
 
-    if (loading) return <div>Data Loading...</div>
+    if (loading) return <div className="p-8 text-center text-muted-foreground">ক্যাটাগরি লোড হচ্ছে...</div>
 
     return (
         <div className="space-y-4">
@@ -166,7 +173,9 @@ export function CategoriesClient({ shopId }: CategoriesClientProps) {
                                         <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">ম্যানুয়াল</span>
                                     )}
                                 </TableCell>
-                                <TableCell>{format(new Date(category.created_at), 'dd MMM yyyy')}</TableCell>
+                                <TableCell>
+                                    {category.created_at ? format(new Date(category.created_at), 'dd MMM yyyy') : '-'}
+                                </TableCell>
                                 <TableCell className="text-right space-x-2">
                                     <Button
                                         variant="ghost"

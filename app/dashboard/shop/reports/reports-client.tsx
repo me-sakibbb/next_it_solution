@@ -39,17 +39,32 @@ const COLORS = [
 
 type DateRange = 'today' | '7days' | '30days' | 'this_month' | 'custom'
 
+import { useReports } from '@/hooks/use-reports'
+
 interface ReportsClientProps {
-  sales: any[]
-  products: any[]
-  expenses: any[]
+  shopId: string
   currency: string
 }
 
-export function ReportsClient({ sales, products, expenses, currency }: ReportsClientProps) {
+export function ReportsClient({ shopId, currency }: ReportsClientProps) {
+  const { sales, products, expenses, loading, refresh } = useReports(shopId)
   const [dateRange, setDateRange] = useState<DateRange>('30days')
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-[200px] w-full bg-muted animate-pulse rounded-lg" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
+        <div className="h-[400px] w-full bg-muted animate-pulse rounded-lg" />
+      </div>
+    )
+  }
 
   // --- Date filtering ---
   const getDateBounds = useCallback(() => {

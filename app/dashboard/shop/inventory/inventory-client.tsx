@@ -14,12 +14,10 @@ import { formatCurrency } from '@/lib/utils'
 import type { Category } from '@/lib/types'
 
 interface InventoryClientProps {
-  categories: Category[]
-  suppliers: any[]
   shopId: string
 }
 
-export function InventoryClient({ categories, suppliers, shopId }: InventoryClientProps) {
+export function InventoryClient({ shopId }: InventoryClientProps) {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
   const [showProductDialog, setShowProductDialog] = useState(false)
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
@@ -30,6 +28,8 @@ export function InventoryClient({ categories, suppliers, shopId }: InventoryClie
 
   const {
     products,
+    categories,
+    suppliers,
     total,
     loading,
     page,
@@ -38,8 +38,12 @@ export function InventoryClient({ categories, suppliers, shopId }: InventoryClie
     setLimit,
     setSearch,
     setFilters,
-    refresh
-  } = useProducts(shopId, selectedCategoryId === 'all' ? undefined : selectedCategoryId)
+    refresh,
+    handleCreateProduct,
+    handleUpdateProduct,
+    handleUpdateInventory,
+    handleCreateCategory,
+  } = useProducts(shopId)
 
   useEffect(() => {
     setFilters({ category_id: selectedCategoryId === 'all' ? undefined : selectedCategoryId })
@@ -311,6 +315,8 @@ export function InventoryClient({ categories, suppliers, shopId }: InventoryClie
           refresh()
           setShowProductDialog(false)
         }}
+        onCreateProduct={handleCreateProduct}
+        onUpdateProduct={handleUpdateProduct}
       />
 
       <CategoryDialog
@@ -318,6 +324,7 @@ export function InventoryClient({ categories, suppliers, shopId }: InventoryClie
         onOpenChange={setShowCategoryDialog}
         categories={categories}
         shopId={shopId}
+        onCreateCategory={handleCreateCategory}
       />
 
       <StockAdjustmentDialog
@@ -329,6 +336,7 @@ export function InventoryClient({ categories, suppliers, shopId }: InventoryClie
           refresh()
           setShowStockDialog(false)
         }}
+        onUpdateInventory={handleUpdateInventory}
       />
     </div>
   )
