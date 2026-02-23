@@ -7,24 +7,33 @@ import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/utils'
 import { Plus, Edit } from 'lucide-react'
 import { StaffDialog } from './staff-dialog'
-import { getStaff } from '@/app/actions/staff'
+import { useStaff } from '@/hooks/use-staff'
 
 interface StaffListProps {
-  staff: any[]
   shopId: string
 }
 
-export function StaffList({ staff: initialStaff, shopId }: StaffListProps) {
-  const [staff, setStaff] = useState(initialStaff)
+export function StaffList({ shopId }: StaffListProps) {
+  const {
+    staff,
+    total,
+    loading,
+    page,
+    limit,
+    setPage,
+    setLimit,
+    setSearch,
+    refresh,
+    stats
+  } = useStaff(shopId)
+
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null)
   const [showDialog, setShowDialog] = useState(false)
 
-  const handleSuccess = async (newStaff: any) => {
+  const handleSuccess = () => {
     setShowDialog(false)
     setSelectedStaff(null)
-    // Refresh staff list
-    const updated = await getStaff(shopId)
-    setStaff(updated)
+    refresh()
   }
 
   const handleEdit = (staffMember: any) => {
@@ -100,8 +109,8 @@ export function StaffList({ staff: initialStaff, shopId }: StaffListProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          মোট স্টাফ: {staff.length}
+        <div className="text-sm text-muted-foreground font-medium">
+          মোট স্টাফ: {stats.totalStaff} জন
         </div>
         <Button onClick={handleAddNew}>
           <Plus className="mr-2 h-4 w-4" />
@@ -113,6 +122,13 @@ export function StaffList({ staff: initialStaff, shopId }: StaffListProps) {
         data={staff}
         columns={columns}
         searchPlaceholder="স্টাফ খুঁজুন..."
+        onSearchChange={setSearch}
+        total={total}
+        page={page}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        loading={loading}
       />
 
       <StaffDialog

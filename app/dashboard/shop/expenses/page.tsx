@@ -1,5 +1,6 @@
 import { getUserShop } from '@/lib/get-user-shop'
 import { ExpensesClient } from './expenses-client'
+import { getExpenseStats } from '@/app/actions/expenses'
 
 export const metadata = {
     title: 'খরচ ব্যবস্থাপনা | দোকান',
@@ -17,7 +18,10 @@ export default async function ExpensesPage() {
                 </p>
             </div>
 
-            <ExpensesClient shopId={shop.id} currency={shop.currency || 'BDT'} />
+            <ExpensesClient
+                shopId={shop.id}
+                currency={shop.currency || 'BDT'}
+            />
         </div>
     )
 }

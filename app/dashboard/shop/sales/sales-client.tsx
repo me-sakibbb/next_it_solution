@@ -7,20 +7,29 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import { useSales } from '@/hooks/use-sales'
 import { SaleDetailsDialog } from './sale-details-dialog'
 import { formatCurrency } from '@/lib/utils'
 
 interface SalesClientProps {
-  sales: any[]
+  initialSales: any[]
   shopId: string
 }
 
-export function SalesClient({ sales, shopId }: SalesClientProps) {
+export function SalesClient({ shopId }: SalesClientProps) {
   const [selectedSale, setSelectedSale] = useState<any | null>(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
 
-  const totalSales = sales.reduce((sum, sale) => sum + Number(sale.total_amount), 0)
-  const totalCompleted = sales.filter(s => s.status === 'completed').length
+  const {
+    sales,
+    isLoading,
+    total,
+    page,
+    limit,
+    setPage,
+    setLimit,
+    setSearch
+  } = useSales(shopId)
 
   const columns = [
     {
@@ -33,7 +42,7 @@ export function SalesClient({ sales, shopId }: SalesClientProps) {
     {
       key: 'sale_date',
       label: 'তারিখ',
-      render: (sale: any) => format(new Date(sale.sale_date), 'MMM dd, yyyy HH:mm'),
+      render: (sale: any) => format(new Date(sale.created_at || sale.sale_date), 'MMM dd, yyyy HH:mm'),
     },
     {
       key: 'customer',
@@ -63,40 +72,10 @@ export function SalesClient({ sales, shopId }: SalesClientProps) {
         return <Badge variant={status.variant}>{status.label}</Badge>
       },
     },
-    {
-      key: 'status',
-      label: 'অবস্থা',
-      render: (sale: any) => {
-        const statusMap = {
-          completed: { label: 'সম্পন্ন', variant: 'default' as const },
-          draft: { label: 'ড্রাফট', variant: 'secondary' as const },
-          cancelled: { label: 'বাতিল', variant: 'destructive' as const },
-        }
-        const status = statusMap[sale.status as keyof typeof statusMap] || statusMap.draft
-        return <Badge variant={status.variant}>{status.label}</Badge>
-      },
-    },
   ]
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">মোট বিক্রয়</div>
-          <div className="text-2xl font-bold">{formatCurrency(totalSales)}</div>
-        </div>
-        <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">সম্পন্ন বিক্রয়</div>
-          <div className="text-2xl font-bold">{totalCompleted}</div>
-        </div>
-        <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">গড় বিক্রয়</div>
-          <div className="text-2xl font-bold">
-            ${sales.length > 0 ? (totalSales / sales.length).toFixed(2) : '0.00'}
-          </div>
-        </div>
-      </div>
-
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">সাম্প্রতিক বিক্রয়</h2>
         <Link href="/dashboard/shop/sales/pos">
@@ -110,7 +89,14 @@ export function SalesClient({ sales, shopId }: SalesClientProps) {
       <DataTable
         data={sales}
         columns={columns}
-        searchPlaceholder="বিক্রয় খুঁজুন..."
+        searchPlaceholder="বিক্রয় নম্বর দিয়ে খুঁজুন..."
+        total={total}
+        page={page}
+        limit={limit}
+        onPageChange={setPage}
+        onSearchChange={setSearch}
+        onLimitChange={setLimit}
+        loading={isLoading}
         onRowClick={(sale) => {
           setSelectedSale(sale)
           setShowDetailsDialog(true)

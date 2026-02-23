@@ -4,18 +4,60 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createSystemExpense } from '@/app/actions/expenses'
 
-export async function getStaff(shopId: string) {
-  const supabase = await createClient()
+import { getPaginationRange, type PaginationParams, type PaginatedResponse } from '@/lib/pagination'
 
-  const { data, error } = await supabase
+export async function getPaginatedStaff(params: PaginationParams): Promise<PaginatedResponse<any>> {
+  const supabase = await createClient()
+  const { from, to } = getPaginationRange(params.page, params.limit)
+
+  let query = supabase
     .from('staff')
-    .select('*')
-    .eq('shop_id', shopId)
+    .select('*', { count: 'exact' })
+    .eq('shop_id', params.shopId)
     .eq('is_active', true)
-    .order('created_at', { ascending: false })
+
+  if (params.search) {
+    query = query.or(`name.ilike.%${params.search}%,email.ilike.%${params.search}%,phone.ilike.%${params.search}%`)
+  }
+
+  const { data, error, count } = await query
+    .order(params.sortBy || 'created_at', { ascending: params.sortOrder === 'asc' })
+    .range(from, to)
 
   if (error) throw error
-  return data
+
+  return {
+    data: data || [],
+    total: count || 0,
+    page: params.page,
+    limit: params.limit,
+    totalPages: Math.ceil((count || 0) / params.limit)
+  }
+}
+
+export async function getStaffStats(shopId: string) {
+  const supabase = await createClient()
+
+  const { count: staffCount, error: staffError } = await supabase
+    .from('staff')
+    .select('id', { count: 'exact', head: true })
+    .eq('shop_id', shopId)
+    .eq('is_active', true)
+
+  if (staffError) throw staffError
+
+  const { count: leaveCount, error: leaveError } = await supabase
+    .from('leaves')
+    .select('id', { count: 'exact', head: true })
+    .eq('shop_id', shopId)
+    .eq('status', 'pending')
+
+  if (leaveError) throw leaveError
+
+  return {
+    totalStaff: staffCount || 0,
+    totalPendingLeaves: leaveCount || 0
+  }
 }
 
 export async function getAttendance(shopId: string, staffId?: string, month?: number, year?: number) {
@@ -137,18 +179,59 @@ export async function rejectLeave(leaveId: string) {
   revalidatePath('/dashboard/shop/staff')
 }
 
-export async function getPayroll(shopId: string) {
+export async function getPaginatedPayroll(params: PaginationParams): Promise<PaginatedResponse<any>> {
+  const supabase = await createClient()
+  const { from, to } = getPaginationRange(params.page, params.limit)
+
+  let query = supabase
+    .from('payroll')
+    .select('*, staff!inner(*)', { count: 'exact' })
+    .eq('shop_id', params.shopId)
+
+  if (params.search) {
+    query = query.ilike('staff.name', `%${params.search}%`)
+  }
+
+  if (params.filters?.status) {
+    query = query.eq('status', params.filters.status)
+  }
+
+  const { data, error, count } = await query
+    .order(params.sortBy || 'year', { ascending: params.sortOrder === 'asc' })
+    .order('month', { ascending: params.sortOrder === 'asc' })
+    .range(from, to)
+
+  if (error) throw error
+
+  return {
+    data: data || [],
+    total: count || 0,
+    page: params.page,
+    limit: params.limit,
+    totalPages: Math.ceil((count || 0) / params.limit)
+  }
+}
+
+export async function getPayrollStats(shopId: string) {
   const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('payroll')
-    .select('*, staff(*)')
+    .select('net_salary, status')
     .eq('shop_id', shopId)
-    .order('year', { ascending: false })
-    .order('month', { ascending: false })
 
   if (error) throw error
-  return data
+
+  const totalPayroll = data.reduce((sum, p) => sum + Number(p.net_salary), 0)
+  const pendingCount = data.filter(p => p.status === 'pending').length
+  const paidCount = data.filter(p => p.status === 'paid').length
+
+  return {
+    totalPayroll,
+    totalRecords: data.length,
+    pendingCount,
+    paidCount
+  }
 }
 
 export async function createPayroll(shopId: string, formData: FormData) {

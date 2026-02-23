@@ -3,18 +3,68 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function getExpenses(shopId: string) {
+import { getPaginationRange, type PaginationParams, type PaginatedResponse } from '@/lib/pagination'
+
+export async function getPaginatedExpenses(params: PaginationParams): Promise<PaginatedResponse<any>> {
     const supabase = await createClient()
+    const { from, to } = getPaginationRange(params.page, params.limit)
+
+    let query = supabase
+        .from('expenses')
+        .select('*, expense_categories(*)', { count: 'exact' })
+        .eq('shop_id', params.shopId)
+
+    if (params.search) {
+        query = query.ilike('title', `%${params.search}%`)
+    }
+
+    if (params.filters?.category_id && params.filters.category_id !== 'all') {
+        query = query.eq('category_id', params.filters.category_id)
+    }
+
+    const { data, error, count } = await query
+        .order(params.sortBy || 'expense_date', { ascending: params.sortOrder === 'asc' })
+        .order('created_at', { ascending: params.sortOrder === 'asc' })
+        .range(from, to)
+
+    if (error) throw error
+
+    return {
+        data: data || [],
+        total: count || 0,
+        page: params.page,
+        limit: params.limit,
+        totalPages: Math.ceil((count || 0) / params.limit)
+    }
+}
+
+export async function getExpenseStats(shopId: string) {
+    const supabase = await createClient()
+
+    const todayStr = new Date().toISOString().split('T')[0]
+    const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
 
     const { data, error } = await supabase
         .from('expenses')
-        .select('*, expense_categories(*)')
+        .select('amount, expense_date')
         .eq('shop_id', shopId)
-        .order('expense_date', { ascending: false })
-        .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data
+
+    const totalAmount = data.reduce((sum, e) => sum + Number(e.amount), 0)
+    const todayAmount = data
+        .filter(e => e.expense_date === todayStr)
+        .reduce((sum, e) => sum + Number(e.amount), 0)
+    const thisMonthAmount = data
+        .filter(e => e.expense_date >= firstDayOfMonth)
+        .reduce((sum, e) => sum + Number(e.amount), 0)
+
+    return {
+        totalAmount,
+        todayAmount,
+        thisMonthAmount,
+        totalRecords: data.length
+    }
 }
 
 export async function createExpense(shopId: string, formData: FormData) {

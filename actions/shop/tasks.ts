@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ShopTask, TaskStatus } from '@/lib/types'
 import { createSystemExpense, deleteSystemExpense } from '@/app/actions/expenses'
+import { getPaginationRange, type PaginationParams, type PaginatedResponse } from '@/lib/pagination'
 
 export async function getShopTasks(shopId: string) {
     const supabase = await createClient()
@@ -19,6 +20,38 @@ export async function getShopTasks(shopId: string) {
     }
 
     return data as ShopTask[]
+}
+
+export async function getPaginatedShopTasks(params: PaginationParams): Promise<PaginatedResponse<ShopTask>> {
+    const supabase = await createClient()
+    const { from, to } = getPaginationRange(params.page, params.limit)
+
+    let query = supabase
+        .from('shop_tasks')
+        .select('*', { count: 'exact' })
+        .eq('shop_id', params.shopId)
+
+    if (params.search) {
+        query = query.or(`title.ilike.%${params.search}%,customer_name.ilike.%${params.search}%`)
+    }
+
+    if (params.filters?.status && params.filters.status !== 'all') {
+        query = query.eq('status', params.filters.status)
+    }
+
+    const { data, error, count } = await query
+        .order(params.sortBy || 'created_at', { ascending: params.sortOrder === 'asc' })
+        .range(from, to)
+
+    if (error) throw new Error(error.message)
+
+    return {
+        data: (data || []) as ShopTask[],
+        total: count || 0,
+        page: params.page,
+        limit: params.limit,
+        totalPages: Math.ceil((count || 0) / params.limit)
+    }
 }
 
 export async function createShopTask(shopId: string, data: Partial<ShopTask>) {

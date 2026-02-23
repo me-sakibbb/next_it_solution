@@ -1,20 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useShop } from '@/hooks/use-shop'
 import { useShopTasks } from '@/hooks/use-shop-tasks'
 import { Button } from '@/components/ui/button'
+import { DataTable } from '@/components/ui/data-table'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
 import {
     Dialog,
     DialogContent,
@@ -31,7 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { Plus, Search, Trash2, CheckCircle, Clock } from 'lucide-react'
@@ -39,18 +32,34 @@ import { TaskStatus } from '@/lib/types'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
 import { CustomerSelector } from '@/components/dashboard/shop/customer-selector'
+import { useCustomers } from '@/hooks/use-customers'
 
-interface TasksClientProps {
-    customers: any[]
-}
-
-export function TasksClient({ customers }: TasksClientProps) {
+export function TasksClient() {
     const { shop } = useShop()
-    const { tasks, loading, pendingCount, completedCount, pendingValue, createTask, updateStatus, deleteTask } = useShopTasks(shop?.id)
-
     const [isCreateOpen, setIsCreateOpen] = useState(false)
-    const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState<'all' | TaskStatus>('all')
+
+    const {
+        tasks,
+        total,
+        loading,
+        page,
+        limit,
+        setPage,
+        setLimit,
+        setSearch,
+        setFilters,
+        stats,
+        createTask,
+        updateStatus,
+        deleteTask,
+    } = useShopTasks(shop?.id, statusFilter)
+
+    const { customers } = useCustomers(shop?.id || '')
+
+    useEffect(() => {
+        setFilters({ status: statusFilter })
+    }, [statusFilter, setFilters])
 
     // Form state
     const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -90,14 +99,51 @@ export function TasksClient({ customers }: TasksClientProps) {
         }
     }
 
-    const filteredTasks = tasks.filter(task => {
-        const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            task.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesStatus = statusFilter === 'all' || task.status === statusFilter
-        return matchesSearch && matchesStatus
-    })
-
-
+    const columns = [
+        {
+            key: 'title',
+            label: 'টাস্ক',
+            render: (task: any) => (
+                <div>
+                    <div className="font-medium">{task.title}</div>
+                    {task.description && (
+                        <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {task.description}
+                        </div>
+                    )}
+                </div>
+            ),
+        },
+        {
+            key: 'customer_name',
+            label: 'কাস্টমার',
+            render: (task: any) => task.customer_name || '-',
+        },
+        {
+            key: 'due_date',
+            label: 'নির্ধারিত তারিখ',
+            render: (task: any) => task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : '-',
+        },
+        {
+            key: 'price',
+            label: 'মূল্য',
+            render: (task: any) => formatCurrency(task.price),
+        },
+        {
+            key: 'cost',
+            label: 'খরচ',
+            render: (task: any) => formatCurrency(task.cost || 0),
+        },
+        {
+            key: 'status',
+            label: 'স্টেটাস',
+            render: (task: any) => (
+                <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
+                    {task.status === 'completed' ? 'সম্পন্ন' : 'অপেক্ষমান'}
+                </Badge>
+            ),
+        },
+    ]
 
     return (
         <div className="space-y-6">
@@ -147,7 +193,6 @@ export function TasksClient({ customers }: TasksClientProps) {
                                     }}
                                     placeholder="কাস্টমার নির্বাচন করুন..."
                                 />
-                                {/* Hidden input to store custom name if needed, or fallback */}
                                 {selectedCustomerId === '' && (
                                     <Input
                                         id="customer-manual"
@@ -209,7 +254,6 @@ export function TasksClient({ customers }: TasksClientProps) {
                 </Dialog>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -217,7 +261,7 @@ export function TasksClient({ customers }: TasksClientProps) {
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{pendingCount}</div>
+                        <div className="text-2xl font-bold">{stats.pendingCount}</div>
                         <p className="text-xs text-muted-foreground">
                             যে টাস্কগুলো সম্পন্ন হওয়ার অপেক্ষায় আছে
                         </p>
@@ -229,7 +273,7 @@ export function TasksClient({ customers }: TasksClientProps) {
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(pendingValue)}</div>
+                        <div className="text-2xl font-bold">{formatCurrency(stats.pendingValue)}</div>
                         <p className="text-xs text-muted-foreground">
                             অপেক্ষমান টাস্ক থেকে সম্ভাব্য আয়
                         </p>
@@ -241,7 +285,7 @@ export function TasksClient({ customers }: TasksClientProps) {
                         <CheckCircle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{completedCount}</div>
+                        <div className="text-2xl font-bold">{stats.completedCount}</div>
                         <p className="text-xs text-muted-foreground">
                             মোট সম্পন্ন টাস্ক
                         </p>
@@ -249,15 +293,13 @@ export function TasksClient({ customers }: TasksClientProps) {
                 </Card>
             </div>
 
-            {/* Filters */}
             <div className="flex items-center gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="টাস্ক খুঁজুন..."
                         className="pl-8"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
                 <Select
@@ -275,91 +317,47 @@ export function TasksClient({ customers }: TasksClientProps) {
                 </Select>
             </div>
 
-            {/* Tasks Table */}
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>টাস্ক</TableHead>
-                            <TableHead>কাস্টমার</TableHead>
-                            <TableHead>নির্ধারিত তারিখ</TableHead>
-                            <TableHead>মূল্য</TableHead>
-                            <TableHead>খরচ</TableHead>
-                            <TableHead>স্টেটাস</TableHead>
-                            <TableHead className="text-right">অ্যাকশন</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    টাস্ক লোড হচ্ছে...
-                                </TableCell>
-                            </TableRow>
-                        ) : filteredTasks.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    কোনো টাস্ক পাওয়া যায়নি
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filteredTasks.map((task) => (
-                                <TableRow key={task.id}>
-                                    <TableCell>
-                                        <div className="font-medium">{task.title}</div>
-                                        {task.description && (
-                                            <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                                {task.description}
-                                            </div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>{task.customer_name || '-'}</TableCell>
-                                    <TableCell>
-                                        {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : '-'}
-                                    </TableCell>
-                                    <TableCell>{formatCurrency(task.price)}</TableCell>
-                                    <TableCell>{formatCurrency(task.cost || 0)}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
-                                            {task.status === 'completed' ? 'সম্পন্ন' : 'অপেক্ষমান'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            {task.status === 'pending' && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => updateStatus(task.id, 'completed')}
-                                                >
-                                                    সম্পন্ন করুন
-                                                </Button>
-                                            )}
-                                            {task.status === 'completed' && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => updateStatus(task.id, 'pending')}
-                                                >
-                                                    অপেক্ষমান হিসেবে চিহ্নিত করুন
-                                                </Button>
-                                            )}
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-destructive hover:text-destructive/90"
-                                                onClick={() => deleteTask(task.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
+            <DataTable
+                data={tasks}
+                columns={columns}
+                hideSearch={true}
+                total={total}
+                page={page}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+                loading={loading}
+                actions={(task) => (
+                    <div className="flex justify-end gap-2">
+                        {task.status === 'pending' && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateStatus(task.id, 'completed')}
+                            >
+                                সম্পন্ন করুন
+                            </Button>
                         )}
-                    </TableBody>
-                </Table>
-            </div>
+                        {task.status === 'completed' && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateStatus(task.id, 'pending')}
+                            >
+                                অপেক্ষমান
+                            </Button>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive/90"
+                            onClick={() => deleteTask(task.id)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+            />
         </div>
     )
 }

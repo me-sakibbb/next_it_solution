@@ -22,19 +22,16 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus } from 'lucide-react'
-import { createAttendance } from '@/app/actions/staff'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-
 interface AttendanceDialogProps {
   staff: any[]
   shopId: string
+  onSuccess?: () => void
+  onCreateAttendance: (formData: FormData) => Promise<boolean>
 }
 
-export function AttendanceDialog({ staff, shopId }: AttendanceDialogProps) {
+export function AttendanceDialog({ staff, shopId, onSuccess, onCreateAttendance }: AttendanceDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -42,13 +39,13 @@ export function AttendanceDialog({ staff, shopId }: AttendanceDialogProps) {
 
     try {
       const formData = new FormData(e.currentTarget)
-      await createAttendance(shopId, formData)
-      toast.success('Attendance record created successfully')
-      setOpen(false)
-      router.refresh()
+      const success = await onCreateAttendance(formData)
+      if (success) {
+        setOpen(false)
+        if (onSuccess) onSuccess()
+      }
     } catch (error) {
       console.error('Error creating attendance:', error)
-      toast.error('Failed to create attendance record')
     } finally {
       setLoading(false)
     }

@@ -10,52 +10,63 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { formatCurrency } from '@/lib/utils'
-import { createPayroll, markPayrollPaid } from '@/app/actions/staff'
-import { toast } from 'sonner'
 import { PlusCircle, CheckCircle } from 'lucide-react'
-
+import { usePayroll } from '@/hooks/use-payroll'
 interface PayrollClientProps {
-  payroll: any[]
   staff: any[]
   shopId: string
 }
 
-export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
+export function PayrollClient({ staff, shopId }: PayrollClientProps) {
+  const {
+    payroll,
+    total,
+    loading: pageLoading,
+    page,
+    limit,
+    setPage,
+    setLimit,
+    setSearch,
+    refresh,
+    stats,
+    handleCreatePayroll: createPayrollHandler,
+    handleMarkAsPaid
+  } = usePayroll(shopId)
+
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selectedStaff, setSelectedStaff] = useState<string>('')
 
-  const handleCreatePayroll = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreatePayrollSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
 
     try {
       const formData = new FormData(e.currentTarget)
-      await createPayroll(shopId, formData)
-      toast.success('পে-রোল রেকর্ড সফলভাবে তৈরি হয়েছে')
-      setOpen(false)
-      e.currentTarget.reset()
-      setSelectedStaff('')
+      const success = await createPayrollHandler(formData)
+      if (success) {
+        setOpen(false)
+        setSelectedStaff('')
+        e.currentTarget.reset()
+      }
     } catch (error: any) {
-      toast.error(error.message || 'পে-রোল তৈরি করতে ব্যর্থ হয়েছে')
+      console.error('Error creating payroll:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleMarkPaid = async (payrollId: string) => {
-    try {
-      await markPayrollPaid(payrollId)
-      toast.success('পে-রোল পরিশোধিত হিসেবে মার্ক করা হয়েছে')
-    } catch (error: any) {
-      toast.error(error.message || 'পে-রোল পরিশোধিত হিসেবে মার্ক করতে ব্যর্থ হয়েছে')
-    }
-  }
   const columns = [
     {
       key: 'period',
       label: 'সময়কাল',
-      render: (p: any) => `${new Date(p.year, p.month - 1).toLocaleDateString('default', { month: 'long', year: 'numeric' })}`,
+      render: (p: any) => {
+        try {
+          return `${new Date(p.year, p.month - 1).toLocaleDateString('default', { month: 'long', year: 'numeric' })}`
+        } catch (e) {
+          return '-'
+        }
+      },
     },
     {
       key: 'staff',
@@ -105,28 +116,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
         )
       },
     },
-    {
-      key: 'actions',
-      label: 'অ্যাকশন',
-      render: (p: any) => {
-        const status = p.status || p.payment_status
-        return status !== 'paid' ? (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleMarkPaid(p.id)}
-          >
-            <CheckCircle className="h-4 w-4 mr-1" />
-            পরিশোধ হিসেবে মার্ক করুন
-          </Button>
-        ) : null
-      },
-    },
   ]
-
-  const totalPayroll = payroll?.reduce((sum, p) => sum + Number(p.net_salary), 0) || 0
-  const pendingCount = payroll?.filter(p => (p.status || p.payment_status) === 'pending').length || 0
-  const paidCount = payroll?.filter(p => (p.status || p.payment_status) === 'paid').length || 0
 
   const currentMonth = new Date().getMonth() + 1
   const currentYear = new Date().getFullYear()
@@ -149,7 +139,7 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
             <DialogHeader>
               <DialogTitle>পে-রোল রেকর্ড তৈরি করুন</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreatePayroll} className="space-y-4">
+            <form onSubmit={handleCreatePayrollSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="staff_id">স্টাফ মেম্বার *</Label>
@@ -314,33 +304,45 @@ export function PayrollClient({ payroll, staff, shopId }: PayrollClientProps) {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">মোট পে-রোল</div>
-          <div className="text-2xl font-bold">{formatCurrency(totalPayroll)}</div>
+          <div className="text-sm text-muted-foreground">মোট পরিশোধিত</div>
+          <div className="text-2xl font-bold">{formatCurrency(stats.totalPaid)}</div>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">মোট রেকর্ড</div>
-          <div className="text-2xl font-bold">{payroll?.length || 0}</div>
+          <div className="text-sm text-muted-foreground">মোট অপেক্ষমান</div>
+          <div className="text-2xl font-bold">{formatCurrency(stats.totalPending)}</div>
         </div>
         <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">অপেক্ষমান</div>
-          <div className="text-2xl font-bold">
-            {pendingCount}
-          </div>
-        </div>
-        <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm text-muted-foreground">পরিশোধিত</div>
-          <div className="text-2xl font-bold">
-            {paidCount}
-          </div>
+          <div className="text-sm text-muted-foreground">এই মাসের মোট</div>
+          <div className="text-2xl font-bold">{formatCurrency(stats.thisMonthTotal)}</div>
         </div>
       </div>
 
       <DataTable
         data={payroll || []}
         columns={columns}
-        searchPlaceholder="পে-রোল খুঁজুন..."
+        searchPlaceholder="স্টাফ এর নাম দিয়ে খুঁজুন..."
+        onSearchChange={setSearch}
+        total={total}
+        page={page}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        loading={pageLoading}
+        actions={(p) => {
+          const status = p.status || p.payment_status
+          return status !== 'paid' ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleMarkAsPaid(p.id)}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              পরিশোধ হিসেবে মার্ক করুন
+            </Button>
+          ) : null
+        }}
       />
     </div>
   )

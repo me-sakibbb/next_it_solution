@@ -9,39 +9,30 @@ import { Card, CardContent } from "@/components/ui/card"
 import { SupplierDialog } from './supplier-dialog'
 import { DuePaymentDialog } from './due-payment-dialog'
 import { formatCurrency } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
+import { useSuppliers } from '@/hooks/use-suppliers'
 
 interface SuppliersClientProps {
-    initialSuppliers: any[]
     shopId: string
 }
 
-export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientProps) {
-    const [suppliers, setSuppliers] = useState(initialSuppliers)
+export function SuppliersClient({ shopId }: SuppliersClientProps) {
     const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null)
     const [showSupplierDialog, setShowSupplierDialog] = useState(false)
     const [showDueDialog, setShowDueDialog] = useState(false)
-    const [searchQuery, setSearchQuery] = useState('')
 
-    const refreshSuppliers = useCallback(async () => {
-        const supabase = createClient()
-        const { data } = await supabase
-            .from('suppliers')
-            .select('*')
-            .eq('shop_id', shopId)
-            .eq('is_active', true)
-            .order('name')
-        if (data) setSuppliers(data)
-    }, [shopId])
-
-    const filteredSuppliers = suppliers.filter(item =>
-        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.phone?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-
-    const totalSuppliers = suppliers.length
-    const totalDue = suppliers.reduce((sum, s) => sum + (Number(s.due) || 0), 0)
-    const suppliersWithDueCount = suppliers.filter(s => (Number(s.due) || 0) > 0).length
+    const {
+        suppliers,
+        total,
+        loading,
+        page,
+        limit,
+        setPage,
+        setLimit,
+        setSearch,
+        setFilters,
+        refresh,
+        stats
+    } = useSuppliers(shopId)
 
     const columns = [
         {
@@ -57,15 +48,9 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
             ),
         },
         {
-            key: 'contact',
-            label: 'যোগাযোগ',
-            render: (supplier: any) => (
-                <div className="text-sm">
-                    {supplier.phone && <div>{supplier.phone}</div>}
-                    {supplier.email && <div className="text-muted-foreground">{supplier.email}</div>}
-                    {!supplier.phone && !supplier.email && <span>-</span>}
-                </div>
-            ),
+            key: 'phone',
+            label: 'ফোন',
+            render: (supplier: any) => supplier.phone || '-',
         },
         {
             key: 'address',
@@ -88,39 +73,6 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
                 )
             },
         },
-        {
-            key: 'actions',
-            label: '',
-            render: (supplier: any) => (
-                <div className="flex items-center justify-end gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 gap-1 border-primary/20 text-primary hover:bg-primary/10"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedSupplier(supplier)
-                            setShowDueDialog(true)
-                        }}
-                    >
-                        <DollarSign className="h-3.5 w-3.5" />
-                        পে / অ্যাডজাস্ট
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedSupplier(supplier)
-                            setShowSupplierDialog(true)
-                        }}
-                    >
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                </div>
-            ),
-        },
     ]
 
     return (
@@ -130,7 +82,7 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
                     <CardContent className="p-6 flex flex-row items-center justify-between space-y-0">
                         <div className="space-y-1">
                             <p className="text-sm font-medium text-muted-foreground">মোট সাপ্লায়ার</p>
-                            <p className="text-2xl font-bold">{totalSuppliers}</p>
+                            <p className="text-2xl font-bold">{stats.totalSuppliers}</p>
                         </div>
                         <Users className="h-8 w-8 text-muted-foreground/30" />
                     </CardContent>
@@ -139,7 +91,7 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
                     <CardContent className="p-6 flex flex-row items-center justify-between space-y-0">
                         <div className="space-y-1">
                             <p className="text-sm font-medium text-muted-foreground">মোট বকেয়া (Due)</p>
-                            <p className="text-2xl font-bold text-destructive">{formatCurrency(totalDue)}</p>
+                            <p className="text-2xl font-bold text-destructive">{formatCurrency(stats.totalDue)}</p>
                         </div>
                         <DollarSign className="h-8 w-8 text-destructive/30" />
                     </CardContent>
@@ -148,7 +100,7 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
                     <CardContent className="p-6 flex flex-row items-center justify-between space-y-0">
                         <div className="space-y-1">
                             <p className="text-sm font-medium text-muted-foreground">বকেয়াদারি সাপ্লায়ার</p>
-                            <p className="text-2xl font-bold text-orange-600">{suppliersWithDueCount} জন</p>
+                            <p className="text-2xl font-bold text-orange-600">{stats.suppliersWithDueCount} জন</p>
                         </div>
                         <AlertCircle className="h-8 w-8 text-orange-600/30" />
                     </CardContent>
@@ -169,8 +121,7 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             placeholder="নাম বা মোবাইল নম্বর খুঁজুন..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => setSearch(e.target.value)}
                             className="pl-9"
                         />
                     </div>
@@ -178,13 +129,48 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
             </div>
 
             <DataTable
-                data={filteredSuppliers}
+                data={suppliers}
                 columns={columns}
                 hideSearch={true}
+                total={total}
+                page={page}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+                loading={loading}
                 onRowClick={(supplier) => {
                     setSelectedSupplier(supplier)
                     setShowSupplierDialog(true)
                 }}
+                actions={(supplier) => (
+                    <div className="flex items-center justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 border-primary/20 text-primary hover:bg-primary/10"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedSupplier(supplier)
+                                setShowDueDialog(true)
+                            }}
+                        >
+                            <DollarSign className="h-3.5 w-3.5" />
+                            পে / অ্যাডজাস্ট
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedSupplier(supplier)
+                                setShowSupplierDialog(true)
+                            }}
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
             />
 
             <SupplierDialog
@@ -192,12 +178,8 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
                 onOpenChange={setShowSupplierDialog}
                 supplier={selectedSupplier}
                 shopId={shopId}
-                onSuccess={(updatedSupplier) => {
-                    if (selectedSupplier) {
-                        setSuppliers(suppliers.map(s => s.id === updatedSupplier.id ? updatedSupplier : s))
-                    } else {
-                        setSuppliers([updatedSupplier, ...suppliers])
-                    }
+                onSuccess={() => {
+                    refresh()
                     setShowSupplierDialog(false)
                 }}
             />
@@ -209,7 +191,7 @@ export function SuppliersClient({ initialSuppliers, shopId }: SuppliersClientPro
                 shopId={shopId}
                 onSuccess={() => {
                     setShowDueDialog(false)
-                    refreshSuppliers()
+                    refresh()
                 }}
             />
         </div>

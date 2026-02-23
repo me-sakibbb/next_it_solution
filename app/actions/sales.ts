@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { saleSchema, customerSchema } from '@/lib/validations'
 import { revalidatePath } from 'next/cache'
+import { getPaginationRange, type PaginationParams, type PaginatedResponse } from '@/lib/pagination'
 
 export async function getSales(shopId: string) {
   const supabase = await createClient()
@@ -21,6 +22,68 @@ export async function getSales(shopId: string) {
     .eq('shop_id', shopId)
     .order('created_at', { ascending: false })
     .limit(100)
+
+  if (error) throw error
+  return data
+}
+
+export async function getPaginatedSales(params: PaginationParams): Promise<PaginatedResponse<any>> {
+  const supabase = await createClient()
+  const { from, to } = getPaginationRange(params.page, params.limit)
+
+  let query = supabase
+    .from('sales')
+    .select(`
+      *,
+      customer:customers(id, name, phone),
+      sale_items(
+        *,
+        product:products(name, unit)
+      )
+    `, { count: 'exact' })
+    .eq('shop_id', params.shopId)
+
+  // Search by sale number
+  if (params.search) {
+    query = query.ilike('sale_number', `%${params.search}%`)
+  }
+
+  // Filters (e.g., payment_status)
+  if (params.filters?.payment_status) {
+    query = query.eq('payment_status', params.filters.payment_status)
+  }
+
+  const { data, error, count } = await query
+    .order(params.sortBy || 'created_at', { ascending: params.sortOrder === 'asc' })
+    .range(from, to)
+
+  if (error) throw error
+
+  return {
+    data: data || [],
+    total: count || 0,
+    page: params.page,
+    limit: params.limit,
+    totalPages: Math.ceil((count || 0) / params.limit)
+  }
+}
+
+export async function getSaleFullDetails(saleId: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      customer:customers(id, name, phone, email, address),
+      shop:shops(id, name, address, phone, email, logo_url),
+      sale_items(
+        *,
+        product:products(name, unit)
+      )
+    `)
+    .eq('id', saleId)
+    .single()
 
   if (error) throw error
   return data
@@ -53,7 +116,10 @@ export async function createSale(shopId: string, saleData: any) {
   const totalAmount = subtotal + taxAmount - (saleData.discount_amount || 0)
 
   // Calculate balance (due) amount
-  const paidAmount = Number(saleData.paid_amount) || 0
+  // If user pays more than total (e.g. 120 for 100), record paid as exactly totalAmount
+  const rawPaidAmount = Number(saleData.paid_amount) || 0
+  const paidAmount = Math.min(rawPaidAmount, totalAmount)
+
   const balanceAmount = totalAmount - paidAmount
   const paymentStatus = balanceAmount <= 0 ? 'paid' : (paidAmount > 0 ? 'partial' : 'pending')
 
@@ -139,97 +205,6 @@ export async function createSale(shopId: string, saleData: any) {
 
   revalidatePath('/dashboard/shop/sales')
   return sale
-}
-
-export async function getCustomers(shopId: string) {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('customers')
-    .select('*')
-    .eq('shop_id', shopId)
-    .eq('is_active', true)
-    .order('name')
-
-  if (error) throw error
-  return data
-}
-
-export async function createCustomer(shopId: string, formData: FormData) {
-  const supabase = await createClient()
-
-  const customerData = {
-    name: formData.get('name'),
-    email: formData.get('email'),
-    phone: formData.get('phone'),
-    address: formData.get('address'),
-    city: formData.get('city'),
-    state: formData.get('state'),
-    zip_code: formData.get('zip_code'),
-    country: formData.get('country'),
-    customer_type: formData.get('customer_type') || 'retail',
-    credit_limit: Number(formData.get('credit_limit') || 0),
-  }
-
-  const validated = customerSchema.parse(customerData)
-
-  if (validated.phone) {
-    const { data: existingCustomer } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('shop_id', shopId)
-      .eq('phone', validated.phone)
-      .maybeSingle()
-
-    if (existingCustomer) {
-      throw new Error(`এই মোবাইল নম্বরটি (${validated.phone}) ইতিমধ্যে অন্য একজন কাস্টমার ব্যবহার করছেন।`)
-    }
-  }
-
-  const { data, error } = await supabase
-    .from('customers')
-    .insert({
-      ...validated,
-      shop_id: shopId,
-    })
-    .select()
-    .single()
-
-  if (error) throw error
-
-  revalidatePath('/dashboard/shop/customers')
-  return data
-}
-
-export async function updateCustomer(id: string, formData: FormData) {
-  const supabase = await createClient()
-
-  const customerData = {
-    name: formData.get('name'),
-    email: formData.get('email'),
-    phone: formData.get('phone'),
-    address: formData.get('address'),
-    city: formData.get('city'),
-    state: formData.get('state'),
-    zip_code: formData.get('zip_code'),
-    country: formData.get('country'),
-    customer_type: formData.get('customer_type'),
-    credit_limit: Number(formData.get('credit_limit') || 0),
-  }
-
-  const validated = customerSchema.parse(customerData)
-
-  const { data, error } = await supabase
-    .from('customers')
-    .update(validated)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) throw error
-
-  revalidatePath('/dashboard/shop/customers')
-  return data
 }
 
 export async function addPayment(shopId: string, paymentData: any) {

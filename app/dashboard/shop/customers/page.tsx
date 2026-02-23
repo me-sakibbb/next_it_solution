@@ -1,11 +1,8 @@
 import { getUserShop } from '@/lib/get-user-shop'
 import { CustomersClient } from './customers-client'
-import { getCustomers } from '@/app/actions/sales'
 
 export default async function CustomersPage() {
   const { shop } = await getUserShop()
-
-  const customers = await getCustomers(shop.id)
 
   return (
     <div className="space-y-6">
@@ -16,7 +13,7 @@ export default async function CustomersPage() {
         </p>
       </div>
 
-      <CustomersClient customers={customers} shopId={shop.id} />
+      <CustomersClient shopId={shop.id} />
     </div>
   )
 }

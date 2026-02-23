@@ -22,19 +22,17 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus } from 'lucide-react'
-import { createLeave } from '@/app/actions/staff'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-
 interface LeaveDialogProps {
   staff: any[]
   shopId: string
+  onSuccess?: () => void
+  onCreateLeave: (formData: FormData) => Promise<boolean>
 }
 
-export function LeaveDialog({ staff, shopId }: LeaveDialogProps) {
+export function LeaveDialog({ staff, shopId, onSuccess, onCreateLeave }: LeaveDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -51,13 +49,13 @@ export function LeaveDialog({ staff, shopId }: LeaveDialogProps) {
         return
       }
 
-      await createLeave(shopId, formData)
-      toast.success('Leave request created successfully')
-      setOpen(false)
-      router.refresh()
+      const success = await onCreateLeave(formData)
+      if (success) {
+        setOpen(false)
+        if (onSuccess) onSuccess()
+      }
     } catch (error) {
       console.error('Error creating leave:', error)
-      toast.error('Failed to create leave request')
     } finally {
       setLoading(false)
     }

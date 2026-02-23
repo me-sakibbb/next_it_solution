@@ -1,7 +1,7 @@
 import { getUserShop } from '@/lib/get-user-shop'
 import { POSClient } from './pos-client'
 import { getProducts } from '@/app/actions/products'
-import { getCustomers } from '@/app/actions/sales'
+import { getCustomers } from '@/app/actions/customers'
 
 export default async function POSPage() {
   const { shop } = await getUserShop()
@@ -10,8 +10,8 @@ export default async function POSPage() {
   const customers = await getCustomers(shop.id)
 
   return (
-    <POSClient 
-      products={products} 
+    <POSClient
+      products={products}
       customers={customers}
       shopId={shop.id}
     />

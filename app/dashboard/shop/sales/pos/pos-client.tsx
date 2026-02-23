@@ -9,11 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Minus, X, Search, ShoppingCart, Loader2 } from 'lucide-react'
-import { createSale } from '@/app/actions/sales'
 import { useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
 import { CustomerSelector } from '@/components/dashboard/shop/customer-selector'
 import { CustomerDialog } from '@/app/dashboard/shop/customers/customer-dialog'
+import { Switch } from '@/components/ui/switch'
+import { generateInvoicePDF, type InvoiceSize } from '@/lib/pdf-export'
+import { useSales } from '@/hooks/use-sales'
 
 interface CartItem {
   product_id: string
@@ -33,6 +35,7 @@ interface POSClientProps {
 
 export function POSClient({ products, customers, shopId }: POSClientProps) {
   const router = useRouter()
+  const { handleCreateSale, getSaleDetails } = useSales(shopId)
   const [cart, setCart] = useState<CartItem[]>([])
   const [localCustomers, setLocalCustomers] = useState(customers)
   const [selectedCustomer, setSelectedCustomer] = useState<string>('')
@@ -43,6 +46,8 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
   const [discount, setDiscount] = useState('0')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [generateInvoice, setGenerateInvoice] = useState(true)
+  const [invoiceSize, setInvoiceSize] = useState<InvoiceSize>('POS')
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -127,7 +132,37 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
         return
       }
 
-      await createSale(shopId, saleData)
+      const sale = await handleCreateSale(saleData)
+
+      if (generateInvoice && sale?.id) {
+        try {
+          const fullSale = await getSaleDetails(sale.id)
+          if (fullSale) {
+            const invoiceData = {
+              id: fullSale.id,
+              invoice_number: fullSale.sale_number,
+              sale_date: fullSale.created_at,
+              customer: fullSale.customer,
+              shop: fullSale.shop,
+              items: fullSale.sale_items.map((item: any) => ({
+                product_name: item.product?.name || 'Unknown Product',
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                total: (item.quantity * item.unit_price)
+              })),
+              subtotal: fullSale.subtotal,
+              tax_amount: fullSale.tax_amount,
+              discount_amount: fullSale.discount_amount,
+              total_amount: fullSale.total_amount,
+              payment_method: fullSale.payment_status === 'paid' ? paymentMethod : 'Partial/Due',
+              notes: fullSale.notes
+            }
+            generateInvoicePDF(invoiceData, invoiceSize)
+          }
+        } catch (printErr) {
+          console.error('Failed to generate invoice:', printErr)
+        }
+      }
 
       // Reset form
       setCart([])
@@ -261,8 +296,8 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
             কার্ট ({cart.length})
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col">
-          <div className="space-y-4 flex-1">
+        <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="space-y-2">
               <Label>কাস্টমার (ঐচ্ছিক)</Label>
               <CustomerSelector
@@ -277,7 +312,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
             <Separator />
 
             {/* Cart Items */}
-            <div className="space-y-2 overflow-y-auto max-h-64">
+            <div className="space-y-2">
               {cart.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   কার্ট খালি
@@ -286,8 +321,8 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
                 cart.map((item) => (
                   <div key={item.product_id} className="flex items-center gap-2 rounded-lg border p-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{item.name}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="font-medium truncate text-sm">{item.name}</div>
+                      <div className="text-xs text-muted-foreground">
                         {formatCurrency(item.unit_price)} × {item.quantity}
                       </div>
                     </div>
@@ -300,7 +335,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
-                      <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                      <span className="w-8 text-center text-xs font-medium">{item.quantity}</span>
                       <Button
                         variant="outline"
                         size="icon"
@@ -318,7 +353,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
-                    <div className="text-right font-medium">
+                    <div className="text-right font-medium text-sm">
                       {formatCurrency(item.unit_price * item.quantity)}
                     </div>
                   </div>
@@ -332,11 +367,11 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">সাবটোটাল:</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>৳{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">ট্যাক্স:</span>
-                <span>${taxAmount.toFixed(2)}</span>
+                <span>৳{taxAmount.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="discount" className="text-sm text-muted-foreground">ডিসকাউন্ট:</Label>
@@ -353,7 +388,7 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span>মোট:</span>
-                <span>${totalAmount.toFixed(2)}</span>
+                <span>৳{totalAmount.toFixed(2)}</span>
               </div>
             </div>
 
@@ -392,14 +427,52 @@ export function POSClient({ products, customers, shopId }: POSClientProps) {
                 <div className="rounded-lg bg-primary/10 p-3">
                   <div className="text-sm text-muted-foreground">ফেরত</div>
                   <div className="text-lg font-bold text-primary">
-                    ${(Number(paidAmount) - totalAmount).toFixed(2)}
+                    ৳{(Number(paidAmount) - totalAmount).toFixed(2)}
                   </div>
                 </div>
               )}
             </div>
 
+            {/* Invoice Options */}
+            <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">ইনভয়েস তৈরি করুন</Label>
+                  <p className="text-[10px] text-muted-foreground">বিক্রয়ের পর সরাসরি প্রিন্ট হবে</p>
+                </div>
+                <Switch
+                  checked={generateInvoice}
+                  onCheckedChange={setGenerateInvoice}
+                />
+              </div>
+
+              {generateInvoice && (
+                <div className="flex gap-2">
+                  <Button
+                    variant={invoiceSize === 'POS' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
+                    onClick={() => setInvoiceSize('POS')}
+                  >
+                    POS (Small)
+                  </Button>
+                  <Button
+                    variant={invoiceSize === 'A4' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
+                    onClick={() => setInvoiceSize('A4')}
+                  >
+                    A4 (Large)
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Fixed Footer with Buttons */}
+          <div className="p-4 border-t bg-card space-y-4">
             {error && (
-              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
                 {error}
               </div>
             )}

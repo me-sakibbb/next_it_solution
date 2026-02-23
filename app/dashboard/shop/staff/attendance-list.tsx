@@ -9,9 +9,11 @@ interface AttendanceListProps {
   attendance: any[]
   staff: any[]
   shopId: string
+  onSuccess?: () => void
+  onCreateAttendance: (formData: FormData) => Promise<boolean>
 }
 
-export function AttendanceList({ attendance, staff, shopId }: AttendanceListProps) {
+export function AttendanceList({ attendance, staff, shopId, onSuccess, onCreateAttendance }: AttendanceListProps) {
   const columns = [
     {
       key: 'date',
@@ -62,7 +64,12 @@ export function AttendanceList({ attendance, staff, shopId }: AttendanceListProp
             সকল স্টাফ সদস্যদের দৈনিক উপস্থিতি ট্র্যাক করুন
           </p>
         </div>
-        <AttendanceDialog staff={staff} shopId={shopId} />
+        <AttendanceDialog
+          staff={staff}
+          shopId={shopId}
+          onSuccess={onSuccess}
+          onCreateAttendance={onCreateAttendance}
+        />
       </div>
       <DataTable
         data={attendance}

@@ -1,87 +1,232 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ShopTask, TaskStatus } from '@/lib/types'
-import { getShopTasks, createShopTask, updateShopTaskStatus, deleteShopTask } from '@/actions/shop/tasks'
 import { toast } from 'sonner'
+import { useServerPagination } from './use-server-pagination'
+import { useMemo, useCallback, useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { getPaginationRange, type PaginationParams } from '@/lib/pagination'
 
-export function useShopTasks(shopId?: string) {
-    const [tasks, setTasks] = useState<ShopTask[]>([])
-    const [loading, setLoading] = useState(true)
+export function useShopTasks(shopId?: string, status: string = 'all') {
+    const supabase = createClient()
+    const [stats, setStats] = useState({
+        pendingCount: 0,
+        completedCount: 0,
+        pendingValue: 0
+    })
 
-    const fetchTasks = useCallback(async () => {
+    const fetchStats = useCallback(async () => {
         if (!shopId) return
-        try {
-            const data = await getShopTasks(shopId)
-            setTasks(data)
-        } catch (error) {
-            console.error('Error fetching tasks:', error)
-            toast.error('Failed to load tasks')
-        } finally {
-            setLoading(false)
+
+        const { data: tasks, error } = await supabase
+            .from('shop_tasks')
+            .select('status, price')
+            .eq('shop_id', shopId)
+
+        if (error) {
+            console.error('Error fetching task stats:', error)
+            return
         }
-    }, [shopId])
+
+        const pending = tasks.filter(t => t.status === 'pending')
+        const completed = tasks.filter(t => t.status === 'completed')
+        const pendingValue = pending.reduce((sum, t) => sum + Number(t.price), 0)
+
+        setStats({
+            pendingCount: pending.length,
+            completedCount: completed.length,
+            pendingValue
+        })
+    }, [supabase, shopId])
 
     useEffect(() => {
-        fetchTasks()
-    }, [fetchTasks])
+        fetchStats()
+    }, [fetchStats])
 
-    const loadTasks = async () => {
-        await fetchTasks()
-    }
+    const fetchTasks = useCallback(async (params: PaginationParams) => {
+        const { from, to } = getPaginationRange(params.page, params.limit)
+
+        let query = supabase
+            .from('shop_tasks')
+            .select('*', { count: 'exact' })
+            .eq('shop_id', params.shopId)
+
+        if (params.search) {
+            query = query.or(`title.ilike.%${params.search}%,customer_name.ilike.%${params.search}%`)
+        }
+
+        if (params.filters?.status && params.filters.status !== 'all') {
+            query = query.eq('status', params.filters.status)
+        }
+
+        const { data, error, count } = await query
+            .order(params.sortBy || 'created_at', { ascending: params.sortOrder === 'desc' })
+            .range(from, to)
+
+        if (error) throw error
+
+        return {
+            data: (data || []) as ShopTask[],
+            total: count || 0,
+        }
+    }, [supabase])
+
+    const pagination = useServerPagination<ShopTask>({
+        fetchAction: fetchTasks,
+        shopId: shopId || '',
+        initialFilters: { status },
+        initialLimit: 10,
+    })
 
     const createTask = async (data: Partial<ShopTask>) => {
         if (!shopId) return
         try {
-            await createShopTask(shopId, data)
+            const { error } = await supabase.from('shop_tasks').insert({
+                shop_id: shopId,
+                ...data,
+                status: 'pending',
+            })
+
+            if (error) throw error
+
             toast.success('Task created successfully')
-            fetchTasks()
-        } catch (error) {
-            console.error('Error creating task:', error)
-            toast.error('Failed to create task')
+            pagination.refresh()
+            fetchStats()
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to create task')
             throw error
         }
     }
 
     const updateStatus = async (taskId: string, status: TaskStatus) => {
+        if (!shopId) return
         try {
-            await updateShopTaskStatus(taskId, status)
+            const { data: { user } } = await supabase.auth.getUser()
+
+            // 1. Get task details
+            const { data: task, error: fetchError } = await supabase
+                .from('shop_tasks')
+                .select('*')
+                .eq('id', taskId)
+                .single()
+
+            if (fetchError) throw fetchError
+
+            // 2. Update status
+            const updates: Partial<ShopTask> = {
+                status,
+                completed_at: status === 'completed' ? new Date().toISOString() : null,
+            }
+
+            const { error: updateError } = await supabase
+                .from('shop_tasks')
+                .update(updates)
+                .eq('id', taskId)
+
+            if (updateError) throw updateError
+
+            // 3. Handle System Expense
+            if (status === 'completed' && task.cost > 0) {
+                try {
+                    const categoryName = 'Service/Task Cost'
+                    let { data: category } = await supabase
+                        .from('expense_categories')
+                        .select('id')
+                        .eq('shop_id', shopId)
+                        .eq('name', categoryName)
+                        .eq('is_system', true)
+                        .single()
+
+                    if (!category) {
+                        const { data: newCategory, error: insertCatError } = await supabase
+                            .from('expense_categories')
+                            .insert({
+                                shop_id: shopId,
+                                name: categoryName,
+                                is_system: true,
+                                is_active: true
+                            })
+                            .select('id')
+                            .single()
+
+                        if (insertCatError) throw insertCatError
+                        category = newCategory
+                    }
+
+                    if (category) {
+                        await supabase
+                            .from('expenses')
+                            .insert({
+                                shop_id: shopId,
+                                title: `Task Cost: ${task.title}`,
+                                category_id: category.id,
+                                amount: Number(task.cost),
+                                expense_date: new Date().toISOString(),
+                                notes: `Auto-generated from shop_task_expense`,
+                                reference_type: 'shop_task_expense',
+                                reference_id: taskId,
+                                created_by: user?.id,
+                            })
+                    }
+                } catch (expError) {
+                    console.error('Failed to create system expense for task:', expError)
+                }
+            } else if (status === 'pending' && task.cost > 0) {
+                try {
+                    await supabase
+                        .from('expenses')
+                        .delete()
+                        .eq('reference_id', taskId)
+                        .eq('reference_type', 'shop_task_expense')
+                } catch (expError) {
+                    console.error('Failed to delete system expense for task:', expError)
+                }
+            }
+
             toast.success('Task status updated')
-            fetchTasks()
-        } catch (error) {
-            console.error('Error updating task status:', error)
-            toast.error('Failed to update task status')
+            pagination.refresh()
+            fetchStats()
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to update task status')
             throw error
         }
     }
 
     const deleteTask = async (taskId: string) => {
         try {
-            await deleteShopTask(taskId)
+            const { error } = await supabase
+                .from('shop_tasks')
+                .delete()
+                .eq('id', taskId)
+
+            if (error) throw error
+
             toast.success('Task deleted successfully')
-            fetchTasks()
-        } catch (error) {
-            console.error('Error deleting task:', error)
-            toast.error('Failed to delete task')
+            pagination.refresh()
+            fetchStats()
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to delete task')
             throw error
         }
     }
 
-    // Computed stats
-    const pendingCount = useMemo(() => tasks.filter(t => t.status === 'pending').length, [tasks])
-    const completedCount = useMemo(() => tasks.filter(t => t.status === 'completed').length, [tasks])
-    const pendingValue = useMemo(
-        () => tasks.filter(t => t.status === 'pending').reduce((sum, t) => sum + Number(t.price), 0),
-        [tasks]
-    )
-
     return {
-        tasks,
-        loading,
-        pendingCount,
-        completedCount,
-        pendingValue,
-        refreshTasks: loadTasks,
+        tasks: pagination.data,
+        total: pagination.total,
+        loading: pagination.loading,
+        error: pagination.error,
+        page: pagination.page,
+        limit: pagination.limit,
+        totalPages: pagination.totalPages,
+        setPage: pagination.setPage,
+        setLimit: pagination.setLimit,
+        setSearch: pagination.setSearch,
+        setFilters: pagination.setFilters,
+        stats,
+        refreshTasks: () => {
+            pagination.refresh()
+            fetchStats()
+        },
         createTask,
         updateStatus,
         deleteTask,

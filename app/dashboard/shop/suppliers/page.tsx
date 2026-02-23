@@ -1,6 +1,5 @@
 import { getUserShop } from '@/lib/get-user-shop'
 import { SuppliersClient } from './suppliers-client'
-import { createClient } from '@/lib/supabase/server'
 
 import { Metadata } from 'next'
 
@@ -12,14 +11,6 @@ export const metadata: Metadata = {
 export default async function SuppliersPage() {
     const { shop } = await getUserShop()
 
-    const supabase = await createClient()
-    const { data: suppliers } = await supabase
-        .from('suppliers')
-        .select('*')
-        .eq('shop_id', shop.id)
-        .eq('is_active', true)
-        .order('name')
-
     return (
         <div className="space-y-6">
             <div>
@@ -30,7 +21,6 @@ export default async function SuppliersPage() {
             </div>
 
             <SuppliersClient
-                initialSuppliers={suppliers || []}
                 shopId={shop.id}
             />
         </div>

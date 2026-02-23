@@ -7,14 +7,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { Button } from '@/components/ui/button'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
+import { DataTable } from '@/components/ui/data-table'
 import {
     Dialog,
     DialogContent,
@@ -26,11 +19,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useToast } from '@/components/ui/use-toast'
 
 import { useExpenses } from '@/hooks/use-expenses'
 import { useExpenseCategories } from '@/hooks/use-expense-categories'
-import { createExpense, updateExpense, deleteExpense } from '@/app/actions/expenses'
 import { formatCurrency } from '@/lib/utils'
 
 interface ExpensesClientProps {
@@ -39,13 +30,33 @@ interface ExpensesClientProps {
 }
 
 export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
-    const { expenses, loading, totalAmount, todayAmount, thisMonthAmount, refresh } = useExpenses(shopId)
+    const {
+        expenses,
+        total,
+        loading,
+        page,
+        limit,
+        setPage,
+        setLimit,
+        setSearch,
+        setFilters,
+        refresh,
+        stats,
+        handleCreateExpense,
+        handleUpdateExpense,
+        handleDeleteExpense
+    } = useExpenses(shopId)
     const { categories } = useExpenseCategories(shopId)
-    const { toast } = useToast()
 
     const [isOpen, setIsOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [editingExpense, setEditingExpense] = useState<any | null>(null)
+    const [selectedCategory, setSelectedCategory] = useState<string>('all')
+
+    const handleCategoryChange = (value: string) => {
+        setSelectedCategory(value)
+        setFilters({ category_id: value })
+    }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -53,42 +64,34 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
 
         try {
             const formData = new FormData(e.currentTarget)
+            let success;
             if (editingExpense) {
-                await updateExpense(editingExpense.id, formData)
-                toast({ title: 'Success', description: 'খরচ সফলভাবে আপডেট হয়েছে' })
+                success = await handleUpdateExpense(editingExpense.id, formData)
             } else {
-                await createExpense(shopId, formData)
-                toast({ title: 'Success', description: 'খরচ সফলভাবে যোগ করা হয়েছে' })
+                success = await handleCreateExpense(formData)
             }
-            setIsOpen(false)
-            setEditingExpense(null)
-            refresh()
+
+            if (success) {
+                setIsOpen(false)
+                setEditingExpense(null)
+            }
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'কিছু একটা ভুল হয়েছে!' })
+            console.error('Error saving expense:', error)
         } finally {
             setIsSubmitting(false)
         }
     }
 
-    const handleDelete = async (id: string, refType: string) => {
+    const handleDeleteClick = async (id: string, refType: string) => {
         if (refType !== 'manual') {
-            toast({ variant: 'destructive', title: 'Error', description: 'সিস্টেম খরচ ডিলিট করা সম্ভব নয়। এটি মূল ট্রানজেকশন ম্যানেজমেন্ট থেকে পরিবর্তন করুন।' })
             return
         }
         if (!confirm('আপনি কি নিশ্চিত?')) return
-
-        try {
-            await deleteExpense(id)
-            toast({ title: 'Success', description: 'খরচ ডিলিট করা হয়েছে' })
-            refresh()
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'কিছু একটা ভুল হয়েছে!' })
-        }
+        await handleDeleteExpense(id)
     }
 
     const openEdit = (expense: any) => {
         if (expense.reference_type !== 'manual') {
-            toast({ variant: 'destructive', title: 'Error', description: 'সিস্টেম খরচ এডিট করা সম্ভব নয়!' })
             return
         }
         setEditingExpense(expense)
@@ -100,17 +103,75 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
         setEditingExpense(null)
     }
 
-    if (loading) return <div>Data Loading...</div>
+    const columns = [
+        {
+            key: 'expense_date',
+            label: 'তারিখ',
+            render: (e: any) => format(new Date(e.expense_date), 'dd MMM yyyy'),
+        },
+        {
+            key: 'title',
+            label: 'শিরোনাম',
+            render: (e: any) => <span className="font-semibold">{e.title}</span>,
+        },
+        {
+            key: 'category',
+            label: 'ক্যাটাগরি',
+            render: (e: any) => (
+                <span className="font-medium text-muted-foreground">
+                    {e.expense_categories?.name || 'Uncategorized'}
+                </span>
+            ),
+        },
+        {
+            key: 'notes',
+            label: 'বর্ণনা/নোট',
+            render: (e: any) => <span className="truncate max-w-[200px] inline-block">{e.notes}</span>,
+        },
+        {
+            key: 'reference_type',
+            label: 'ধরণ',
+            render: (e: any) => (
+                e.reference_type === 'manual' ? (
+                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">ম্যানুয়াল</span>
+                ) : (
+                    <span className="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-800">অটো-সিস্টেম</span>
+                )
+            ),
+        },
+        {
+            key: 'amount',
+            label: 'পরিমাণ',
+            render: (e: any) => (
+                <span className="font-bold text-red-600">
+                    {formatCurrency(e.amount)}
+                </span>
+            ),
+        },
+    ]
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <Link href="/dashboard/shop/expenses/categories">
-                    <Button variant="outline">
-                        <FolderEdit className="mr-2 h-4 w-4" />
-                        ক্যাটাগরি ম্যানেজমেন্ট
-                    </Button>
-                </Link>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                        <SelectTrigger className="w-full sm:w-[200px]">
+                            <SelectValue placeholder="সব ক্যাটাগরি" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">সব ক্যাটাগরি</SelectItem>
+                            {categories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Link href="/dashboard/shop/expenses/categories">
+                        <Button variant="outline">
+                            <FolderEdit className="mr-2 h-4 w-4" />
+                            ক্যাটাগরি ম্যানেজমেন্ট
+                        </Button>
+                    </Link>
+                </div>
                 <Dialog open={isOpen} onOpenChange={(open) => {
                     if (!open) closeDialog()
                     else setIsOpen(true)
@@ -193,98 +254,68 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">মোট খরচ</CardTitle>
+                        <CardTitle className="text-sm font-medium">ম্যানুয়াল খরচ</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">{formatCurrency(totalAmount)}</div>
-                        <p className="text-xs text-muted-foreground">{expenses.length} টি খরচ রেকর্ড করা হয়েছে</p>
+                        <div className="text-2xl font-bold text-red-600">{formatCurrency(stats.manualExpenses)}</div>
+                        <p className="text-xs text-muted-foreground">সরাসরি যোগ করা খরচ</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">আজকের খরচ</CardTitle>
+                        <CardTitle className="text-sm font-medium">সিস্টেম খরচ</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-orange-600">{formatCurrency(todayAmount)}</div>
-                        <p className="text-xs text-muted-foreground">আজকের সর্বমোট</p>
+                        <div className="text-2xl font-bold text-orange-600">{formatCurrency(stats.systemExpenses)}</div>
+                        <p className="text-xs text-muted-foreground">অটো-জেনারেটেড খরচ</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">এই মাসের খরচ</CardTitle>
+                        <CardTitle className="text-sm font-medium">সর্বমোট খরচ</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(thisMonthAmount)}</div>
-                        <p className="text-xs text-muted-foreground">চলতি মাসের সর্বমোট</p>
+                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(stats.totalExpenses)}</div>
+                        <p className="text-xs text-muted-foreground">দোকানের মোট ব্যয়</p>
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>তারিখ</TableHead>
-                            <TableHead>শিরোনাম</TableHead>
-                            <TableHead>ক্যাটাগরি</TableHead>
-                            <TableHead>বর্ণনা/নোট</TableHead>
-                            <TableHead>ধরণ</TableHead>
-                            <TableHead className="text-right">পরিমাণ</TableHead>
-                            <TableHead className="text-right">সংশোধন</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {expenses.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                                    কোনো খরচ পাওয়া যায়নি
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {expenses.map((expense) => (
-                            <TableRow key={expense.id}>
-                                <TableCell>{format(new Date(expense.expense_date), 'dd MMM yyyy')}</TableCell>
-                                <TableCell className="font-semibold">{expense.title}</TableCell>
-                                <TableCell>
-                                    <span className="font-medium text-muted-foreground">{expense.expense_categories?.name || 'Uncategorized'}</span>
-                                </TableCell>
-                                <TableCell className="truncate max-w-[200px]">{expense.notes}</TableCell>
-                                <TableCell>
-                                    {expense.reference_type === 'manual' ? (
-                                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">ম্যানুয়াল</span>
-                                    ) : (
-                                        <span className="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-800">অটো-সিস্টেম</span>
-                                    )}
-                                </TableCell>
-                                <TableCell className="text-right font-bold text-red-600">
-                                    {formatCurrency(expense.amount)}
-                                </TableCell>
-                                <TableCell className="text-right space-x-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => openEdit(expense)}
-                                        disabled={expense.reference_type !== 'manual'}
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-destructive hover:text-destructive"
-                                        onClick={() => handleDelete(expense.id, expense.reference_type)}
-                                        disabled={expense.reference_type !== 'manual'}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable
+                data={expenses}
+                columns={columns}
+                total={total}
+                page={page}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+                onSearchChange={setSearch}
+                loading={loading}
+                searchPlaceholder="শিরোনাম দিয়ে খুঁজুন..."
+                actions={(expense) => (
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEdit(expense)}
+                            disabled={expense.reference_type !== 'manual'}
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteClick(expense.id, expense.reference_type)}
+                            disabled={expense.reference_type !== 'manual'}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+            />
         </div>
     )
 }

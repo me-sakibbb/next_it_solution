@@ -1,25 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { Plus, Users, Wallet, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CustomerDialog } from './customer-dialog'
+import { useCustomers } from '@/hooks/use-customers'
 import type { Customer } from '@/lib/types'
 
 interface CustomersClientProps {
-  customers: Customer[]
   shopId: string
 }
 
-export function CustomersClient({ customers: initialCustomers, shopId }: CustomersClientProps) {
-  const [customers, setCustomers] = useState(initialCustomers)
+export function CustomersClient({ shopId }: CustomersClientProps) {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [showDialog, setShowDialog] = useState(false)
+  const [onlyDebtors, setOnlyDebtors] = useState(false)
+
+  const {
+    customers,
+    total,
+    loading,
+    page,
+    limit,
+    setPage,
+    setLimit,
+    setSearch,
+    setFilters,
+    refresh,
+    handleDeleteCustomer,
+    stats,
+  } = useCustomers(shopId, onlyDebtors)
+
+  useEffect(() => {
+    setFilters({ only_debtors: onlyDebtors })
+  }, [onlyDebtors, setFilters])
 
   const columns = [
+    // ... existing columns ...
     {
       key: 'name',
       label: 'নাম',
@@ -66,11 +87,9 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
     },
   ]
 
-  const totalDue = customers.reduce((sum, c) => sum + (Number(c.outstanding_balance) || 0), 0)
-  const totalDebtors = customers.filter(c => (Number(c.outstanding_balance) || 0) > 0).length
-
   return (
     <div className="space-y-6">
+      {/* ... stats cards ... */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -78,7 +97,7 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{customers.length}</div>
+            <div className="text-2xl font-bold">{stats.totalCustomers}</div>
           </CardContent>
         </Card>
         <Card>
@@ -88,7 +107,7 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              ৳{totalDue.toFixed(2)}
+              ৳{stats.totalDue.toFixed(2)}
             </div>
           </CardContent>
         </Card>
@@ -98,13 +117,35 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
             <AlertCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalDebtors}</div>
+            <div className="text-2xl font-bold">{stats.totalDebtors}</div>
             <p className="text-xs text-muted-foreground mt-1">যাদের কাছে টাকা পাওনা আছে</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex items-center justify-end">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="কাস্টমার খুঁজুন..."
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="debtors-only"
+              checked={onlyDebtors}
+              onChange={(e) => setOnlyDebtors(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <label htmlFor="debtors-only" className="text-sm font-medium leading-none">
+              শুধুমাত্র বকেয়া
+            </label>
+          </div>
+        </div>
         <Button onClick={() => {
           setSelectedCustomer(null)
           setShowDialog(true)
@@ -117,22 +158,44 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
       <DataTable
         data={customers}
         columns={columns}
-        searchPlaceholder="কাস্টমার খুঁজুন..."
+        hideSearch={true}
+        total={total}
+        page={page}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        loading={loading}
         onRowClick={(customer) => {
           setSelectedCustomer(customer)
           setShowDialog(true)
         }}
         actions={(customer) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedCustomer(customer)
-              setShowDialog(true)
-            }}
-          >
-            এডিট
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedCustomer(customer)
+                setShowDialog(true)
+              }}
+            >
+              এডিট
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm('আপনি কি এই কাস্টমারটি ডিলিট করতে চান?')) {
+                  handleDeleteCustomer(customer.id)
+                }
+              }}
+            >
+              ডিলিট
+            </Button>
+          </div>
         )}
       />
 
@@ -141,12 +204,7 @@ export function CustomersClient({ customers: initialCustomers, shopId }: Custome
         onOpenChange={setShowDialog}
         customer={selectedCustomer}
         shopId={shopId}
-        onSuccess={(updatedCustomer) => {
-          if (selectedCustomer) {
-            setCustomers(customers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c))
-          } else {
-            setCustomers([updatedCustomer, ...customers])
-          }
+        onSuccess={() => {
           setShowDialog(false)
         }}
       />

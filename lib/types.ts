@@ -337,7 +337,7 @@ export interface ShopTask {
   due_date?: string
   created_at: string
   updated_at: string
-  completed_at?: string
+  completed_at?: string | null
 }
 
 export type ServiceStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'

@@ -30,8 +30,121 @@ interface InvoiceData {
   notes?: string
 }
 
-export function generateInvoicePDF(invoice: InvoiceData) {
-  const content = `
+export type InvoiceSize = 'A4' | 'POS'
+
+export function generateInvoicePDF(invoice: InvoiceData, size: InvoiceSize = 'A4') {
+  const isPOS = size === 'POS'
+
+  const content = isPOS ? `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice ${invoice.invoice_number}</title>
+  <style>
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      width: 72mm; /* Standard width for 80mm paper allowing for margins */
+      margin: 0 auto;
+      padding: 4mm 2mm;
+      font-size: 11pt;
+      line-height: 1.2;
+      color: #000;
+      background: #fff;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .bold { font-weight: bold; }
+    .divider { border-top: 1px dashed #000; margin: 2mm 0; }
+    .header { margin-bottom: 3mm; }
+    .shop-name { font-size: 14pt; font-weight: bold; margin-bottom: 1mm; }
+    .items-table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
+    .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 1mm 0; font-size: 10pt; }
+    .items-table td { padding: 1mm 0; vertical-align: top; font-size: 10pt; }
+    .totals-area { margin-top: 2mm; }
+    .footer { margin-top: 5mm; font-size: 9pt; }
+  </style>
+</head>
+<body>
+  <div class="header text-center">
+    <div class="shop-name">${invoice.shop.name.toUpperCase()}</div>
+    ${invoice.shop.address ? `<div>${invoice.shop.address}</div>` : ''}
+    ${invoice.shop.phone ? `<div>Tel: ${invoice.shop.phone}</div>` : ''}
+    <div class="divider"></div>
+    <div class="bold">INVOICE: ${invoice.invoice_number}</div>
+    <div>Date: ${new Date(invoice.sale_date).toLocaleString()}</div>
+  </div>
+
+  <div class="divider"></div>
+  
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th width="45%">Item</th>
+        <th width="20%" class="text-center">Qty</th>
+        <th width="35%" class="text-right">Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${invoice.items.map(item => `
+        <tr>
+          <td>${item.product_name}</td>
+          <td class="text-center">${item.quantity}</td>
+          <td class="text-right">${item.total.toFixed(2)}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <div class="divider"></div>
+
+  <div class="totals-area">
+    <div style="display: flex; justify-content: space-between;">
+      <span>Subtotal:</span>
+      <span>${invoice.subtotal.toFixed(2)}</span>
+    </div>
+    ${invoice.discount_amount > 0 ? `
+    <div style="display: flex; justify-content: space-between;">
+      <span>Discount:</span>
+      <span>-${invoice.discount_amount.toFixed(2)}</span>
+    </div>
+    ` : ''}
+    ${invoice.tax_amount > 0 ? `
+    <div style="display: flex; justify-content: space-between;">
+      <span>Tax:</span>
+      <span>${invoice.tax_amount.toFixed(2)}</span>
+    </div>
+    ` : ''}
+    <div class="divider"></div>
+    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 12pt;">
+      <span>TOTAL:</span>
+      <span>৳${invoice.total_amount.toFixed(2)}</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  
+  <div class="footer text-center">
+    <div>Method: ${invoice.payment_method?.toUpperCase() || 'CASH'}</div>
+    ${invoice.customer ? `<div style="margin-top: 1mm;">Customer: ${invoice.customer.name}</div>` : ''}
+    <div style="margin-top: 3mm;">THANK YOU FOR SHOPPING!</div>
+    <div>Visit Again</div>
+  </div>
+
+  <script>
+    window.onload = () => {
+      window.print();
+      // Optional: Close window after printing
+      // window.onafterprint = () => window.close();
+    };
+  </script>
+</body>
+</html>
+  ` : `
 <!DOCTYPE html>
 <html>
 <head>
@@ -217,25 +330,18 @@ export function generateInvoicePDF(invoice: InvoiceData) {
     <p>Thank you for your business!</p>
     <p>This is a computer-generated invoice and does not require a signature.</p>
   </div>
+  <script>window.onload = () => window.print();</script>
 </body>
 </html>
   `
 
-  // Create a new window with the invoice content
   const printWindow = window.open('', '_blank')
   if (printWindow) {
     printWindow.document.write(content)
     printWindow.document.close()
-    
-    // Wait for content to load then print
-    printWindow.onload = () => {
-      printWindow.print()
-    }
   }
 }
 
-export function downloadInvoicePDF(invoice: InvoiceData) {
-  // For a more robust solution, you would use a library like jsPDF
-  // This is a simple implementation that opens print dialog
-  generateInvoicePDF(invoice)
+export function downloadInvoicePDF(invoice: InvoiceData, size: InvoiceSize = 'A4') {
+  generateInvoicePDF(invoice, size)
 }

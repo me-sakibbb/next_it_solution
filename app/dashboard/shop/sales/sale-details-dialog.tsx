@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns'
 import { Separator } from '@/components/ui/separator'
 import { FileDown, Edit, Plus, Loader2 } from 'lucide-react'
-import { downloadInvoicePDF } from '@/lib/pdf-export'
-import { addPayment, updateSale } from '@/app/actions/sales'
+import { downloadInvoicePDF, type InvoiceSize } from '@/lib/pdf-export'
+import { useSales } from '@/hooks/use-sales'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -22,9 +22,11 @@ interface SaleDetailsDialogProps {
 }
 
 export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialogProps) {
+  const { handleAddPayment: onAddPayment, handleUpdateSale: onUpdateSale, getSaleDetails, isLoading: hookLoading } = useSales(sale?.shop_id)
   const [activeTab, setActiveTab] = useState('details')
   const [isEditing, setIsEditing] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [printSize, setPrintSize] = useState<InvoiceSize>('A4')
+  const [isPrinting, setIsPrinting] = useState(false)
 
   // Edit State
   const [editNotes, setEditNotes] = useState('')
@@ -36,70 +38,66 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
 
   if (!sale) return null
 
-  // Update state when sale changes or dialog opens, 
-  // but be careful not to reset user input if they are just switching tabs.
-  // Ideally use useEffect or keys. For now, we'll initialize on edit click.
-
-  const handleDownloadPDF = () => {
-    const invoiceData = {
-      id: sale.id,
-      invoice_number: sale.sale_number,
-      sale_date: sale.sale_date,
-      customer: sale.customer,
-      shop: sale.shop,
-      items: sale.sale_items?.map((item: any) => ({
-        product_name: item.product?.name || 'Unknown Product',
-        quantity: item.quantity,
-        unit_price: Number(item.unit_price),
-        total: Number(item.total_price),
-      })) || [],
-      subtotal: Number(sale.subtotal),
-      tax_amount: Number(sale.tax_amount),
-      discount_amount: Number(sale.discount_amount),
-      total_amount: Number(sale.total_amount),
-      payment_method: sale.payment_method,
-      notes: sale.notes,
+  const handleDownloadPDF = async () => {
+    setIsPrinting(true)
+    try {
+      const fullSale = await getSaleDetails(sale.id)
+      if (fullSale) {
+        const invoiceData = {
+          id: fullSale.id,
+          invoice_number: fullSale.sale_number,
+          sale_date: fullSale.created_at,
+          customer: fullSale.customer,
+          shop: fullSale.shop,
+          items: fullSale.sale_items.map((item: any) => ({
+            product_name: item.product?.name || 'Unknown Product',
+            quantity: item.quantity,
+            unit_price: Number(item.unit_price),
+            total: (item.quantity * item.unit_price)
+          })),
+          subtotal: Number(fullSale.subtotal),
+          tax_amount: Number(fullSale.tax_amount),
+          discount_amount: Number(fullSale.discount_amount),
+          total_amount: Number(fullSale.total_amount),
+          payment_method: fullSale.payment_status === 'paid' ? 'Cash' : 'Partial/Due',
+          notes: fullSale.notes
+        }
+        downloadInvoicePDF(invoiceData, printSize)
+      }
+    } catch (err) {
+      toast.error('ইনভয়েস তৈরিতে সমস্যা হয়েছে')
+    } finally {
+      setIsPrinting(false)
     }
-    downloadInvoicePDF(invoiceData)
   }
 
-  const handleAddPayment = async () => {
+  const handleAddPaymentLocal = async () => {
     if (!paymentAmount || Number(paymentAmount) <= 0) {
       toast.error('ভুল পেমেন্ট পরিমাণ')
       return
     }
 
-    setLoading(true)
-    try {
-      await addPayment(sale.shop_id, {
-        sale_id: sale.id,
-        amount: paymentAmount,
-        payment_method: paymentMethod
-      })
-      toast.success('পেমেন্ট সফলভাবে যুক্ত হয়েছে')
+    const success = await onAddPayment({
+      sale_id: sale.id,
+      amount: paymentAmount,
+      payment_method: paymentMethod
+    })
+
+    if (success) {
       setPaymentAmount('')
-      onOpenChange(false) // Close to refresh data
-    } catch (error: any) {
-      toast.error(error.message)
-    } finally {
-      setLoading(false)
+      onOpenChange(false)
     }
   }
 
-  const handleUpdateSale = async () => {
-    setLoading(true)
-    try {
-      await updateSale(sale.shop_id, sale.id, {
-        discount_amount: editDiscount,
-        notes: editNotes
-      })
-      toast.success('বিক্রয় আপডেট করা হয়েছে')
+  const handleUpdateSaleLocal = async () => {
+    const success = await onUpdateSale(sale.id, {
+      discount_amount: editDiscount,
+      notes: editNotes
+    })
+
+    if (success) {
       setIsEditing(false)
       onOpenChange(false)
-    } catch (error: any) {
-      toast.error(error.message)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -122,8 +120,27 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
                   <Edit className="h-4 w-4" />
                 </Button>
               )}
-              <Button onClick={handleDownloadPDF} size="sm" variant="outline">
-                <FileDown className="h-4 w-4" />
+              <div className="flex items-center gap-1 border rounded-md p-0.5 bg-muted/50">
+                <Button
+                  onClick={() => setPrintSize('A4')}
+                  variant={printSize === 'A4' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-[10px] px-2"
+                >
+                  A4
+                </Button>
+                <Button
+                  onClick={() => setPrintSize('POS')}
+                  variant={printSize === 'POS' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-[10px] px-2"
+                >
+                  POS
+                </Button>
+              </div>
+              <Button onClick={handleDownloadPDF} size="sm" variant="outline" disabled={isPrinting}>
+                {isPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                <span className="ml-2 hidden sm:inline">প্রিন্ট ইনভয়েস</span>
               </Button>
             </div>
           </div>
@@ -252,9 +269,9 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
 
             {isEditing && (
               <div className="flex gap-2 justify-end mt-4">
-                <Button variant="outline" onClick={() => setIsEditing(false)} disabled={loading}>বাতিল</Button>
-                <Button onClick={handleUpdateSale} disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button variant="outline" onClick={() => setIsEditing(false)} disabled={hookLoading}>বাতিল</Button>
+                <Button onClick={handleUpdateSaleLocal} disabled={hookLoading}>
+                  {hookLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   সেভ করুন
                 </Button>
               </div>
@@ -306,8 +323,8 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
                     </Select>
                   </div>
                 </div>
-                <Button onClick={handleAddPayment} className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button onClick={handleAddPaymentLocal} className="w-full" disabled={hookLoading}>
+                  {hookLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   পেমেন্ট নিশ্চিত করুন
                 </Button>
               </div>

@@ -5,35 +5,33 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Check, X } from 'lucide-react'
 import { format } from 'date-fns'
-import { approveLeave, rejectLeave } from '@/app/actions/staff'
 import { LeaveDialog } from './leave-dialog'
-import { toast } from 'sonner'
 
 interface LeavesListProps {
   leaves: any[]
   staff: any[]
   shopId: string
+  onSuccess?: () => void
+  onCreateLeave: (formData: FormData) => Promise<boolean>
+  onUpdateStatus: (id: string, status: 'approved' | 'rejected') => Promise<boolean>
 }
 
-export function LeavesList({ leaves, staff, shopId }: LeavesListProps) {
+export function LeavesList({
+  leaves,
+  staff,
+  shopId,
+  onSuccess,
+  onCreateLeave,
+  onUpdateStatus
+}: LeavesListProps) {
   const handleApprove = async (leaveId: string) => {
-    try {
-      await approveLeave(leaveId)
-      toast.success('Leave approved successfully')
-      window.location.reload()
-    } catch (error) {
-      toast.error('Failed to approve leave')
-    }
+    const success = await onUpdateStatus(leaveId, 'approved')
+    if (success && onSuccess) onSuccess()
   }
 
   const handleReject = async (leaveId: string) => {
-    try {
-      await rejectLeave(leaveId)
-      toast.success('Leave rejected')
-      window.location.reload()
-    } catch (error) {
-      toast.error('Failed to reject leave')
-    }
+    const success = await onUpdateStatus(leaveId, 'rejected')
+    if (success && onSuccess) onSuccess()
   }
 
   const columns = [
@@ -93,7 +91,12 @@ export function LeavesList({ leaves, staff, shopId }: LeavesListProps) {
             কর্মচারী ছুটির আবেদন এবং অনুমোদন পরিচালনা করুন
           </p>
         </div>
-        <LeaveDialog staff={staff} shopId={shopId} />
+        <LeaveDialog
+          staff={staff}
+          shopId={shopId}
+          onSuccess={onSuccess}
+          onCreateLeave={onCreateLeave}
+        />
       </div>
       <DataTable
         data={leaves}

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { productSchema, categorySchema } from '@/lib/validations'
 import { revalidatePath } from 'next/cache'
+import { getPaginationRange, type PaginationParams, type PaginatedResponse } from '@/lib/pagination'
 
 export async function getProducts(shopId: string) {
   const supabase = await createClient()
@@ -23,8 +24,44 @@ export async function getProducts(shopId: string) {
     throw error
   }
 
-  console.log('Products with inventory:', JSON.stringify(data, null, 2))
   return data
+}
+
+export async function getPaginatedProducts(params: PaginationParams): Promise<PaginatedResponse<any>> {
+  const supabase = await createClient()
+  const { from, to } = getPaginationRange(params.page, params.limit)
+
+  let query = supabase
+    .from('products')
+    .select(`
+      *,
+      category:categories(id, name),
+      inventory(quantity)
+    `, { count: 'exact' })
+    .eq('shop_id', params.shopId)
+    .eq('is_active', true)
+
+  if (params.search) {
+    query = query.or(`name.ilike.%${params.search}%,sku.ilike.%${params.search}%,barcode.ilike.%${params.search}%`)
+  }
+
+  if (params.filters?.category_id) {
+    query = query.eq('category_id', params.filters.category_id)
+  }
+
+  const { data, error, count } = await query
+    .order(params.sortBy || 'name', { ascending: params.sortOrder === 'asc' })
+    .range(from, to)
+
+  if (error) throw error
+
+  return {
+    data: data || [],
+    total: count || 0,
+    page: params.page,
+    limit: params.limit,
+    totalPages: Math.ceil((count || 0) / params.limit)
+  }
 }
 
 export async function getProduct(id: string) {

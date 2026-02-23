@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { createCustomer, updateCustomer } from '@/app/actions/sales'
+import { useCustomers } from '@/hooks/use-customers'
 import { Loader2 } from 'lucide-react'
 import type { Customer } from '@/lib/types'
 
@@ -22,26 +22,29 @@ interface CustomerDialogProps {
 }
 
 export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess }: CustomerDialogProps) {
+  const { handleCreateCustomer, handleUpdateCustomer } = useCustomers(shopId)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
-    setError('')
 
     try {
       const formData = new FormData(e.currentTarget)
+      let result
 
       if (customer) {
-        const updated = await updateCustomer(customer.id, formData)
-        onSuccess(updated)
+        result = await handleUpdateCustomer(customer.id, formData)
       } else {
-        const created = await createCustomer(shopId, formData)
-        onSuccess(created)
+        result = await handleCreateCustomer(formData)
+      }
+
+      if (result) {
+        onSuccess(result)
+        onOpenChange(false)
       }
     } catch (err: any) {
-      setError(err.message)
+      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -147,11 +150,6 @@ export function CustomerDialog({ open, onOpenChange, customer, shopId, onSuccess
             </div>
           </div>
 
-          {error && (
-            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
 
           <div className="flex justify-end gap-3">
             <Button
