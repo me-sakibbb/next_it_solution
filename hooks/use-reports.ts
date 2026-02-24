@@ -26,7 +26,7 @@ export function useReports(shopId: string) {
                     .from('products')
                     .select('*, category:categories(name), inventory(quantity)')
                     .eq('shop_id', shopId)
-                    .is('deleted_at', null),
+                    .eq('is_active', true),
                 supabase
                     .from('expenses')
                     .select('*, expense_categories(name)')

@@ -18,7 +18,7 @@ export function useProducts(shopId: string, categoryId?: string) {
             .from('categories')
             .select('*')
             .eq('shop_id', shopId)
-            .is('deleted_at', null)
+            .eq('is_active', true)
             .order('name')
         if (!error) setCategories(data || [])
     }, [supabase, shopId])
@@ -199,11 +199,11 @@ export function useProducts(shopId: string, categoryId?: string) {
         }
     }
 
-    const handleCreateCategory = async (name: string) => {
+    const handleCreateCategory = async (name: string, description?: string) => {
         try {
             const { data, error } = await supabase
                 .from('categories')
-                .insert({ name, shop_id: shopId })
+                .insert({ name, description, shop_id: shopId })
                 .select()
                 .single()
             if (error) throw error

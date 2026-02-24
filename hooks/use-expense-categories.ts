@@ -18,7 +18,7 @@ export function useExpenseCategories(shopId: string) {
                 .from('expense_categories')
                 .select('*')
                 .eq('shop_id', shopId)
-                .is('deleted_at', null)
+                .eq('is_active', true)
                 .order('name')
 
             if (error) throw error
@@ -34,11 +34,11 @@ export function useExpenseCategories(shopId: string) {
         fetchCategories()
     }, [fetchCategories])
 
-    const handleCreateCategory = async (name: string) => {
+    const handleCreateCategory = async (name: string, description?: string) => {
         try {
             const { data, error } = await supabase
                 .from('expense_categories')
-                .insert({ name, shop_id: shopId })
+                .insert({ name, description, shop_id: shopId })
                 .select()
                 .single()
 
@@ -75,7 +75,7 @@ export function useExpenseCategories(shopId: string) {
         try {
             const { error } = await supabase
                 .from('expense_categories')
-                .update({ deleted_at: new Date().toISOString() })
+                .update({ is_active: false })
                 .eq('id', id)
 
             if (error) throw error

@@ -52,19 +52,7 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-[200px] w-full bg-muted animate-pulse rounded-lg" />
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
-          ))}
-        </div>
-        <div className="h-[400px] w-full bg-muted animate-pulse rounded-lg" />
-      </div>
-    )
-  }
+
 
   // --- Date filtering ---
   const getDateBounds = useCallback(() => {
@@ -297,6 +285,20 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
       </CardContent>
     </Card>
   )
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-[200px] w-full bg-muted animate-pulse rounded-lg" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
+        <div className="h-[400px] w-full bg-muted animate-pulse rounded-lg" />
+      </div>
+    )
+  }
 
   const dateRangeLabel = () => {
     switch (dateRange) {

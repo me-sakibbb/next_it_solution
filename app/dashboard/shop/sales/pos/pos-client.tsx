@@ -419,11 +419,11 @@ export function POSClient({ shopId, currency }: POSClientProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">নগদ</SelectItem>
+                    <SelectItem value="cash">ক্যাশ</SelectItem>
                     <SelectItem value="card">কার্ড</SelectItem>
-                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="mobile_banking">মোবাইল ব্যাংকিং</SelectItem>
                     <SelectItem value="bank_transfer">ব্যাংক ট্রান্সফার</SelectItem>
-                    <SelectItem value="due">বাকি (Due)</SelectItem>
+                    <SelectItem value="due">বাকি</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

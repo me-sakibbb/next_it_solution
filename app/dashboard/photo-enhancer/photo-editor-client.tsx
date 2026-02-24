@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Upload, Download, RotateCw, Crop, Contrast, Sun, ImageIcon, Scissors, Printer, Maximize2, Sparkles, Palette, ZoomIn, ZoomOut, Eraser } from 'lucide-react'
+import { Upload, Download, RotateCw, RotateCcw, Crop, Contrast, Sun, ImageIcon, Scissors, Printer, Maximize2, Sparkles, Palette, ZoomIn, ZoomOut, Eraser, Check } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import jsPDF from 'jspdf'
 
@@ -100,6 +100,12 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   const [viewZoom, setViewZoom] = useState(1.0)
   const [isErasing, setIsErasing] = useState(false)
   const [brushSize, setBrushSize] = useState(30)
+  // Enhancement state
+  const [isEnhancing, setIsEnhancing] = useState(false)
+  const [enhanceProgress, setEnhanceProgress] = useState(0)
+  const [originalBeforeEnhance, setOriginalBeforeEnhance] = useState<HTMLImageElement | null>(null)
+  const [enhancedPreview, setEnhancedPreview] = useState<string | null>(null)
+  const [showEnhanceComparison, setShowEnhanceComparison] = useState(false)
 
   // Download/Print dialog state
   const [showPrintDialog, setShowPrintDialog] = useState(false)
@@ -797,6 +803,60 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     }
   }
 
+  const enhanceImage = async () => {
+    if (!image || !canvasRef.current) return
+
+    setIsEnhancing(true)
+    setEnhanceProgress(10)
+
+    try {
+      // Convert current image to base64 data URL
+      const canvas = document.createElement('canvas')
+      canvas.width = image.width
+      canvas.height = image.height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(image, 0, 0)
+      const dataUrl = canvas.toDataURL('image/png')
+
+      setEnhanceProgress(20)
+
+      // Send to sharp API route for server-side enhancement
+      const response = await fetch('/api/enhance-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl }),
+      })
+
+      setEnhanceProgress(70)
+
+      if (!response.ok) {
+        throw new Error(`Enhancement failed: ${response.statusText}`)
+      }
+
+      // Get the enhanced image back as base64 data URL
+      const data = await response.json()
+      const enhancedUrl = data.image
+
+      setEnhanceProgress(90)
+
+      // Store original + enhanced for before/after comparison
+      setOriginalBeforeEnhance(image)
+      setEnhancedPreview(enhancedUrl)
+      setShowEnhanceComparison(true)
+      setIsEnhancing(false)
+      setEnhanceProgress(0)
+    } catch (error) {
+      console.error('Enhancement error:', error)
+      setIsEnhancing(false)
+      setEnhanceProgress(0)
+      toast({
+        title: "Enhancement Error",
+        description: "Failed to enhance image. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Build pre-filtered offscreen canvas when filters/rotation change
   useEffect(() => {
     filterDirtyRef.current = true
@@ -1237,6 +1297,31 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                     Upload Image
                   </Button>
                 </div>
+              ) : showEnhanceComparison && enhancedPreview && originalBeforeEnhance ? (
+                <div className="flex-1 flex items-center justify-center p-6 gap-6 w-full">
+                  {/* Before */}
+                  <div className="flex-1 flex flex-col items-center gap-2 max-w-[50%]">
+                    <div className="relative rounded-xl overflow-hidden border-2 border-border shadow-lg w-full">
+                      <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-3 py-1 rounded-full font-semibold z-10 backdrop-blur-sm">Before</div>
+                      <img
+                        src={originalBeforeEnhance.src}
+                        alt="Before enhancement"
+                        className="w-full h-auto object-contain max-h-[60vh]"
+                      />
+                    </div>
+                  </div>
+                  {/* After */}
+                  <div className="flex-1 flex flex-col items-center gap-2 max-w-[50%]">
+                    <div className="relative rounded-xl overflow-hidden border-2 border-primary/50 shadow-lg shadow-primary/10 w-full">
+                      <div className="absolute top-3 left-3 bg-primary/90 text-primary-foreground text-xs px-3 py-1 rounded-full font-semibold z-10 backdrop-blur-sm">After</div>
+                      <img
+                        src={enhancedPreview}
+                        alt="After enhancement"
+                        className="w-full h-auto object-contain max-h-[60vh]"
+                      />
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="relative inline-block mx-auto transition-all duration-200">
                   <canvas
@@ -1409,6 +1494,72 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                       />
                     )}
                   </Button>
+
+                  <Button
+                    onClick={enhanceImage}
+                    variant="outline"
+                    className="w-full relative overflow-hidden border-primary/30 hover:border-primary transition-all group/enhance"
+                    disabled={isEnhancing}
+                  >
+                    <div className="relative z-10 flex items-center">
+                      <Sparkles className={`h-4 w-4 mr-2 transition-transform duration-500 ${isEnhancing ? 'animate-spin' : 'group-hover/enhance:rotate-12 group-hover/enhance:scale-120'}`} />
+                      {isEnhancing ? `Enhancing ${enhanceProgress}%...` : 'Auto Enhance'}
+                    </div>
+                    {isEnhancing && (
+                      <div
+                        className="absolute left-0 top-0 bottom-0 bg-primary/10 transition-all duration-300"
+                        style={{ width: `${enhanceProgress}%` }}
+                      />
+                    )}
+                    {!isEnhancing && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover/enhance:translate-x-[100%] transition-transform duration-1000" />
+                    )}
+                  </Button>
+
+                  {showEnhanceComparison && enhancedPreview && originalBeforeEnhance && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          const img = new window.Image()
+                          img.onload = () => {
+                            setImage(img)
+                            setShowEnhanceComparison(false)
+                            setEnhancedPreview(null)
+                            setOriginalBeforeEnhance(null)
+                            toast({
+                              title: "Enhancement Applied",
+                              description: "Auto Levels, Sharpening, Vibrance & Gamma applied.",
+                            })
+                          }
+                          img.src = enhancedPreview
+                        }}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Accept
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          setImage(originalBeforeEnhance)
+                          setShowEnhanceComparison(false)
+                          setEnhancedPreview(null)
+                          setOriginalBeforeEnhance(null)
+                          toast({
+                            title: "Original Restored",
+                            description: "Enhancement discarded, original image restored.",
+                          })
+                        }}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Restore Original
+                      </Button>
+                    </div>
+                  )}
 
                   {bgRemoved && (
                     <div className="space-y-4 p-4 bg-muted/40 rounded-xl border border-primary/20 shadow-sm relative overflow-hidden group">

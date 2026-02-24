@@ -15,7 +15,7 @@ interface CategoryDialogProps {
   onOpenChange: (open: boolean) => void
   categories: Category[]
   shopId: string
-  onCreateCategory?: (name: string) => Promise<any>
+  onCreateCategory?: (name: string, description?: string) => Promise<any>
 }
 
 export function CategoryDialog({ open, onOpenChange, categories, shopId, onCreateCategory }: CategoryDialogProps) {
@@ -30,8 +30,9 @@ export function CategoryDialog({ open, onOpenChange, categories, shopId, onCreat
     try {
       const formData = new FormData(e.currentTarget)
       const name = formData.get('name') as string
+      const description = formData.get('description') as string
       if (onCreateCategory) {
-        await onCreateCategory(name)
+        await onCreateCategory(name, description)
       }
       onOpenChange(false)
     } catch (err: any) {
