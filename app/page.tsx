@@ -14,9 +14,7 @@ export default function LandingPage() {
       <main className="flex-1">
         <Hero />
         <Features />
-        <Testimonials />
         <Pricing />
-        <FAQ />
         <CTA />
       </main>
       <Footer />
