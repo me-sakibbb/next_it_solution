@@ -7,21 +7,23 @@ export function useCVAI() {
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-    const generateCV = useCallback(async (text: string, templateId: string): Promise<{ success: boolean; data?: CVData; error?: string }> => {
+    const generateCV = useCallback(async (input: string, templateId: string): Promise<{ success: boolean; data?: CVData; error?: string }> => {
         if (!genAI) {
             return { success: false, error: 'Gemini API key not configured (NEXT_PUBLIC_GEMINI_API_KEY missing)' };
         }
 
-        if (!text) {
-            return { success: false, error: 'No text provided' };
+        if (!input) {
+            return { success: false, error: 'No input provided' };
         }
+
+        const isImage = input.startsWith('data:image/');
 
         try {
             const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-            const prompt = `
+            const basePrompt = `
             You are an expert CV writer and ATS (Applicant Tracking System) optimization specialist. 
-            Extract information from the text below and structure it into a JSON format for a professional CV.
+            Extract information from the provided ${isImage ? 'image' : 'text'} and structure it into a JSON format for a professional CV.
             
             CRITICAL INSTRUCTIONS:
             1.  **Format**: The output MUST be a valid JSON object.
@@ -71,14 +73,25 @@ export function useCVAI() {
                 ],
                 "languages": [] // Array of strings
             }
-
-            Resume Text:
-            ${text}
-
-            Return ONLY the JSON. Do not include markdown formatting like \`\`\`json.
             `;
 
-            const result = await model.generateContent(prompt);
+            let result;
+            if (isImage) {
+                const base64Data = input.split(',')[1];
+                const mimeType = input.split(';')[0].split(':')[1];
+                result = await model.generateContent([
+                    basePrompt + "\n\nReturn ONLY the JSON. Do not include markdown formatting like ```json.",
+                    {
+                        inlineData: {
+                            data: base64Data,
+                            mimeType: mimeType
+                        }
+                    }
+                ]);
+            } else {
+                result = await model.generateContent(basePrompt + `\n\nResume Text:\n${input}\n\nReturn ONLY the JSON. Do not include markdown formatting like \`\`\`json.`);
+            }
+
             const response = await result.response;
             const textResponse = response.text();
 

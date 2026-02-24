@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { usePdfParser } from '@/hooks/use-pdf-parser'
+import { useFileParser } from '@/hooks/use-file-parser'
 import { useCVAI } from '@/hooks/use-cv-ai'
 
 import { Card, CardContent } from '@/components/ui/card'
@@ -38,7 +38,7 @@ const TEMPLATES = [
 export function CVBuilderWizard() {
     const [step, setStep] = useState(1)
     const [file, setFile] = useState<File | null>(null)
-    const { parsePdf, isParsing, error: parseError } = usePdfParser()
+    const { parseFile, isParsing, error: parseError } = useFileParser()
     const [parsedText, setParsedText] = useState<string>('')
     const [selectedTemplate, setSelectedTemplate] = useState<string>('')
     const [isGenerating, setIsGenerating] = useState(false)
@@ -194,10 +194,9 @@ export function CVBuilderWizard() {
             const uploadedFile = e.target.files[0]
             setFile(uploadedFile)
 
-            const text = await parsePdf(uploadedFile)
-            if (text) {
-                setParsedText(text)
-                // Stay on step 1 to ask for photo
+            const result = await parseFile(uploadedFile)
+            if (result) {
+                setParsedText(result)
             }
         }
     }
@@ -366,20 +365,20 @@ export function CVBuilderWizard() {
                                 {isParsing ? <Loader2 className="w-8 h-8 animate-spin text-primary" /> : <Upload className="w-8 h-8 text-primary" />}
                                 {file && <div className="absolute top-0 right-0 bg-green-500 rounded-full p-1"><Check className="w-3 h-3 text-white" /></div>}
                             </div>
-                            <h2 className="text-2xl font-bold mb-2">1. Upload Resume (PDF)</h2>
+                            <h2 className="text-2xl font-bold mb-2">1. Upload Resume (PDF, DOCX, Image)</h2>
                             <p className="text-muted-foreground mb-6 text-center max-w-md">
-                                Upload your existing CV in PDF format.
+                                Upload your existing CV in PDF, DOCX or Image format.
                             </p>
                             <div className="relative">
                                 <input
                                     type="file"
-                                    accept=".pdf"
+                                    accept=".pdf,.docx,image/*"
                                     onChange={handleFileUpload}
                                     disabled={isParsing}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                                 <Button disabled={isParsing} variant={file ? "outline" : "default"}>
-                                    {file ? 'Change PDF' : 'Select PDF File'}
+                                    {file ? 'Change File' : 'Select Resume File'}
                                 </Button>
                             </div>
                             {file && <p className="mt-2 text-sm text-green-600 font-medium">{file.name} uploaded</p>}

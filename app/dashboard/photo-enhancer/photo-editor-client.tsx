@@ -619,6 +619,8 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     const ctx = croppedCanvas.getContext('2d')
 
     if (ctx) {
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
       if (isPhotoMode || photoScale !== 1 || photoX !== 0 || photoY !== 0) {
         // Photo was repositioned/scaled: draw image at its transform, clipped to crop box
         ctx.drawImage(
@@ -707,6 +709,8 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     const ctx = resizedCanvas.getContext('2d')
 
     if (ctx) {
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
       ctx.drawImage(image, 0, 0, resizeWidth, resizeHeight)
 
       const resizedImg = new Image()
@@ -870,6 +874,9 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     const octx = offscreen.getContext('2d')
     if (!octx) return null
 
+    octx.imageSmoothingEnabled = true
+    octx.imageSmoothingQuality = 'high'
+
     octx.save()
     octx.translate(offscreen.width / 2, offscreen.height / 2)
     octx.rotate((rotation * Math.PI) / 180)
@@ -939,6 +946,9 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     const px = photoRef.current.x * scaleX
     const py = photoRef.current.y * scaleY
     const ps = photoRef.current.scale
+
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -1545,7 +1555,12 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                         size="sm"
                         className="flex-1"
                         onClick={() => {
-                          setImage(originalBeforeEnhance)
+                          if (originalBeforeEnhance) {
+                            setImage(originalBeforeEnhance)
+                            setResizeWidth(originalBeforeEnhance.width)
+                            setResizeHeight(originalBeforeEnhance.height)
+                            setIsCropping(false)
+                          }
                           setShowEnhanceComparison(false)
                           setEnhancedPreview(null)
                           setOriginalBeforeEnhance(null)
