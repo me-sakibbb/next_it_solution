@@ -2,7 +2,7 @@ export type UserRole = 'super_admin' | 'shop_owner' | 'manager' | 'staff'
 
 export type ShopMemberRole = 'owner' | 'manager' | 'staff'
 
-export type SubscriptionPlanType = 'trial' | 'basic' | 'premium' | 'enterprise'
+export type SubscriptionPlanType = 'trial' | 'basic' | 'premium' | 'enterprise' | 'basic_bit' | 'advance_plus' | 'premium_power'
 
 export type SubscriptionStatus = 'active' | 'expired' | 'cancelled' | 'suspended'
 
@@ -394,6 +394,24 @@ export interface Notification {
   read: boolean
   action_url?: string
   created_at: string
+}
+
+
+export type BkashPaymentIntent = 'add_balance' | 'subscribe'
+export type BkashPaymentStatus = 'created' | 'executed' | 'failed' | 'cancelled'
+
+export interface BkashPayment {
+  id: string
+  user_id: string
+  payment_id: string
+  intent: BkashPaymentIntent
+  plan_type?: string
+  amount: number
+  status: BkashPaymentStatus
+  trx_id?: string
+  bkash_error?: string
+  created_at: string
+  updated_at: string
 }
 
 export interface PushSubscriptionData {

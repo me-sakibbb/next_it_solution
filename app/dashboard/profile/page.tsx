@@ -1,18 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { User, Bell, Shield, CreditCard, Mail, Check } from "lucide-react";
 import { AccountOverview } from "@/components/dashboard/account-overview";
 import { ProfileForm } from "@/components/dashboard/profile-form";
+import { SubscriptionPlans } from "@/components/dashboard/subscription-plans";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -22,54 +13,23 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/auth/login");
 
+  const adminSupabase = createAdminClient();
+
   const { data: profile } = await supabase
     .from("users")
     .select("*")
     .eq("id", user.id)
     .single();
 
-  const { data: subscription } = await supabase
+  // Fix: use adminSupabase instead of regular client which is blocked by RLS
+  const { data: subscription } = await adminSupabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", user.id)
+    .order('status', { ascending: true })
+    .order('subscription_start_date', { ascending: false })
+    .limit(1)
     .maybeSingle();
-
-  const plans = [
-    {
-      name: "Free",
-      price: 0,
-      features: [
-        "১০০টি পণ্য",
-        "১জন কর্মচারী",
-        "বেসিক রিপোর্ট",
-        "ইমেইল সাপোর্ট",
-      ],
-    },
-    {
-      name: "Pro",
-      price: 29,
-      features: [
-        "আনলিমিটেড পণ্য",
-        "১০জন পর্যন্ত কর্মচারী",
-        "উন্নত রিপোর্ট",
-        "অগ্রাধিকার সাপোর্ট",
-        "এপিআই অ্যাক্সেস",
-      ],
-      popular: true,
-    },
-    {
-      name: "Enterprise",
-      price: 99,
-      features: [
-        "আনলিমিটেড পণ্য",
-        "আনলিমিটেড কর্মচারী",
-        "কাস্টম রিপোর্ট",
-        "২৪/৭ সাপোর্ট",
-        "এপিআই অ্যাক্সেস",
-        "কাস্টম ইন্টিগ্রেশন",
-      ],
-    },
-  ];
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -80,7 +40,10 @@ export default async function ProfilePage() {
         </p>
       </div>
 
-      <AccountOverview user={user} profile={profile} />
+      <AccountOverview
+        subscription={subscription}
+        balance={profile?.balance || 0}
+      />
 
       <div className="mt-10">
         <h2 className="text-2xl font-bold tracking-tight mb-6">
@@ -93,56 +56,10 @@ export default async function ProfilePage() {
         <h2 className="text-2xl font-bold tracking-tight mb-6">
           সাবস্ক্রিপশন প্ল্যানসমূহ
         </h2>
-        <div className="grid gap-6 md:grid-cols-3">
-          {plans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={`flex flex-col relative overflow-hidden ${plan.popular ? "border-primary shadow-md" : ""}`}
-            >
-              {plan.popular && (
-                <div className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium text-center relative z-10 w-full">
-                  সবচেয়ে জনপ্রিয়
-                </div>
-              )}
-              <CardHeader className={plan.popular ? "pt-4" : ""}>
-                <CardTitle className="text-xl">{plan.name === "Free" ? "ফ্রি" : plan.name === "Pro" ? "প্রো" : "এন্টারপ্রাইজ"}</CardTitle>
-                <div className="mt-2">
-                  <span className="text-3xl font-bold text-foreground">
-                    ${plan.price}
-                  </span>
-                  {plan.price > 0 && (
-                    <span className="text-muted-foreground">/মাস</span>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <ul className="space-y-3 text-sm text-muted-foreground">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  variant={plan.popular ? "default" : "outline"}
-                  className="w-full"
-                  disabled={
-                    subscription?.plan_type === plan.name.toLowerCase() ||
-                    (plan.name === "Free" && !subscription)
-                  }
-                >
-                  {subscription?.plan_type === plan.name.toLowerCase() ||
-                    (plan.name === "Free" && !subscription)
-                    ? "বর্তমান প্ল্যান"
-                    : `${plan.name}-এ আপগ্রেড করুন`}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <SubscriptionPlans
+          currentPlan={subscription?.plan_type}
+          userBalance={profile?.balance || 0}
+        />
       </div>
     </div>
   );

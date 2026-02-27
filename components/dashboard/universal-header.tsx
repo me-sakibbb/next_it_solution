@@ -14,6 +14,7 @@ import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { NotificationsDropdown } from "./notifications";
+import { AddBalanceModal } from "./add-balance-modal";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, Crown } from "lucide-react";
@@ -37,7 +38,11 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
 
   const planMap: Record<string, string> = {
     'free': 'ফ্রি',
+    'trial': 'ট্রায়াল',
     'basic': 'বেসিক',
+    'basic_bit': 'বেসিক বিট',
+    'advance_plus': 'এডভান্স প্লাস',
+    'premium_power': 'প্রিমিয়াম পাওয়ার',
     'premium': 'প্রিমিয়াম',
     'enterprise': 'এন্টারপ্রাইজ',
     'Free': 'ফ্রি'
@@ -74,9 +79,12 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
       <div className="flex items-center gap-3">
         {/* Balance and Subscription Info */}
         <div className="hidden md:flex items-center gap-3 mr-2 bg-muted/50 rounded-full px-3 py-1.5 border">
-          <div className="flex items-center gap-1.5 text-sm font-medium pr-3 border-r">
-            <Wallet className="w-4 h-4 text-blue-500" />
-            <span>{formatCurrency(balance)}</span>
+          <div className="flex items-center gap-2 text-sm font-medium pr-2 border-r">
+            <div className="flex items-center gap-1.5">
+              <Wallet className="w-4 h-4 text-blue-500" />
+              <span>{formatCurrency(balance)}</span>
+            </div>
+            <AddBalanceModal />
           </div>
           <div className="flex items-center gap-1.5 text-sm font-medium">
             <Crown

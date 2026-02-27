@@ -7,47 +7,48 @@ import Link from "next/link"
 
 const plans = [
     {
-        name: "Starter",
-        price: "$29",
-        description: "Perfect for small shops just getting started.",
+        name: "Basic Bit",
+        price: "৳199",
+        description: "ব্যক্তিগত ব্যবহারের জন্য উপযুক্ত প্যাকেজ।",
         features: [
-            "1 Shop Location",
-            "Basic Inventory Management",
-            "Point of Sale (POS)",
-            "Daily Sales Reports",
-            "Email Support"
+            "শপ ম্যানেজমেন্ট একসেস",
+            "১০টি AI CV মেইক",
+            "২০টি অটোফিল আবেদন",
+            "সকল অনলাইন টুলস",
+            "প্রয়োজনীয় গ্রাফিক্স ফাইল",
+            "গুরুত্বপূর্ণ সনদ ফরমেট"
         ],
-        cta: "Start Free Trial",
+        cta: "Start Now",
         popular: false
     },
     {
-        name: "Pro",
-        price: "$79",
-        description: "Ideal for growing businesses with more needs.",
+        name: "Advance Plus",
+        price: "৳299",
+        description: "উন্নত ফিচার সহ জনপ্রিয় চয়েস।",
         features: [
-            "Up to 3 Shop Locations",
-            "Advanced Inventory & Alerts",
-            "Employee Management & Payroll",
-            "AI Photo Editor (50/mo)",
-            "Priority Support",
-            "Customer Loyalty Program"
+            "শপ ম্যানেজমেন্ট একসেস",
+            "২০টি AI CV মেইক",
+            "৪০টি অটোফিল আবেদন",
+            "সকল অনলাইন টুলস",
+            "প্রয়োজনীয় গ্রাফিক্স ফাইল",
+            "গুরুত্বপূর্ণ সনদ ফরমেট"
         ],
-        cta: "Start Free Trial",
+        cta: "Start Now",
         popular: true
     },
     {
-        name: "Enterprise",
-        price: "Custom",
-        description: "For large chains and franchises.",
+        name: "Premium Power",
+        price: "৳399",
+        description: "সকল টুলের আনলিমিটেড অ্যাক্সেস।",
         features: [
-            "Unlimited Locations",
-            "Custom Reporting",
-            "Dedicated Account Manager",
-            "API Access",
-            "Unlimited AI Photo Edits",
-            "White Label Options"
+            "শপ ম্যানেজমেন্ট একসেস",
+            "৪০টি AI CV মেইক",
+            "৮০টি অটোফিল আবেদন",
+            "সকল অনলাইন টুলস",
+            "প্রয়োজনীয় গ্রাফিক্স ফাইল",
+            "গুরুত্বপূর্ণ সনদ ফরমেট"
         ],
-        cta: "Contact Sales",
+        cta: "Start Now",
         popular: false
     }
 ]
@@ -78,7 +79,7 @@ export function Pricing() {
                                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                                 <div className="mt-4">
                                     <span className="text-4xl font-bold">{plan.price}</span>
-                                    {plan.price !== "Custom" && <span className="text-muted-foreground">/month</span>}
+                                    <span className="text-muted-foreground">/মাস</span>
                                 </div>
                                 <CardDescription className="mt-2">{plan.description}</CardDescription>
                             </CardHeader>

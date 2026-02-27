@@ -17,20 +17,21 @@ export default function DashboardPage() {
   const { staff, loading: staffLoading } = useStaff(shop?.id || "");
   const { services: premiumServices, orders, balance, refresh, loading: servicesLoading } = useServices();
   const [profile, setProfile] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
-    async function fetchProfile() {
+    async function fetchUserData() {
       if (user) {
         const supabase = createClient();
-        const { data } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        setProfile(data);
+        const [profileRes, subRes] = await Promise.all([
+          supabase.from("users").select("*").eq("id", user.id).single(),
+          supabase.from("subscriptions").select("*").eq("user_id", user.id).eq("status", "active").limit(1).maybeSingle()
+        ]);
+        setProfile(profileRes.data);
+        setSubscription(subRes.data);
       }
     }
-    fetchProfile();
+    fetchUserData();
   }, [user]);
 
   // Show loading state while fetching initial data
@@ -77,6 +78,7 @@ export default function DashboardPage() {
       premiumServices={premiumServices}
       orders={orders}
       userBalance={balance}
+      subscription={subscription}
       onRefresh={refresh}
     />
   );

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useFileParser } from '@/hooks/use-file-parser'
 import { useCVAI } from '@/hooks/use-cv-ai'
+import { checkFeatureLimit, incrementFeatureUsage } from '@/actions/limits'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, Upload, FileText, Check, Download, ArrowLeft, RefreshCw, Edit, Pencil, Sparkles } from 'lucide-react'
@@ -261,10 +262,24 @@ export function CVBuilderWizard() {
         setIsGenerating(true)
 
         try {
+            // Check limit
+            const limitCheck = await checkFeatureLimit('cv')
+            if (!limitCheck.allowed) {
+                toast({
+                    title: "লিমিট শেষ",
+                    description: "আপনার এই মাসের সিভি তৈরির লিমিট শেষ হয়ে গেছে। দয়া করে আপনার প্ল্যানটি আপগ্রেড করুন।",
+                    variant: "destructive"
+                })
+                return
+            }
+
             // Include photo in the final data
             const result = await generateCV(parsedText, templateId)
 
             if (result.success && result.data) {
+                // Increment usage
+                await incrementFeatureUsage('cv')
+
                 setCvData({
                     ...result.data,
                     personalInfo: {
@@ -274,12 +289,20 @@ export function CVBuilderWizard() {
                 })
                 setStep(3)
             } else {
-                alert(result.error || 'Failed to generate CV. Please try again.')
+                toast({
+                    title: "Error Generating CV",
+                    description: result.error || 'Failed to generate CV. Please try again.',
+                    variant: "destructive"
+                })
             }
 
         } catch (error) {
             console.error(error)
-            alert('Error generating CV')
+            toast({
+                title: "Error",
+                description: 'An unexpected error occurred while generating your CV.',
+                variant: "destructive"
+            })
         } finally {
             setIsGenerating(false)
         }

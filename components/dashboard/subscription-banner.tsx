@@ -28,7 +28,7 @@ export function SubscriptionBanner({ userId }: { userId: string }) {
             : `আপনার সাবস্ক্রিপশনের মেয়াদ ${daysRemaining} দিনের মধ্যে শেষ হয়ে যাবে। বিচ্চিন্নতা এড়াতে এখনই রিনিউ করুন।`}
         </span>
         <div className="flex gap-2">
-          <Link href="/dashboard/settings">
+          <Link href="/dashboard/billing">
             <Button size="sm" variant="outline">
               এখনই আপগ্রেড করুন
             </Button>

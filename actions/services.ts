@@ -41,6 +41,12 @@ export async function getUserOrders() {
 }
 
 import { notifyUser, notifySuperAdmins } from './notifications'
+import { checkFeatureLimit, incrementFeatureUsage } from './limits'
+
+function isAutofillService(serviceName: string): boolean {
+    const name = serviceName.toLowerCase()
+    return name.includes('অটোমেশন') || name.includes('automation') || name.includes('form-fill')
+}
 
 export async function createServiceOrder(
     serviceId: string,
@@ -62,9 +68,18 @@ export async function createServiceOrder(
         throw new Error('Insufficient balance')
     }
 
-    // Get service details for notification
+    // Get service details for notification and limit check
     const { data: serviceData } = await supabase.from('services').select('name').eq('id', serviceId).single()
     const serviceName = serviceData?.name || 'a service'
+
+    // Check Rate Limits for Autofill Services
+    const isAutofill = isAutofillService(serviceName)
+    if (isAutofill) {
+        const limitCheck = await checkFeatureLimit('autofill')
+        if (!limitCheck.allowed) {
+            throw new Error('আপনার এই মাসের অটো-ফিল আবেদন লিমিট শেষ হয়ে গেছে। দয়া করে আপনার প্ল্যানটি আপগ্রেড করুন।')
+        }
+    }
 
     // Create order
     const { data: orderData, error: orderError } = await supabase
@@ -105,5 +120,10 @@ export async function createServiceOrder(
         '/dashboard/orders',
         'order_status'
     )
+
+    // Increment usage for Autofill Services
+    if (isAutofill) {
+        await incrementFeatureUsage('autofill')
+    }
 }
 

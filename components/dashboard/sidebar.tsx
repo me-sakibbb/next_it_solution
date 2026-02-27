@@ -14,6 +14,7 @@ import {
   TrendingUp,
   UserCircle,
   Briefcase,
+  CreditCard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { User } from '@supabase/supabase-js'
@@ -40,6 +41,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
   const isDashboardHome = pathname === '/dashboard'
   const isPhotoEnhancer = pathname === '/dashboard/photo-enhancer' || pathname.startsWith('/dashboard/photo-enhancer/')
   const isCVBuilder = pathname === '/dashboard/cv-builder' || pathname.startsWith('/dashboard/cv-builder/')
+  const isBilling = pathname === '/dashboard/billing' || pathname.startsWith('/dashboard/billing/')
 
   return (
     <div className="flex w-64 flex-col border-r bg-card">
@@ -101,6 +103,20 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
           icon={Briefcase}
           subItems={inventorySubItems}
         />
+
+        {/* Billing */}
+        <Link
+          href="/dashboard/billing"
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            isBilling
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+          )}
+        >
+          <CreditCard className="h-5 w-5" />
+          বিলিং ও প্ল্যান
+        </Link>
       </nav>
 
       <div className="border-t p-4">

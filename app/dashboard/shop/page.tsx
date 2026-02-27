@@ -2,6 +2,7 @@
 
 import { useDashboardStats } from '@/hooks/use-dashboard-stats'
 import { ShopDashboardClient } from './shop-dashboard-client'
+import { SubscriptionWall } from '@/components/dashboard/subscription-wall'
 
 export default function ShopDashboardPage() {
   const {
@@ -52,30 +53,32 @@ export default function ShopDashboardPage() {
   }
 
   return (
-    <ShopDashboardClient
-      totalRevenue={totalRevenue}
-      todayRevenue={todayRevenue}
-      salesRevenue={salesRevenue}
-      tasksRevenue={tasksRevenue}
-      totalExpenses={totalExpenses}
-      todayExpenses={todayExpenses}
-      netProfit={netProfit}
-      todayProfit={todayProfit}
-      totalDue={totalDue}
-      activeProducts={activeProducts}
-      lowStockProducts={lowStockProducts}
-      activeStaff={activeStaff}
-      salesCount={salesCount}
-      activeTasksCount={activeTasksCount}
-      shopName={shop.name}
-      productsTotal={productsTotal}
-      staffTotal={staffTotal}
-      userEmail={user.email}
-      recentSales={recentSales}
-      pendingTasks={pendingTasks}
-      recentExpenses={recentExpenses}
-      lowStockProductsList={lowStockProductsList}
-      currency={shop.currency}
-    />
+    <SubscriptionWall feature="shop">
+      <ShopDashboardClient
+        totalRevenue={totalRevenue}
+        todayRevenue={todayRevenue}
+        salesRevenue={salesRevenue}
+        tasksRevenue={tasksRevenue}
+        totalExpenses={totalExpenses}
+        todayExpenses={todayExpenses}
+        netProfit={netProfit}
+        todayProfit={todayProfit}
+        totalDue={totalDue}
+        activeProducts={activeProducts}
+        lowStockProducts={lowStockProducts}
+        activeStaff={activeStaff}
+        salesCount={salesCount}
+        activeTasksCount={activeTasksCount}
+        shopName={shop.name}
+        productsTotal={productsTotal}
+        staffTotal={staffTotal}
+        userEmail={user.email}
+        recentSales={recentSales}
+        pendingTasks={pendingTasks}
+        recentExpenses={recentExpenses}
+        lowStockProductsList={lowStockProductsList}
+        currency={shop.currency}
+      />
+    </SubscriptionWall>
   )
 }

@@ -21,6 +21,9 @@ export function useSubscriptionStatus(userId: string) {
                     .from('subscriptions')
                     .select('*')
                     .eq('user_id', userId)
+                    .order('status', { ascending: true })
+                    .order('subscription_start_date', { ascending: false })
+                    .limit(1)
                     .maybeSingle()
 
                 if (error) throw error

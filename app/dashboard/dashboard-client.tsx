@@ -21,6 +21,7 @@ interface DashboardClientProps {
   orders?: ServiceOrder[];
   premiumServices?: Service[];
   userBalance?: number;
+  subscription?: any;
   onRefresh?: () => void;
 }
 
@@ -38,6 +39,7 @@ export function DashboardClient({
   orders = [],
   premiumServices = [],
   userBalance = 0,
+  subscription = null,
   onRefresh,
 }: DashboardClientProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -71,6 +73,8 @@ export function DashboardClient({
           </p>
         </div>
       </section>
+
+
 
       {/* Basic Services - Full Width */}
       <section className="space-y-6">
