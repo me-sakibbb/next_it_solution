@@ -136,7 +136,7 @@ export function OrdersList({ initialOrders }: OrdersListProps) {
 
                         <div className="space-y-2">
                             <Label>Requirements from User</Label>
-                            <div className="bg-gray-50 p-3 rounded-md text-sm text-gray-700 min-h-[60px]">
+                            <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md text-sm text-gray-700 dark:text-gray-300 min-h-[60px] whitespace-pre-wrap border border-gray-200 dark:border-gray-800">
                                 {selectedOrder?.requirements || 'No requirements provided.'}
                             </div>
                         </div>

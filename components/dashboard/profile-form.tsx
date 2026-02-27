@@ -33,49 +33,49 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
 
         setLoading(false)
         if (!error) {
-            toast.success('Profile updated successfully!')
+            toast.success('প্রোফাইল সফলভাবে আপডেট করা হয়েছে!')
             router.refresh()
         } else {
-            toast.error('Error updating profile: ' + error.message)
+            toast.error('প্রোফাইল আপডেট করতে সমস্যা: ' + error.message)
         }
     }
 
     return (
         <Card className="border-muted shadow-sm">
             <CardHeader>
-                <CardTitle>Personal Details</CardTitle>
-                <CardDescription>Update your personal information</CardDescription>
+                <CardTitle>ব্যক্তিগত বিবরণ</CardTitle>
+                <CardDescription>আপনার ব্যক্তিগত তথ্য আপডেট করুন</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
+                        <Label htmlFor="email">ইমেইল ঠিকানা</Label>
                         <Input id="email" value={email || ''} disabled className="bg-muted" />
-                        <p className="text-[10px] text-muted-foreground">Contact support to change email</p>
+                        <p className="text-[10px] text-muted-foreground">ইমেইল পরিবর্তন করতে সাপোর্টের সাথে যোগাযোগ করুন</p>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="role">Role</Label>
-                        <Input id="role" value={profile?.role || 'User'} disabled className="bg-muted capitalize" />
-                        <p className="text-[10px] text-muted-foreground">Account permissions</p>
+                        <Label htmlFor="role">ভূমিকা</Label>
+                        <Input id="role" value={profile?.role === 'user' ? 'ব্যবহারকারী' : (profile?.role === 'superadmin' ? 'সুপার এডমিন' : profile?.role) || 'ব্যবহারকারী'} disabled className="bg-muted capitalize" />
+                        <p className="text-[10px] text-muted-foreground">অ্যাকাউন্ট পারমিশন</p>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name</Label>
+                        <Label htmlFor="fullName">পুরো নাম</Label>
                         <Input
                             id="fullName"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
-                            placeholder="John Doe"
+                            placeholder="আপনার নাম লিখুন"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="phone">ফোন নম্বর</Label>
                         <Input
                             id="phone"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            placeholder="+880 1..."
+                            placeholder="+৮৮০ ১..."
                         />
                     </div>
                 </div>
@@ -87,7 +87,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
                     ) : (
                         <Save className="w-4 h-4 mr-2" />
                     )}
-                    Save Changes
+                    পরিবর্তন সংরক্ষণ করুন
                 </Button>
             </CardFooter>
         </Card>

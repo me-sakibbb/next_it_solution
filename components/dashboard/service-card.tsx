@@ -13,6 +13,8 @@ interface ServiceCardProps {
     colorClass?: string
     iconColorClass?: string
     disabled?: boolean
+    price?: number | string
+    onClick?: () => void
 }
 
 export function ServiceCard({
@@ -22,8 +24,14 @@ export function ServiceCard({
     href,
     colorClass = "bg-primary/5 hover:bg-primary/10",
     iconColorClass = "text-primary",
-    disabled = false
+    disabled = false,
+    price,
+    onClick
 }: ServiceCardProps) {
+    const formatPrice = (p: number | string) => {
+        if (typeof p === 'string') return p
+        return `৳${p.toLocaleString()}`
+    }
     const Content = (
         <Card className={cn(
             "h-full transition-all duration-300 border-border/50 hover:shadow-md hover:border-primary/20 group relative overflow-hidden",
@@ -46,9 +54,16 @@ export function ServiceCard({
                     {description}
                 </p>
 
+                {price && (
+                    <div className="mt-4 flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">মূল্য:</span>
+                        <span className="text-lg font-bold text-primary">{formatPrice(price)}</span>
+                    </div>
+                )}
+
                 {disabled && (
                     <div className="mt-4 pt-3 border-t border-border/50">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Coming Soon</span>
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">শীঘ্রই আসছে</span>
                     </div>
                 )}
             </CardContent>
@@ -59,6 +74,17 @@ export function ServiceCard({
 
     if (disabled) {
         return <div className="block h-full">{Content}</div>
+    }
+
+    if (onClick) {
+        return (
+            <button
+                onClick={onClick}
+                className="block w-full text-left h-full focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-xl"
+            >
+                {Content}
+            </button>
+        )
     }
 
     return (

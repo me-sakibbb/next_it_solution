@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Service } from '@/lib/types'
 import { upsertService } from '@/actions/superadmin'
 import { useRouter } from 'next/navigation'
@@ -25,7 +25,8 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from '@/components/ui/label'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, ClipboardList } from 'lucide-react'
+import { ServiceFormBuilder } from './service-form-builder'
 
 interface ServicesManagementProps {
     initialServices: Service[]
@@ -36,11 +37,18 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
     const [services, setServices] = useState(initialServices)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [currentService, setCurrentService] = useState<Partial<Service>>({})
+    const [priceInput, setPriceInput] = useState('')
     const [loading, setLoading] = useState(false)
+
+    // Synchronize local state with props when they change
+    useEffect(() => {
+        setServices(initialServices);
+    }, [initialServices]);
 
     const handleOpenDialog = (service?: Service) => {
         if (service) {
             setCurrentService(service)
+            setPriceInput(service.price.toString())
         } else {
             setCurrentService({
                 name: '',
@@ -48,7 +56,9 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
                 price: 0,
                 category: '',
                 is_active: true,
+                form_config: [],
             })
+            setPriceInput('0')
         }
         setIsDialogOpen(true)
     }
@@ -56,7 +66,11 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
     const handleSave = async () => {
         setLoading(true)
         try {
-            await upsertService(currentService)
+            const serviceToSave = {
+                ...currentService,
+                price: parseFloat(priceInput) || 0
+            }
+            await upsertService(serviceToSave)
             setIsDialogOpen(false)
             router.refresh()
         } catch (error) {
@@ -88,7 +102,7 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {initialServices.map((service) => (
+                        {services.map((service) => (
                             <TableRow key={service.id}>
                                 <TableCell className="font-medium">{service.name}</TableCell>
                                 <TableCell>{service.category}</TableCell>
@@ -110,7 +124,7 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{currentService.id ? 'Edit Service' : 'Add New Service'}</DialogTitle>
                     </DialogHeader>
@@ -137,8 +151,10 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
                             <Input
                                 id="price"
                                 type="number"
-                                value={currentService.price || 0}
-                                onChange={(e) => setCurrentService({ ...currentService, price: parseFloat(e.target.value) })}
+                                step="0.01"
+                                value={priceInput}
+                                onChange={(e) => setPriceInput(e.target.value)}
+                                placeholder="0.00"
                             />
                         </div>
                         <div className="grid gap-2">
@@ -156,6 +172,13 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
                                 onCheckedChange={(checked) => setCurrentService({ ...currentService, is_active: checked })}
                             />
                             <Label htmlFor="active">Active</Label>
+                        </div>
+
+                        <div className="pt-4 border-t">
+                            <ServiceFormBuilder
+                                fields={currentService.form_config || []}
+                                onChange={(fields) => setCurrentService({ ...currentService, form_config: fields })}
+                            />
                         </div>
                     </div>
                     <DialogFooter>

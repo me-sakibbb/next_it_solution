@@ -11,14 +11,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import { FileText, Download } from 'lucide-react'
+import { FileText, ExternalLink } from 'lucide-react'
 
 interface UserOrdersListProps {
     initialOrders: ServiceOrder[]
@@ -31,12 +24,39 @@ const statusColors: Record<string, string> = {
     cancelled: 'bg-red-100 text-red-800',
 }
 
+const statusLabels: Record<string, string> = {
+    pending: 'অপেক্ষমান',
+    in_progress: 'চলমান',
+    completed: 'সম্পন্ন',
+    cancelled: 'বাতিল',
+}
+
 export function UserOrdersList({ initialOrders }: UserOrdersListProps) {
+    const renderDeliverables = (text: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.split(urlRegex).map((part, i) => {
+            if (part.match(urlRegex)) {
+                return (
+                    <a
+                        key={i}
+                        href={part}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline inline-flex items-center gap-1 font-medium break-all"
+                    >
+                        {part} <ExternalLink className="w-3 h-3" />
+                    </a>
+                );
+            }
+            return part;
+        });
+    };
+
     if (initialOrders.length === 0) {
         return (
             <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
                 <p className="text-gray-500 dark:text-gray-400">You haven't placed any orders yet.</p>
-                <Button className="mt-4" variant="outline" onClick={() => window.location.href = '/dashboard/services'}>
+                <Button className="mt-4" variant="outline" onClick={() => window.location.href = '/dashboard'}>
                     Browse Services
                 </Button>
             </div>
@@ -46,8 +66,8 @@ export function UserOrdersList({ initialOrders }: UserOrdersListProps) {
     return (
         <div className="space-y-4">
             {initialOrders.map((order) => (
-                <Card key={order.id}>
-                    <CardHeader className="pb-3">
+                <Card key={order.id} className="overflow-hidden">
+                    <CardHeader className="pb-3 border-b bg-muted/20">
                         <div className="flex justify-between items-start">
                             <div>
                                 <CardTitle className="text-lg">{order.service?.name || 'Unknown Service'}</CardTitle>
@@ -56,48 +76,46 @@ export function UserOrdersList({ initialOrders }: UserOrdersListProps) {
                                 </CardDescription>
                             </div>
                             <Badge className={statusColors[order.status] || 'bg-gray-100'}>
-                                {order.status.replace('_', ' ')}
+                                {statusLabels[order.status] || order.status.replace('_', ' ')}
                             </Badge>
                         </div>
                     </CardHeader>
-                    <CardContent className="pb-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span className="font-semibold block text-gray-700 dark:text-gray-300">Price:</span>
-                                ${order.total_price.toFixed(2)}
+                    <CardContent className="pt-4 pb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                            <div className="space-y-1">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price</span>
+                                <p className="text-lg font-bold text-primary">৳{order.total_price.toLocaleString()}</p>
                             </div>
                             {order.requirements && (
-                                <div>
-                                    <span className="font-semibold block text-gray-700 dark:text-gray-300">My Requirements:</span>
-                                    <p className="text-gray-600 dark:text-gray-400 truncate">{order.requirements}</p>
+                                <div className="space-y-1">
+                                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">My Requirements</span>
+                                    <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed border-l-2 border-primary/20 pl-3">
+                                        {order.requirements}
+                                    </p>
                                 </div>
                             )}
                         </div>
-                    </CardContent>
-                    <CardFooter className="pt-3 border-t bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center">
-                        {order.status === 'completed' && order.deliverables ? (
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="ml-auto">
-                                        <FileText className="w-4 h-4 mr-2" />
-                                        View Deliverables
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Deliverables</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md font-mono text-sm whitespace-pre-wrap max-h-[60vh] overflow-y-auto">
-                                        {order.deliverables}
+
+                        {order.status === 'completed' && (
+                            <div className="mt-6 pt-6 border-t">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-3">Deliverables / Result</span>
+                                {order.deliverables ? (
+                                    <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-xl text-sm border border-primary/10 whitespace-pre-wrap leading-relaxed shadow-sm">
+                                        {renderDeliverables(order.deliverables)}
                                     </div>
-                                </DialogContent>
-                            </Dialog>
-                        ) : (
-                            <span className="text-xs text-gray-400 italic ml-auto">
-                                {order.status === 'completed' ? 'No deliverables attached' : 'Work in progress...'}
-                            </span>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground italic">No specific deliverables attached.</p>
+                                )}
+                            </div>
                         )}
-                    </CardFooter>
+
+                        {order.status === 'in_progress' && (
+                            <div className="mt-6 pt-6 border-t flex items-center gap-2 text-sm text-blue-600 font-medium">
+                                <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+                                Our team is currently working on your request...
+                            </div>
+                        )}
+                    </CardContent>
                 </Card>
             ))}
         </div>

@@ -37,17 +37,41 @@ export async function getAllOrdersAdmin() {
     return data ?? []
 }
 
+import { notifyUser } from './notifications'
+
 export async function updateOrderStatus(
     orderId: string,
     status: string,
     deliverables: string
 ) {
     const supabase = createClient()
-    const { error } = await supabase
+    const { error, data: orderData } = await supabase
         .from('service_orders')
         .update({ status, deliverables, updated_at: new Date().toISOString() })
         .eq('id', orderId)
+        .select('user_id, service:services(name)')
+        .single()
+
     if (error) throw new Error(error.message)
+
+    if (orderData && orderData.user_id) {
+        const serviceName = (orderData.service as any)?.name || 'আপনার অর্ডার'
+        const statusMap: Record<string, string> = {
+            'pending': 'অপেক্ষমান',
+            'in_progress': 'চলমান',
+            'completed': 'সম্পন্ন',
+            'cancelled': 'বাতিল'
+        }
+        const readableStatus = statusMap[status] || status
+
+        await notifyUser(
+            orderData.user_id,
+            'অর্ডারের স্ট্যাটাস আপডেট হয়েছে',
+            `${serviceName} এর বর্তমান স্ট্যাটাস: ${readableStatus}`,
+            '/dashboard/orders',
+            'order_status'
+        )
+    }
 }
 
 export async function getServicesAdmin() {

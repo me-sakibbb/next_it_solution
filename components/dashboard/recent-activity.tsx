@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Activity, ShoppingCart, UserPlus, FileText } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { Button } from '@/components/ui/button'
 
 interface ActivityItem {
     id: string
@@ -18,31 +19,31 @@ const MOCK_ACTIVITY: ActivityItem[] = [
     {
         id: '1',
         type: 'sale',
-        title: 'New Sale',
-        description: 'Sold iPhone 13 Pro Max to John Doe',
+        title: 'নতুন বিক্রয়',
+        description: 'John Doe-এর কাছে iPhone 13 Pro Max বিক্রি করা হয়েছে',
         timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 mins ago
         amount: 1099
     },
     {
         id: '2',
         type: 'customer',
-        title: 'New Customer',
-        description: 'Sarah Smith joined the loyalty program',
+        title: 'নতুন ক্রেতা',
+        description: 'Sarah Smith লয়্যালটি প্রোগ্রামে যোগ দিয়েছেন',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
     },
     {
         id: '3',
         type: 'invoice',
-        title: 'Invoice Generated',
-        description: 'Invoice #INV-2024-001 sent to Tech Corp',
+        title: 'ইনভয়েস তৈরি',
+        description: 'Invoice #INV-2024-001 Tech Corp-কে পাঠানো হয়েছে',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5), // 5 hours ago
         amount: 2500
     },
     {
         id: '4',
         type: 'system',
-        title: 'System Update',
-        description: 'Inventory sync completed successfully',
+        title: 'সিস্টেম আপডেট',
+        description: 'ইনভেন্টরি সিঙ্ক সফলভাবে সম্পন্ন হয়েছে',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
     }
 ]
@@ -71,7 +72,7 @@ export function RecentActivity({ activities = MOCK_ACTIVITY }: { activities?: Ac
             <CardHeader>
                 <CardTitle className="text-lg font-medium flex items-center gap-2">
                     <Activity className="w-5 h-5 text-primary" />
-                    Recent Activity
+                    সাম্প্রতিক কার্যক্রম
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -103,7 +104,7 @@ export function RecentActivity({ activities = MOCK_ACTIVITY }: { activities?: Ac
                     ))}
                     <div className="pt-2">
                         <button className="text-sm text-primary hover:underline w-full text-center">
-                            View All Activity
+                            সব কার্যক্রম দেখুন
                         </button>
                     </div>
                 </div>

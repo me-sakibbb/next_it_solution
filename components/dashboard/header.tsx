@@ -37,7 +37,7 @@ export function DashboardHeader({ user, profile }: HeaderProps) {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search products, customers, sales..."
+            placeholder="পণ্য, ক্রেতা, বিক্রয় খুঁজুন..."
             className="pl-10"
           />
         </div>
@@ -57,7 +57,7 @@ export function DashboardHeader({ user, profile }: HeaderProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span>{profile?.full_name || 'User'}</span>
+                <span>{profile?.full_name || 'ব্যবহারকারী'}</span>
                 <span className="text-xs font-normal text-muted-foreground">
                   {user.email}
                 </span>
@@ -65,11 +65,11 @@ export function DashboardHeader({ user, profile }: HeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
-              Settings
+              সেটিংস
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
+              লগ আউট
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

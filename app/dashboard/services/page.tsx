@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { getAvailableServices, getUserBalance } from '@/actions/services'
 import { ServiceCatalog } from '@/components/services/service-catalog'
 import { Wallet } from 'lucide-react'
@@ -10,7 +10,8 @@ export default function ServicesPage() {
     const [balance, setBalance] = useState(0)
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
+    const fetchData = useCallback(() => {
+        setLoading(true)
         Promise.all([getAvailableServices(), getUserBalance()])
             .then(([s, b]) => {
                 setServices(s)
@@ -19,6 +20,10 @@ export default function ServicesPage() {
             .catch(console.error)
             .finally(() => setLoading(false))
     }, [])
+
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
 
     if (loading) {
         return (
@@ -43,7 +48,11 @@ export default function ServicesPage() {
                 </div>
             </div>
 
-            <ServiceCatalog initialServices={services} userBalance={balance} />
+            <ServiceCatalog
+                initialServices={services}
+                userBalance={balance}
+                onOrderSuccess={fetchData}
+            />
         </div>
     )
 }

@@ -39,21 +39,21 @@ export default async function ProfilePage() {
       name: "Free",
       price: 0,
       features: [
-        "100 Products",
-        "1 Staff Member",
-        "Basic Reports",
-        "Email Support",
+        "১০০টি পণ্য",
+        "১জন কর্মচারী",
+        "বেসিক রিপোর্ট",
+        "ইমেইল সাপোর্ট",
       ],
     },
     {
       name: "Pro",
       price: 29,
       features: [
-        "Unlimited Products",
-        "Up to 10 Staff",
-        "Advanced Reports",
-        "Priority Support",
-        "API Access",
+        "আনলিমিটেড পণ্য",
+        "১০জন পর্যন্ত কর্মচারী",
+        "উন্নত রিপোর্ট",
+        "অগ্রাধিকার সাপোর্ট",
+        "এপিআই অ্যাক্সেস",
       ],
       popular: true,
     },
@@ -61,12 +61,12 @@ export default async function ProfilePage() {
       name: "Enterprise",
       price: 99,
       features: [
-        "Unlimited Products",
-        "Unlimited Staff",
-        "Custom Reports",
-        "24/7 Support",
-        "API Access",
-        "Custom Integrations",
+        "আনলিমিটেড পণ্য",
+        "আনলিমিটেড কর্মচারী",
+        "কাস্টম রিপোর্ট",
+        "২৪/৭ সাপোর্ট",
+        "এপিআই অ্যাক্সেস",
+        "কাস্টম ইন্টিগ্রেশন",
       ],
     },
   ];
@@ -74,9 +74,9 @@ export default async function ProfilePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+        <h1 className="text-3xl font-bold tracking-tight">আমার প্রোফাইল</h1>
         <p className="text-muted-foreground">
-          View your account details, balance, and subscription plans.
+          আপনার অ্যাকাউন্টের বিবরণ, ব্যালেন্স এবং সাবস্ক্রিপশন প্ল্যান দেখুন।
         </p>
       </div>
 
@@ -84,14 +84,14 @@ export default async function ProfilePage() {
 
       <div className="mt-10">
         <h2 className="text-2xl font-bold tracking-tight mb-6">
-          Personal details
+          ব্যক্তিগত বিবরণ
         </h2>
         <ProfileForm profile={profile} email={user.email} />
       </div>
 
       <div className="mt-10">
         <h2 className="text-2xl font-bold tracking-tight mb-6">
-          Subscription Plans
+          সাবস্ক্রিপশন প্ল্যানসমূহ
         </h2>
         <div className="grid gap-6 md:grid-cols-3">
           {plans.map((plan) => (
@@ -101,17 +101,17 @@ export default async function ProfilePage() {
             >
               {plan.popular && (
                 <div className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium text-center relative z-10 w-full">
-                  Most Popular
+                  সবচেয়ে জনপ্রিয়
                 </div>
               )}
               <CardHeader className={plan.popular ? "pt-4" : ""}>
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
+                <CardTitle className="text-xl">{plan.name === "Free" ? "ফ্রি" : plan.name === "Pro" ? "প্রো" : "এন্টারপ্রাইজ"}</CardTitle>
                 <div className="mt-2">
                   <span className="text-3xl font-bold text-foreground">
                     ${plan.price}
                   </span>
                   {plan.price > 0 && (
-                    <span className="text-muted-foreground">/month</span>
+                    <span className="text-muted-foreground">/মাস</span>
                   )}
                 </div>
               </CardHeader>
@@ -136,8 +136,8 @@ export default async function ProfilePage() {
                 >
                   {subscription?.plan_type === plan.name.toLowerCase() ||
                     (plan.name === "Free" && !subscription)
-                    ? "Current Plan"
-                    : `Upgrade to ${plan.name}`}
+                    ? "বর্তমান প্ল্যান"
+                    : `${plan.name}-এ আপগ্রেড করুন`}
                 </Button>
               </CardFooter>
             </Card>

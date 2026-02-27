@@ -25,12 +25,12 @@ interface SidebarProps {
 }
 
 const inventorySubItems = [
-  { name: 'Sales & POS', href: '/dashboard/sales', icon: ShoppingCart },
-  { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
-  { name: 'Customers', href: '/dashboard/customers', icon: UserCircle },
-  { name: 'Staff', href: '/dashboard/staff', icon: Users },
-  { name: 'Payroll', href: '/dashboard/payroll', icon: DollarSign },
-  { name: 'Reports', href: '/dashboard/reports', icon: TrendingUp },
+  { name: 'বিক্রয় ও পিওএস', href: '/dashboard/sales', icon: ShoppingCart },
+  { name: 'ইনভেন্টরি', href: '/dashboard/inventory', icon: Package },
+  { name: 'ক্রেতা', href: '/dashboard/customers', icon: UserCircle },
+  { name: 'কর্মচারী', href: '/dashboard/staff', icon: Users },
+  { name: 'পেরোল', href: '/dashboard/payroll', icon: DollarSign },
+  { name: 'রিপোর্ট', href: '/dashboard/reports', icon: TrendingUp },
 ]
 
 export function DashboardSidebar({ user, profile }: SidebarProps) {
@@ -64,7 +64,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
           )}
         >
           <LayoutDashboard className="h-5 w-5" />
-          Dashboard
+          ড্যাশবোর্ড
         </Link>
 
         {/* Photo Enhancer */}
@@ -78,7 +78,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
           )}
         >
           <ImageIcon className="h-5 w-5" />
-          Photo Enhancer
+          ফটো এনহ্যান্সার
         </Link>
 
         {/* AI CV Builder */}
@@ -92,12 +92,12 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
           )}
         >
           <FileUser className="h-5 w-5" />
-          AI CV Builder
+          AI সিভি বিল্ডার
         </Link>
 
         {/* Inventory Management - Collapsible */}
         <CollapsibleNav
-          name="Inventory Management"
+          name="ইনভেন্টরি ম্যানেজমেন্ট"
           icon={Briefcase}
           subItems={inventorySubItems}
         />
@@ -110,7 +110,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="truncate text-sm font-medium text-foreground">
-              {profile?.full_name || 'User'}
+              {profile?.full_name || 'ব্যবহারকারী'}
             </p>
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </div>

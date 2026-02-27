@@ -35,8 +35,16 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
     }).format(amount)}`;
   };
 
+  const planMap: Record<string, string> = {
+    'free': 'ফ্রি',
+    'basic': 'বেসিক',
+    'premium': 'প্রিমিয়াম',
+    'enterprise': 'এন্টারপ্রাইজ',
+    'Free': 'ফ্রি'
+  }
+
   const balance = profile?.balance || 0.0;
-  const planName = status?.subscription?.plan_type || "Free";
+  const planName = planMap[status?.subscription?.plan_type || "Free"] || (status?.subscription?.plan_type || "ফ্রি");
   const isActive = status?.isActive || false;
 
   const handleSignOut = async () => {
@@ -57,7 +65,7 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
               Next IT
             </span>
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-              Solution
+              সলিউশন
             </span>
           </div>
         </Link>
@@ -102,7 +110,7 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {profile?.full_name || "User"}
+                  {profile?.full_name || "ব্যবহারকারী"}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">
                   {user.email}
@@ -114,13 +122,13 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
               onClick={() => router.push("/dashboard")}
               className="cursor-pointer"
             >
-              Dashboard
+              ড্যাশবোর্ড
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => router.push("/dashboard/profile")}
               className="cursor-pointer"
             >
-              Profile
+              প্রোফাইল
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -128,7 +136,7 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
               className="text-destructive focus:bg-destructive/10 cursor-pointer"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
+              লগ আউট
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

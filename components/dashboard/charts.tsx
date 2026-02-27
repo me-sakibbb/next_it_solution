@@ -25,7 +25,7 @@ export function SalesChart({ data }: SalesChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sales Overview</CardTitle>
+        <CardTitle>বিক্রয় সারসংক্ষেপ</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -35,8 +35,8 @@ export function SalesChart({ data }: SalesChartProps) {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} />
-            <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} />
+            <Line name="রাজস্ব" type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} />
+            <Line name="মুনাফা" type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </CardContent>
@@ -52,7 +52,7 @@ export function TopProductsChart({ data }: TopProductsChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top Products</CardTitle>
+        <CardTitle>শীর্ষ পণ্যসমূহ</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -61,7 +61,7 @@ export function TopProductsChart({ data }: TopProductsChartProps) {
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="sales" fill="#3b82f6" />
+            <Bar name="বিক্রয়কাল" dataKey="sales" fill="#3b82f6" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -85,7 +85,7 @@ export function CategoryDistributionChart({ data }: CategoryDistributionProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sales by Category</CardTitle>
+        <CardTitle>ক্যাটেগরি অনুযায়ী বিক্রয়</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -120,7 +120,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Monthly Revenue</CardTitle>
+        <CardTitle>মাসিক আয়</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -129,7 +129,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
             <XAxis dataKey="month" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="revenue" fill="#3b82f6" />
+            <Bar name="রাজস্ব" dataKey="revenue" fill="#3b82f6" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

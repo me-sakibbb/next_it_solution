@@ -24,13 +24,13 @@ export function SubscriptionBanner({ userId }: { userId: string }) {
       <AlertDescription className="flex items-center justify-between">
         <span>
           {daysRemaining <= 0
-            ? 'Your subscription has expired. Upgrade to continue using all features.'
-            : `Your subscription expires in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}. Renew now to avoid interruption.`}
+            ? 'আপনার সাবস্ক্রিপশনের মেয়াদ শেষ হয়ে গেছে। সব ফিচার ব্যবহার অব্যহত রাখতে আপগ্রেড করুন।'
+            : `আপনার সাবস্ক্রিপশনের মেয়াদ ${daysRemaining} দিনের মধ্যে শেষ হয়ে যাবে। বিচ্চিন্নতা এড়াতে এখনই রিনিউ করুন।`}
         </span>
         <div className="flex gap-2">
           <Link href="/dashboard/settings">
             <Button size="sm" variant="outline">
-              Upgrade Now
+              এখনই আপগ্রেড করুন
             </Button>
           </Link>
           <Button

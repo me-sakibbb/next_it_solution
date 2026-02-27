@@ -342,6 +342,14 @@ export interface ShopTask {
 
 export type ServiceStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
 
+export interface ServiceFormField {
+  id: string
+  label: string
+  type: 'text' | 'dropdown'
+  options?: string[] // for dropdown
+  required: boolean
+}
+
 export interface Service {
   id: string
   name: string
@@ -350,6 +358,7 @@ export interface Service {
   category: string
   is_active: boolean
   image_url?: string
+  form_config?: ServiceFormField[]
   created_at: string
   updated_at: string
 }
@@ -371,5 +380,27 @@ export interface ServiceOrder {
 export interface SuperAdmin {
   id: string
   email: string
+  created_at: string
+}
+
+export type NotificationType = 'order_status' | 'system' | 'payment' | 'general'
+
+export interface Notification {
+  id: string
+  user_id: string
+  title: string
+  message: string
+  type: NotificationType
+  read: boolean
+  action_url?: string
+  created_at: string
+}
+
+export interface PushSubscriptionData {
+  id: string
+  user_id?: string
+  endpoint: string
+  p256dh: string
+  auth_key: string
   created_at: string
 }

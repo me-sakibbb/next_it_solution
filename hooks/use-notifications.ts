@@ -1,131 +1,142 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { Notification } from '@/lib/types'
+import { subscribeToPushNotifications, unsubscribeFromPushNotifications } from '@/lib/push-notifications'
 
-export interface Notification {
-  id: string
-  type: 'info' | 'warning' | 'error' | 'success'
-  title: string
-  message: string
-  link?: string
-  is_read: boolean
-  created_at: string
-}
-
-export function useNotifications(userId: string) {
+export function useNotifications(userId?: string) {
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [isPushEnabled, setIsPushEnabled] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const supabase = createClient()
 
-  const loadNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!userId) return
+    setIsLoading(true)
+
     try {
+      // Check if we actually have a session
+      const { data: sessionData } = await supabase.auth.getSession()
+      console.log('Current notification session:', sessionData.session ? 'Active' : 'Missing')
+
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
+        .limit(50)
 
-      if (error) throw error
-      setNotifications(data || [])
-    } catch (error) {
-      console.error('Failed to load notifications:', error)
+      if (error) {
+        console.error('Error fetching notifications detail:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        })
+      } else if (data) {
+        setNotifications(data as Notification[])
+        setUnreadCount(data.filter(n => !n.read).length)
+      }
+    } catch (err: any) {
+      console.error('Fetch notifications catch block:', err)
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
-  }, [supabase, userId])
+
+    // Check push permission state
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setIsPushEnabled(Notification.permission === 'granted')
+    }
+  }, [userId]) // supabase removed from deps as it is now a stable singleton
 
   useEffect(() => {
-    loadNotifications()
+    if (userId) {
+      fetchNotifications()
 
-    if (!userId) return
+      // Subscribe to real-time changes
+      const channel = supabase
+        .channel(`user-notifications-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`
+          },
+          () => {
+            fetchNotifications()
+          }
+        )
+        .subscribe()
 
-    // Subscribe to real-time notifications
-    const channel = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          loadNotifications()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
-  }, [userId, supabase, loadNotifications])
+  }, [userId, fetchNotifications])
 
   const markAsRead = async (id: string) => {
     // Optimistic update
     setNotifications(current =>
-      current.map(n => n.id === id ? { ...n, is_read: true } : n)
+      current.map(n => n.id === id ? { ...n, read: true } : n)
     )
+    setUnreadCount(current => Math.max(0, current - 1))
 
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', id)
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', id)
 
-      if (error) throw error
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error)
-      loadNotifications() // Revert on failure
+    if (error) {
+      fetchNotifications()
+      console.error('Error marking notification as read', error)
     }
   }
 
   const markAllAsRead = async () => {
-    // Optimistic update
-    setNotifications(current =>
-      current.map(n => ({ ...n, is_read: true }))
-    )
+    if (!userId) return
 
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', userId)
+    // Optimistic
+    setNotifications(current => current.map(n => ({ ...n, read: true })))
+    setUnreadCount(0)
 
-      if (error) throw error
-    } catch (error) {
-      console.error('Failed to mark all notifications as read:', error)
-      loadNotifications()
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', userId)
+      .eq('read', false)
+
+    if (error) {
+      fetchNotifications()
     }
   }
 
-  const removeNotification = async (id: string) => {
-    // Optimistic update
-    setNotifications(current =>
-      current.filter(n => n.id !== id)
-    )
+  const enablePush = async () => {
+    const success = await subscribeToPushNotifications()
+    setIsPushEnabled(success)
+    return success
+  }
 
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-    } catch (error) {
-      console.error('Failed to delete notification:', error)
-      loadNotifications()
+  const disablePush = async () => {
+    const success = await unsubscribeFromPushNotifications()
+    if (success) {
+      setIsPushEnabled(false)
     }
+    return success
   }
 
   return {
     notifications,
-    loading,
+    unreadCount,
+    isPushEnabled,
+    isLoading,
     markAsRead,
     markAllAsRead,
-    removeNotification,
-    refresh: loadNotifications
+    enablePush,
+    disablePush,
+    refresh: fetchNotifications
   }
 }

@@ -5,6 +5,7 @@ import { useSales } from "@/hooks/use-sales";
 import { useProducts } from "@/hooks/use-products";
 import { useStaff } from "@/hooks/use-staff";
 import { DashboardClient } from "./dashboard-client";
+import { useServices } from "@/hooks/use-services";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,6 +15,7 @@ export default function DashboardPage() {
   const { sales, isLoading: salesLoading } = useSales(shop?.id || "");
   const { products, loading: productsLoading } = useProducts(shop?.id || "");
   const { staff, loading: staffLoading } = useStaff(shop?.id || "");
+  const { services: premiumServices, orders, balance, refresh, loading: servicesLoading } = useServices();
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -32,12 +34,12 @@ export default function DashboardPage() {
   }, [user]);
 
   // Show loading state while fetching initial data
-  if (shopLoading || salesLoading || productsLoading || staffLoading) {
+  if (shopLoading || salesLoading || productsLoading || staffLoading || servicesLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
+          <p className="text-muted-foreground">ড্যাশবোর্ড লোড হচ্ছে...</p>
         </div>
       </div>
     );
@@ -47,7 +49,7 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="text-center space-y-4">
-          <p className="text-destructive">Failed to load shop data</p>
+          <p className="text-destructive">শপ ডেটা লোড করতে ব্যর্থ হয়েছে</p>
         </div>
       </div>
     );
@@ -72,6 +74,10 @@ export default function DashboardPage() {
       userEmail={user.email}
       user={user}
       profile={profile}
+      premiumServices={premiumServices}
+      orders={orders}
+      userBalance={balance}
+      onRefresh={refresh}
     />
   );
 }

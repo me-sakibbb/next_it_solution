@@ -40,6 +40,8 @@ export async function getUserOrders() {
     return data ?? []
 }
 
+import { notifyUser, notifySuperAdmins } from './notifications'
+
 export async function createServiceOrder(
     serviceId: string,
     requirements: string,
@@ -52,7 +54,7 @@ export async function createServiceOrder(
     // Check balance
     const { data: profile } = await supabase
         .from('users')
-        .select('balance')
+        .select('balance, email')
         .eq('id', user.id)
         .single()
 
@@ -60,8 +62,12 @@ export async function createServiceOrder(
         throw new Error('Insufficient balance')
     }
 
+    // Get service details for notification
+    const { data: serviceData } = await supabase.from('services').select('name').eq('id', serviceId).single()
+    const serviceName = serviceData?.name || 'a service'
+
     // Create order
-    const { error: orderError } = await supabase
+    const { data: orderData, error: orderError } = await supabase
         .from('service_orders')
         .insert({
             user_id: user.id,
@@ -70,6 +76,9 @@ export async function createServiceOrder(
             total_price: price,
             status: 'pending',
         })
+        .select('id')
+        .single()
+
     if (orderError) throw new Error(orderError.message)
 
     // Deduct balance
@@ -77,5 +86,24 @@ export async function createServiceOrder(
         .from('users')
         .update({ balance: profile.balance - price })
         .eq('id', user.id)
+
     if (balanceError) throw new Error(balanceError.message)
+
+    // Send Notifications
+    const orderIdShort = orderData?.id?.substring(0, 8) || ''
+    await notifySuperAdmins(
+        'নতুন অর্ডার এসেছে',
+        `${profile.email || 'একজন ব্যবহারকারী'} ${serviceName} এর জন্য একটি নতুন অর্ডার প্লেস করেছেন (অর্ডার #${orderIdShort})`,
+        '/superadmin/orders',
+        'order_status'
+    )
+
+    await notifyUser(
+        user.id,
+        'অর্ডার সফলভাবে প্লেস করা হয়েছে',
+        `আপনার ${serviceName} অর্ডারটি গ্রহণ করা হয়েছে এবং পর্যালোচনার জন্য অপেক্ষমান রয়েছে।`,
+        '/dashboard/orders',
+        'order_status'
+    )
 }
+

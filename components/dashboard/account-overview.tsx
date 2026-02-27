@@ -33,7 +33,15 @@ export function AccountOverview({ user, profile }: AccountOverviewProps) {
     const totalDays = 30
     const progress = Math.min(100, Math.max(0, (daysRemaining / totalDays) * 100))
 
-    const planName = status?.subscription?.plan_type || 'Free Plan'
+    const planMap: Record<string, string> = {
+        'trial': 'ট্রায়াল',
+        'basic': 'বেসিক',
+        'premium': 'প্রিমিয়াম',
+        'enterprise': 'এন্টারপ্রাইজ',
+        'Free Plan': 'ফ্রি প্ল্যান'
+    }
+
+    const planName = planMap[status?.subscription?.plan_type || 'Free Plan'] || (status?.subscription?.plan_type || 'ফ্রি প্ল্যান')
     const isTrial = status?.subscription?.plan_type === 'trial'
 
     // Formatter for currency
@@ -60,27 +68,27 @@ export function AccountOverview({ user, profile }: AccountOverviewProps) {
                         <div className="space-y-4">
                             <div>
                                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    Current Plan: <span className="text-primary text-xl">{planName.charAt(0).toUpperCase() + planName.slice(1)}</span>
-                                    {isTrial && <Badge variant="secondary" className="ml-2">Trial</Badge>}
+                                    বর্তমান প্ল্যান: <span className="text-primary text-xl ml-2">{planName.charAt(0).toUpperCase() + planName.slice(1)}</span>
+                                    {isTrial && <Badge variant="secondary" className="ml-2">ট্রায়াল</Badge>}
                                     {isActive ? (
-                                        <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 border-emerald-500/20">Active</Badge>
+                                        <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 border-emerald-500/20">সক্রিয়</Badge>
                                     ) : (
-                                        <Badge variant="destructive">Inactive</Badge>
+                                        <Badge variant="destructive">নিষ্ক্রিয়</Badge>
                                     )}
                                 </h3>
                                 <p className="text-muted-foreground text-sm mt-1">
-                                    Access to all AI features and tools.
+                                    সমস্ত AI ফিচার এবং টুল ব্যবহারের সুবিধা।
                                 </p>
                             </div>
 
                             <div className="flex items-center gap-4 text-sm">
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <Calendar className="w-4 h-4" />
-                                    <span>{daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Expired'}</span>
+                                    <span>{daysRemaining > 0 ? `${daysRemaining} দিন বাকি` : 'মেয়াদ শেষ'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <CreditCard className="w-4 h-4" />
-                                    <span>Next billing: {status?.subscription?.current_period_end ? new Date(status.subscription.current_period_end).toLocaleDateString() : 'N/A'}</span>
+                                    <span>পরবর্তী বিলিং: {status?.subscription?.current_period_end ? new Date(status.subscription.current_period_end).toLocaleDateString() : 'প্রযোজ্য নয়'}</span>
                                 </div>
                             </div>
                         </div>
@@ -88,7 +96,7 @@ export function AccountOverview({ user, profile }: AccountOverviewProps) {
                         <div className="w-full md:w-auto flex flex-col gap-3">
                             <Button asChild className="w-full md:w-auto shadow-lg shadow-primary/20">
                                 <Link href="/dashboard/profile">
-                                    Upgrade Plan <ArrowRight className="w-4 h-4 ml-2" />
+                                    প্ল্যান আপগ্রেড করুন <ArrowRight className="w-4 h-4 ml-2" />
                                 </Link>
                             </Button>
                         </div>
@@ -97,8 +105,8 @@ export function AccountOverview({ user, profile }: AccountOverviewProps) {
                     {isActive && (
                         <div className="mt-6 pt-4 border-t border-primary/10">
                             <div className="flex justify-between text-xs mb-2 text-muted-foreground">
-                                <span>Plan Usage</span>
-                                <span>{daysRemaining} / {totalDays} days</span>
+                                <span>প্ল্যান ব্যবহার</span>
+                                <span>{daysRemaining} / {totalDays} দিন</span>
                             </div>
                             <Progress value={progress} className="h-2 bg-primary/20" />
                         </div>
@@ -115,19 +123,19 @@ export function AccountOverview({ user, profile }: AccountOverviewProps) {
                         <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                             <Wallet className="w-5 h-5" />
                         </div>
-                        <span className="font-medium text-muted-foreground">Available Balance</span>
+                        <span className="font-medium text-muted-foreground">বর্তমান ব্যালেন্স</span>
                     </div>
 
                     <div className="mt-2">
                         <h2 className="text-3xl font-bold tracking-tight">{formatCurrency(balance)}</h2>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Funds for AI credits & premium services
+                            AI ক্রেডিট এবং প্রিমিয়াম সার্ভিসের জন্য তহবিল
                         </p>
                     </div>
 
                     <div className="mt-6">
                         <Button variant="outline" className="w-full hover:bg-blue-500/5 hover:text-blue-600 hover:border-blue-200 transition-colors">
-                            Add Funds
+                            ফান্ড যোগ করুন
                         </Button>
                     </div>
                 </CardContent>
