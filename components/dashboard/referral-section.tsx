@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Gift, Copy, Users } from 'lucide-react'
+import { Gift, Copy, Users, Tag, Link2, BadgePercent } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 
 export interface ReferralStats {
@@ -22,11 +22,11 @@ export function ReferralSection({ referralCode, stats, siteUrl }: ReferralSectio
     const { toast } = useToast()
     const referralLink = `${siteUrl}/auth/sign-up?ref=${referralCode}`
 
-    const copyLink = () => {
-        navigator.clipboard.writeText(referralLink)
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text)
         toast({
-            title: 'কপি হয়েছে! ✅',
-            description: 'রেফারেল লিংক ক্লিপবোর্ডে কপি করা হয়েছে।',
+            title: 'কপি হয়েছে!',
+            description: `${label} ক্লিপবোর্ডে কপি করা হয়েছে।`,
         })
     }
 
@@ -43,19 +43,23 @@ export function ReferralSection({ referralCode, stats, siteUrl }: ReferralSectio
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Referral Link Card */}
+                {/* Referral Code & Link Card */}
                 <Card className="border-primary/20">
                     <CardContent className="p-5 space-y-4">
+                        {/* Referral Code */}
                         <div className="space-y-2">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">আপনার রেফারেল লিংক</p>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                <Tag className="w-3.5 h-3.5" />
+                                আপনার রেফারেল কোড
+                            </p>
                             <div className="flex items-center gap-2">
-                                <code className="flex-1 bg-muted px-3 py-2 rounded-md text-xs truncate">
-                                    {referralLink}
+                                <code className="flex-1 bg-muted px-3 py-2 rounded-md text-lg font-bold tracking-widest text-center">
+                                    {referralCode}
                                 </code>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={copyLink}
+                                    onClick={() => copyToClipboard(referralCode, 'রেফারেল কোড')}
                                     className="shrink-0"
                                 >
                                     <Copy className="w-4 h-4" />
@@ -63,9 +67,32 @@ export function ReferralSection({ referralCode, stats, siteUrl }: ReferralSectio
                             </div>
                         </div>
 
-                        <div className="bg-primary/5 border border-primary/10 rounded-lg p-3">
+                        {/* Referral Link */}
+                        <div className="space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                <Link2 className="w-3.5 h-3.5" />
+                                আপনার রেফারেল লিংক
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <code className="flex-1 bg-muted px-3 py-2 rounded-md text-xs truncate">
+                                    {referralLink}
+                                </code>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => copyToClipboard(referralLink, 'রেফারেল লিংক')}
+                                    className="shrink-0"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Info box */}
+                        <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 flex items-start gap-2">
+                            <BadgePercent className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                🎁 আপনার লিংক দিয়ে কেউ অ্যাকাউন্ট তৈরি করে ৳২০০+ টপআপ বা সাবস্ক্রিপশন কিনলে আপনি <span className="font-bold text-primary">৳৪৯</span> বোনাস পাবেন!
+                                আপনার লিংক দিয়ে কেউ অ্যাকাউন্ট তৈরি করে ৳২০০+ টপআপ বা সাবস্ক্রিপশন কিনলে আপনি <span className="font-bold text-primary">৳৪৯</span> বোনাস পাবেন!
                             </p>
                         </div>
                     </CardContent>
