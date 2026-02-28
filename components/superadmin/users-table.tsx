@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { updateUserInfo, updateUserSubscription } from '@/actions/superadmin'
+import { updateUserSubscription } from '@/actions/superadmin'
+import { updateUserInfo } from '@/actions/superadmin-server'
 import { useRouter } from 'next/navigation'
 import { Search, Pencil, Crown, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'

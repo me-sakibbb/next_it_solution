@@ -10,13 +10,13 @@ export async function getAdminStats() {
             .select('id', { count: 'exact', head: true })
             .in('status', ['pending', 'in_progress']),
         supabase
-            .from('service_orders')
-            .select('total_price')
-            .eq('status', 'completed'),
+            .from('bkash_payments')
+            .select('amount')
+            .eq('status', 'executed'),
     ])
 
     const revenue = (revenueResult.data ?? []).reduce(
-        (sum: number, o: { total_price: number }) => sum + o.total_price,
+        (sum: number, o: { amount: number }) => sum + Number(o.amount),
         0
     )
 
@@ -110,27 +110,6 @@ export async function getAllUsers(search?: string) {
     return data ?? []
 }
 
-export async function updateUserBalance(userId: string, balance: number) {
-    const supabase = createClient()
-    const { error } = await supabase
-        .from('users')
-        .update({ balance, updated_at: new Date().toISOString() })
-        .eq('id', userId)
-    if (error) throw new Error(error.message)
-}
-
-export async function updateUserInfo(
-    userId: string,
-    fields: { full_name?: string; balance?: number; is_active?: boolean }
-) {
-    const supabase = createClient()
-    const { error } = await supabase
-        .from('users')
-        .update({ ...fields, updated_at: new Date().toISOString() })
-        .eq('id', userId)
-    if (error) throw new Error(error.message)
-}
-
 export async function getAllUsersWithSubscription(search?: string) {
     const supabase = createClient()
     let query = supabase
@@ -154,6 +133,8 @@ export async function updateUserSubscription(
     subscriptionEndDate?: string
 ) {
     const supabase = createClient()
+
+    // When superadmin changes the plan, always reset usage limits
     const { error } = await supabase
         .from('subscriptions')
         .upsert(
@@ -163,6 +144,8 @@ export async function updateUserSubscription(
                 status,
                 subscription_start_date: new Date().toISOString(),
                 subscription_end_date: subscriptionEndDate || null,
+                cv_usage: 0,
+                autofill_usage: 0,
                 updated_at: new Date().toISOString(),
             },
             { onConflict: 'user_id' }
@@ -203,6 +186,42 @@ export async function getAllTransactions(page = 1, pageSize = 20, search?: strin
 
     return {
         data: payments.map((p: any) => ({ ...p, user: userMap[p.user_id] ?? null })),
+        count: count ?? 0,
+    }
+}
+
+export async function getAllBalanceTransactions(page = 1, pageSize = 20, search?: string) {
+    const supabase = createClient()
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
+    let query = supabase
+        .from('balance_transactions')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to)
+
+    if (search) {
+        query = query.ilike('description', `%${search}%`)
+    }
+
+    const { data: txns, error, count } = await query
+    if (error) throw new Error(error.message)
+
+    if (!txns || txns.length === 0) {
+        return { data: [], count: count ?? 0 }
+    }
+
+    const userIds = [...new Set(txns.map((t: any) => t.user_id))]
+    const { data: users } = await supabase
+        .from('users')
+        .select('id, email, full_name')
+        .in('id', userIds)
+
+    const userMap = Object.fromEntries((users ?? []).map((u: any) => [u.id, u]))
+
+    return {
+        data: txns.map((t: any) => ({ ...t, user: userMap[t.user_id] ?? null })),
         count: count ?? 0,
     }
 }

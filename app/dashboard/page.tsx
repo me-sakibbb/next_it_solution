@@ -8,6 +8,7 @@ import { DashboardClient } from "./dashboard-client";
 import { useServices } from "@/hooks/use-services";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getResourceLinks } from "@/actions/settings";
 
 
 export default function DashboardPage() {
@@ -18,6 +19,13 @@ export default function DashboardPage() {
   const { services: premiumServices, orders, balance, refresh, loading: servicesLoading } = useServices();
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [resourceLinks, setResourceLinks] = useState({ graphics_files_drive_url: '', certificate_formats_drive_url: '' });
+
+  useEffect(() => {
+    getResourceLinks()
+      .then(setResourceLinks)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function fetchUserData() {
@@ -97,6 +105,8 @@ export default function DashboardPage() {
       userBalance={balance}
       subscription={subscription}
       onRefresh={refresh}
+      graphicsFilesUrl={resourceLinks.graphics_files_drive_url}
+      certificateFormatsUrl={resourceLinks.certificate_formats_drive_url}
     />
   );
 }

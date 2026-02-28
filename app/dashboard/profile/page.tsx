@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { AccountOverview } from "@/components/dashboard/account-overview";
 import { ProfileForm } from "@/components/dashboard/profile-form";
 import { SubscriptionPlans } from "@/components/dashboard/subscription-plans";
+import { ReferralSection } from "@/components/dashboard/referral-section";
+import { headers } from "next/headers";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -15,21 +17,41 @@ export default async function ProfilePage() {
 
   const adminSupabase = createAdminClient();
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const [profileRes, subscriptionRes, referralsRes] = await Promise.all([
+    adminSupabase.from("users").select("*").eq("id", user.id).single(),
+    adminSupabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("status", { ascending: true })
+      .order("subscription_start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    adminSupabase
+      .from("referrals")
+      .select("id, status, bonus_amount, created_at", { count: "exact" })
+      .eq("referrer_id", user.id),
+  ]);
 
-  // Fix: use adminSupabase instead of regular client which is blocked by RLS
-  const { data: subscription } = await adminSupabase
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", user.id)
-    .order('status', { ascending: true })
-    .order('subscription_start_date', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const profile = profileRes.data;
+  const subscription = subscriptionRes.data;
+  const referrals = referralsRes.data ?? [];
+  const referralCount = referralsRes.count ?? 0;
+
+  const referralStats = {
+    total: referralCount,
+    rewarded: referrals.filter((r) => r.status === "rewarded").length,
+    pending: referrals.filter((r) => r.status === "pending").length,
+    totalEarned: referrals
+      .filter((r) => r.status === "rewarded")
+      .reduce((sum, r) => sum + parseFloat(r.bonus_amount || 0), 0),
+  };
+
+  // Build site URL for referral link
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:3000";
+  const proto = process.env.NODE_ENV === "production" ? "https" : "http";
+  const siteUrl = `${proto}://${host}`;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -51,6 +73,17 @@ export default async function ProfilePage() {
         </h2>
         <ProfileForm profile={profile} email={user.email} />
       </div>
+
+      {/* Referral Section */}
+      {profile?.referral_code && (
+        <div className="mt-10">
+          <ReferralSection
+            referralCode={profile.referral_code}
+            stats={referralStats}
+            siteUrl={siteUrl}
+          />
+        </div>
+      )}
 
       <div className="mt-10">
         <h2 className="text-2xl font-bold tracking-tight mb-6">

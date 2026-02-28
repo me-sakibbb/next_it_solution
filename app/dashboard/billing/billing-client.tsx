@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { SubscriptionPlans } from '@/components/dashboard/subscription-plans'
 import { AddBalanceModal } from '@/components/dashboard/add-balance-modal'
+import { ReferralSection } from '@/components/dashboard/referral-section'
+import type { ReferralStats } from '@/components/dashboard/referral-section'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,6 +23,7 @@ interface BillingPageClientProps {
     profile: any
     subscription: any
     payments: BkashPayment[]
+    referralStats: ReferralStats
 }
 
 const PLAN_NAMES: Record<string, string> = {
@@ -37,7 +40,7 @@ const STATUS_CONFIG = {
     created: { label: 'প্রক্রিয়াধীন', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
 }
 
-export function BillingPageClient({ user, profile, subscription, payments }: BillingPageClientProps) {
+export function BillingPageClient({ user, profile, subscription, payments, referralStats }: BillingPageClientProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { toast } = useToast()
@@ -192,7 +195,16 @@ export function BillingPageClient({ user, profile, subscription, payments }: Bil
                 />
             </div>
 
-            {/* Payment History */}
+            {/* Referral Program */}
+            {profile?.referral_code && (
+                <ReferralSection
+                    referralCode={profile.referral_code}
+                    stats={referralStats}
+                    siteUrl={typeof window !== 'undefined' ? window.location.origin : ''}
+                />
+            )}
+
+            {/* Payment History — bKash */}
             {payments.length > 0 && (
                 <div className="space-y-4">
                     <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -255,3 +267,5 @@ export function BillingPageClient({ user, profile, subscription, payments }: Bil
         </div>
     )
 }
+
+// Referral Section is now in @/components/dashboard/referral-section

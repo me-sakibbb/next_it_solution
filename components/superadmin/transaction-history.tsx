@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { getAllTransactions } from '@/actions/superadmin'
+import { fetchAllBkashTransactions } from '@/actions/superadmin-server'
 import { useRouter } from 'next/navigation'
 import { Search, ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, Ban } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -79,7 +79,7 @@ export function TransactionHistory({
     const fetchPage = async (newPage: number, newSearch?: string) => {
         setLoading(true)
         try {
-            const result = await getAllTransactions(newPage, pageSize, newSearch)
+            const result = await fetchAllBkashTransactions(newPage, pageSize, newSearch)
             setData(result.data as Transaction[])
             setCount(result.count)
             setPage(newPage)

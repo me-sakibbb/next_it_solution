@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkAndRewardReferral } from '@/lib/referral'
 
 const PLAN_PRICES: Record<string, number> = {
     basic_bit: 199,
@@ -71,29 +72,43 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'ব্যালেন্স কাটাতে ব্যর্থ হয়েছে' }, { status: 500 })
         }
 
+        // Log balance transaction (debit for subscription purchase)
+        await adminSupabase.from('balance_transactions').insert({
+            user_id: user.id,
+            amount: planPrice,
+            type: 'debit',
+            description: `${PLAN_NAMES[planType]} সাবস্ক্রিপশন কেনা হয়েছে (ওয়ালেট থেকে)`,
+            reference_type: 'subscription',
+        })
+
         // Calculate subscription dates
         const startDate = new Date()
 
         // Find any existing subscription record for this user
         const { data: existing } = await adminSupabase
             .from('subscriptions')
-            .select('id, subscription_end_date, status')
+            .select('id, plan_type, subscription_end_date, status')
             .eq('user_id', user.id)
             .order('subscription_start_date', { ascending: false })
             .limit(1)
             .maybeSingle()
 
-        // Extend from current end if still active, otherwise 30 days from now
+        // Calculate end date:
+        // - If same plan and still active: extend from current end date
+        // - If upgrading/downgrading plan or expired: 30 days from now
         let endDate: Date
-        if (
-            existing &&
+        const isCurrentlyActive = existing &&
             existing.status === 'active' &&
             existing.subscription_end_date &&
             new Date(existing.subscription_end_date) > startDate
-        ) {
-            endDate = new Date(existing.subscription_end_date)
+        const isSamePlan = existing?.plan_type === planType
+
+        if (isCurrentlyActive && isSamePlan) {
+            // Same plan renewal — extend from current end
+            endDate = new Date(existing.subscription_end_date!)
             endDate.setDate(endDate.getDate() + 30)
         } else {
+            // New plan or upgrade/downgrade — 30 days from now, limits reset
             endDate = new Date(startDate)
             endDate.setDate(endDate.getDate() + 30)
         }
@@ -144,6 +159,11 @@ export async function POST(request: NextRequest) {
             type: 'payment',
             action_url: '/dashboard/billing',
         })
+
+        // Check referral bonus eligibility (subscription purchase of 200+ taka)
+        if (planPrice >= 200) {
+            await checkAndRewardReferral(user.id, planPrice, 'subscription')
+        }
 
         return NextResponse.json({
             success: true,

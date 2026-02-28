@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { executePayment } from '@/lib/bkash'
+import { checkAndRewardReferral } from '@/lib/referral'
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
             .eq('payment_id', paymentID)
 
         const userId = paymentRecord.user_id
-        const amount = paymentRecord.amount
+        const amount = parseFloat(paymentRecord.amount)
 
         if (paymentRecord.intent === 'add_balance') {
             // Increment user balance
@@ -84,46 +85,65 @@ export async function GET(request: NextRequest) {
             if (userFetchErr || !currentUser) {
                 console.error('Failed to fetch user balance:', userFetchErr)
             } else {
-                const newBalance = parseFloat(currentUser.balance || 0) + parseFloat(amount)
+                const newBalance = parseFloat(currentUser.balance || 0) + amount
                 await adminSupabase
                     .from('users')
                     .update({ balance: newBalance })
                     .eq('id', userId)
+
+                // Log balance transaction (credit via bkash)
+                await adminSupabase.from('balance_transactions').insert({
+                    user_id: userId,
+                    amount,
+                    type: 'credit',
+                    description: `bKash দিয়ে ব্যালেন্স যোগ (TxID: ${trxResult.trxID})`,
+                    reference_id: paymentRecord.id,
+                    reference_type: 'bkash_payment',
+                })
             }
 
             // Send notification
             await adminSupabase.from('notifications').insert({
                 user_id: userId,
                 title: 'ব্যালেন্স যোগ হয়েছে ✅',
-                message: `আপনার ওয়ালেটে ৳${parseFloat(amount).toFixed(2)} সফলভাবে যোগ হয়েছে। ট্রানজেকশন আইডি: ${trxResult.trxID}`,
+                message: `আপনার ওয়ালেটে ৳${amount.toFixed(2)} সফলভাবে যোগ হয়েছে। ট্রানজেকশন আইডি: ${trxResult.trxID}`,
                 type: 'payment',
                 action_url: '/dashboard/billing',
             })
+
+            // Check referral bonus eligibility (top-up of 200+ taka)
+            if (amount >= 200) {
+                await checkAndRewardReferral(userId, amount, 'topup')
+            }
         } else if (paymentRecord.intent === 'subscribe') {
             const planType = paymentRecord.plan_type
-
             const startDate = new Date()
 
             // Upsert subscription — find any existing record for this user
             const { data: existing } = await adminSupabase
                 .from('subscriptions')
-                .select('id, subscription_end_date, status')
+                .select('id, plan_type, subscription_end_date, status')
                 .eq('user_id', userId)
                 .order('subscription_start_date', { ascending: false })
                 .limit(1)
                 .maybeSingle()
 
-            // Calculate end date: extend from current end if still active, otherwise 30 days from now
+            // Calculate end date:
+            // - If same plan and still active: extend from current end date
+            // - If upgrading/downgrading plan or expired: 30 days from now
             let endDate: Date
-            if (
-                existing &&
+            const isCurrentlyActive = existing &&
                 existing.status === 'active' &&
                 existing.subscription_end_date &&
                 new Date(existing.subscription_end_date) > startDate
-            ) {
-                endDate = new Date(existing.subscription_end_date)
+            const isSamePlan = existing?.plan_type === planType
+
+            if (isCurrentlyActive && isSamePlan) {
+                // Same plan renewal — extend from current end
+                endDate = new Date(existing.subscription_end_date!)
                 endDate.setDate(endDate.getDate() + 30)
             } else {
+                // New plan or upgrade/downgrade — 30 days from now, limits reset
                 endDate = new Date(startDate)
                 endDate.setDate(endDate.getDate() + 30)
             }
@@ -178,6 +198,11 @@ export async function GET(request: NextRequest) {
                 type: 'payment',
                 action_url: '/dashboard/billing',
             })
+
+            // Check referral bonus eligibility (subscription purchase of 200+ taka)
+            if (amount >= 200) {
+                await checkAndRewardReferral(userId, amount, 'subscription')
+            }
         }
 
         return NextResponse.redirect(`${baseRedirect}?status=success`)

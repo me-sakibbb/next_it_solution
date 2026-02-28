@@ -2,20 +2,27 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { getAvailableServices, getUserBalance } from '@/actions/services'
+import { getResourceLinks } from '@/actions/settings'
 import { ServiceCatalog } from '@/components/services/service-catalog'
 import { Wallet } from 'lucide-react'
 
 export default function ServicesPage() {
     const [services, setServices] = useState<any[]>([])
     const [balance, setBalance] = useState(0)
+    const [resourceLinks, setResourceLinks] = useState({ graphics_files_drive_url: '', certificate_formats_drive_url: '' })
     const [loading, setLoading] = useState(true)
 
     const fetchData = useCallback(() => {
         setLoading(true)
-        Promise.all([getAvailableServices(), getUserBalance()])
-            .then(([s, b]) => {
+        Promise.all([
+            getAvailableServices(),
+            getUserBalance(),
+            getResourceLinks().catch(() => ({ graphics_files_drive_url: '', certificate_formats_drive_url: '' })),
+        ])
+            .then(([s, b, r]) => {
                 setServices(s)
                 setBalance(b)
+                setResourceLinks(r)
             })
             .catch(console.error)
             .finally(() => setLoading(false))
@@ -44,7 +51,7 @@ export default function ServicesPage() {
                 <div className="flex items-center bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                     <Wallet className="w-5 h-5 text-green-600 mr-2" />
                     <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Balance:</span>
-                    <span className="text-lg font-bold text-gray-900 dark:text-white">${balance.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">৳{balance.toFixed(2)}</span>
                 </div>
             </div>
 
@@ -52,7 +59,10 @@ export default function ServicesPage() {
                 initialServices={services}
                 userBalance={balance}
                 onOrderSuccess={fetchData}
+                graphicsFilesUrl={resourceLinks.graphics_files_drive_url}
+                certificateFormatsUrl={resourceLinks.certificate_formats_drive_url}
             />
         </div>
     )
 }
+

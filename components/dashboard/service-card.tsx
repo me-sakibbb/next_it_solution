@@ -22,6 +22,7 @@ interface ServiceCardProps {
     price?: number | string
     usageLimit?: UsageLimit
     onClick?: () => void
+    externalHref?: string
 }
 
 export function ServiceCard({
@@ -34,7 +35,8 @@ export function ServiceCard({
     disabled = false,
     price,
     usageLimit,
-    onClick
+    onClick,
+    externalHref,
 }: ServiceCardProps) {
     const formatPrice = (p: number | string) => {
         if (typeof p === 'string') return p
@@ -127,6 +129,19 @@ export function ServiceCard({
             >
                 {Content}
             </button>
+        )
+    }
+
+    if (externalHref) {
+        return (
+            <a
+                href={externalHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-full focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-xl"
+            >
+                {Content}
+            </a>
         )
     }
 

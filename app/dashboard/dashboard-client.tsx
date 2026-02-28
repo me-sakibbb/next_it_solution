@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace } from "lucide-react";
+import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace, FolderOpen, FileText } from "lucide-react";
 import { ServiceCard } from "@/components/dashboard/service-card";
 import { RecentOrdersWidget } from "@/components/dashboard/recent-orders-widget";
 import { ServiceOrder, Service } from "@/lib/types";
@@ -24,6 +24,8 @@ interface DashboardClientProps {
   userBalance?: number;
   subscription?: any;
   onRefresh?: () => void;
+  graphicsFilesUrl?: string;
+  certificateFormatsUrl?: string;
 }
 
 export function DashboardClient({
@@ -42,6 +44,8 @@ export function DashboardClient({
   userBalance = 0,
   subscription = null,
   onRefresh,
+  graphicsFilesUrl = '',
+  certificateFormatsUrl = '',
 }: DashboardClientProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
@@ -143,13 +147,33 @@ export function DashboardClient({
           />
           <ServiceCard
             title="ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই"
-            description="ইন্ডিয়ান ভিসার জন্য দ্রুত এবং নির্ভুল ফর্ম ফিলিং সার্ভিস।"
+            description="ইন্ডিয়ান ভিসার জন্য দ্রুত এবং নির্ভুল ফর্ম ফিলিং সার্ভিস।"
             icon={ScanFace}
             href="#"
             onClick={() => handleServiceClick("ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই")}
             colorClass="bg-indigo-500/10 text-indigo-600"
             iconColorClass="text-indigo-600"
             usageLimit={autofillLimit}
+          />
+          <ServiceCard
+            title="প্রয়োজনীয় গ্রাফিক্স ফাইল"
+            description="ব্যবসায়িক কাজে প্রয়োজনীয় গ্রাফিক্স টেমপ্লেট ও ফাইলসমূহ Google Drive থেকে ডাউনলোড করুন।"
+            icon={FolderOpen}
+            href="#"
+            externalHref={graphicsFilesUrl || undefined}
+            disabled={!graphicsFilesUrl}
+            colorClass="bg-purple-500/10 text-purple-600"
+            iconColorClass="text-purple-600"
+          />
+          <ServiceCard
+            title="গুরুত্বপূর্ণ সনদ ফরমেট"
+            description="বিভিন্ন ধরনের সনদপত্র ও সার্টিফিকেটের রেডিমেড ফরমেট Google Drive থেকে ডাউনলোড করুন।"
+            icon={FileText}
+            href="#"
+            externalHref={certificateFormatsUrl || undefined}
+            disabled={!certificateFormatsUrl}
+            colorClass="bg-green-500/10 text-green-600"
+            iconColorClass="text-green-600"
           />
         </div>
       </section>

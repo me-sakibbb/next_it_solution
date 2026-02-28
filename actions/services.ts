@@ -104,6 +104,16 @@ export async function createServiceOrder(
 
     if (balanceError) throw new Error(balanceError.message)
 
+    // Log balance transaction
+    await supabase.from('balance_transactions').insert({
+        user_id: user.id,
+        amount: price,
+        type: 'debit',
+        description: `Service order: ${serviceName}`,
+        reference_id: orderData?.id ?? null,
+        reference_type: 'service_order',
+    })
+
     // Send Notifications
     const orderIdShort = orderData?.id?.substring(0, 8) || ''
     await notifySuperAdmins(
@@ -126,4 +136,3 @@ export async function createServiceOrder(
         await incrementFeatureUsage('autofill')
     }
 }
-
