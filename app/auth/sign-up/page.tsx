@@ -1,6 +1,6 @@
 'use client'
 
-import React from "react"
+import React, { Suspense } from "react"
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertCircle, Gift } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
-export default function SignUpPage() {
+function SignUpForm() {
   const [fullName, setFullName] = useState('')
   const [shopName, setShopName] = useState('')
   const [businessType, setBusinessType] = useState('retail')
@@ -195,5 +195,17 @@ export default function SignUpPage() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
   )
 }
