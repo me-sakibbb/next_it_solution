@@ -16,6 +16,7 @@ import { ProfessionalTemplate } from './templates/ProfessionalTemplate'
 import { CreativeTemplate } from './templates/CreativeTemplate'
 import { MinimalistTemplate } from './templates/MinimalistTemplate'
 import { AcademicTemplate } from './templates/AcademicTemplate'
+import { EuropassTemplate } from './templates/EuropassTemplate'
 import { useReactToPrint } from 'react-to-print'
 
 import Cropper from 'react-easy-crop'
@@ -34,6 +35,7 @@ const TEMPLATES = [
     { id: 'creative', name: 'Creative', description: 'Stand out with a unique layout', component: CreativeTemplate },
     { id: 'minimalist', name: 'Minimalist', description: 'Simple and elegant', component: MinimalistTemplate },
     { id: 'academic', name: 'Academic', description: 'Detailed and scholarly', component: AcademicTemplate },
+    { id: 'europass', name: 'Europass', description: 'Official EU-style CV format', component: EuropassTemplate },
 ]
 
 export function CVBuilderWizard() {
@@ -324,7 +326,7 @@ export function CVBuilderWizard() {
         `
     })
 
-    const renderCurrentTemplate = () => {
+    const renderCurrentTemplate = (forPrint = false) => {
         if (!cvData) return null
 
         const Template = TEMPLATES.find(t => t.id === selectedTemplate)?.component
@@ -332,7 +334,7 @@ export function CVBuilderWizard() {
 
         return <Template
             data={cvData}
-            isEditing={isEditing}
+            isEditing={forPrint ? false : isEditing}
             designSettings={designSettings}
             onUpdate={(newData) => setCvData(newData)}
         />
@@ -597,7 +599,7 @@ export function CVBuilderWizard() {
                                 backgroundColor: 'white',
                             }}
                         >
-                            {renderCurrentTemplate()}
+                            {renderCurrentTemplate(true)}
                         </div>
                     </div>
                 </div>

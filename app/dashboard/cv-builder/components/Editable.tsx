@@ -33,7 +33,7 @@ export const Editable: React.FC<EditableProps> = ({
     }, [localValue, multiline, isEditing]);
 
     if (!isEditing) {
-        return <span className={cn("whitespace-pre-wrap", className)}>{value || placeholder}</span>;
+        return <span className={cn("whitespace-pre-wrap", className)}>{value}</span>;
     }
 
     const editStyles = "w-full bg-blue-50/50 border border-dashed border-blue-300 rounded px-1 -mx-1 hover:bg-blue-50 transition-colors focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200";
