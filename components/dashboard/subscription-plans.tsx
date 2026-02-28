@@ -16,6 +16,7 @@ import { Check, Crown, Zap, Star, Wallet, Loader2, AlertCircle } from 'lucide-re
 import { useBkashPayment } from '@/hooks/use-bkash-payment'
 import { useToast } from '@/components/ui/use-toast'
 import { useRouter } from 'next/navigation'
+import { useSubscriptionContext } from '@/lib/subscription-context'
 
 interface Plan {
     id: string
@@ -100,6 +101,7 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
     const { initiateBkashPayment, initiateWalletSubscribe, isLoading } = useBkashPayment()
     const { toast } = useToast()
     const router = useRouter()
+    const { refresh: refreshSubscription } = useSubscriptionContext()
 
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean
@@ -134,6 +136,7 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
                         title: '🎉 সাবস্ক্রিপশন সক্রিয়!',
                         description: `${plan.name} প্ল্যান সফলভাবে সক্রিয় হয়েছে।`,
                     })
+                    refreshSubscription()
                     onSuccess?.()
                     router.refresh()
                 } else {

@@ -6,9 +6,9 @@ import {
     LayoutDashboard,
     Users,
     ShoppingCart,
-    Settings,
     LogOut,
-    Briefcase
+    Briefcase,
+    Receipt
 } from 'lucide-react'
 
 export default async function SuperAdminLayout({
@@ -39,7 +39,7 @@ export default async function SuperAdminLayout({
             {/* Sidebar */}
             <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col sticky top-0 h-screen">
                 <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    <h1 className="text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         Super Admin
                     </h1>
                 </div>
@@ -60,6 +60,10 @@ export default async function SuperAdminLayout({
                     <Link href="/superadmin/orders" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-all rounded-lg group">
                         <ShoppingCart className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />
                         Orders
+                    </Link>
+                    <Link href="/superadmin/transactions" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-all rounded-lg group">
+                        <Receipt className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />
+                        Transactions
                     </Link>
                 </nav>
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { SubscriptionPlans } from '@/components/dashboard/subscription-plans'
 import { AddBalanceModal } from '@/components/dashboard/add-balance-modal'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { BkashPayment } from '@/lib/types'
 import { useToast } from '@/components/ui/use-toast'
+import { useSubscriptionContext } from '@/lib/subscription-context'
 
 interface BillingPageClientProps {
     user: any
@@ -23,13 +24,10 @@ interface BillingPageClientProps {
 }
 
 const PLAN_NAMES: Record<string, string> = {
-    trial: 'ট্রায়াল',
-    basic: 'বেসিক',
+    trial: 'ফ্রি প্ল্যান',
     basic_bit: 'বেসিক বিট',
     advance_plus: 'এডভান্স প্লাস',
     premium_power: 'প্রিমিয়াম পাওয়ার',
-    premium: 'প্রিমিয়াম',
-    enterprise: 'এন্টারপ্রাইজ',
 }
 
 const STATUS_CONFIG = {
@@ -41,7 +39,39 @@ const STATUS_CONFIG = {
 
 export function BillingPageClient({ user, profile, subscription, payments }: BillingPageClientProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { toast } = useToast()
+    const { refresh: refreshSubscription } = useSubscriptionContext()
+
+    // Show toast based on bKash redirect status query param
+    useEffect(() => {
+        const status = searchParams.get('status')
+        if (!status) return
+
+        if (status === 'success') {
+            toast({
+                title: '🎉 সফল!',
+                description: 'পেমেন্ট সম্পন্ন হয়েছে এবং আপনার অ্যাকাউন্ট আপডেট হয়েছে।',
+            })
+            refreshSubscription()
+            // Remove query params from URL without reloading page
+            router.replace('/dashboard/billing', { scroll: false })
+        } else if (status === 'failed') {
+            toast({
+                title: 'পেমেন্ট ব্যর্থ',
+                description: 'পেমেন্ট সম্পন্ন হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।',
+                variant: 'destructive',
+            })
+            router.replace('/dashboard/billing', { scroll: false })
+        } else if (status === 'cancelled') {
+            toast({
+                title: 'পেমেন্ট বাতিল',
+                description: 'আপনি পেমেন্ট বাতিল করেছেন।',
+                variant: 'destructive',
+            })
+            router.replace('/dashboard/billing', { scroll: false })
+        }
+    }, [searchParams, toast, router])
 
     const balance = parseFloat(profile?.balance || 0)
     const isSubscriptionActive = subscription?.status === 'active' &&

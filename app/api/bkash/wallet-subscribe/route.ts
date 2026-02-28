@@ -73,28 +73,33 @@ export async function POST(request: NextRequest) {
 
         // Calculate subscription dates
         const startDate = new Date()
-        const endDate = new Date(startDate)
-        endDate.setDate(endDate.getDate() + 30)
 
-        // Upsert subscription
+        // Find any existing subscription record for this user
         const { data: existing } = await adminSupabase
             .from('subscriptions')
             .select('id, subscription_end_date, status')
             .eq('user_id', user.id)
+            .order('subscription_start_date', { ascending: false })
             .limit(1)
             .maybeSingle()
 
+        // Extend from current end if still active, otherwise 30 days from now
+        let endDate: Date
+        if (
+            existing &&
+            existing.status === 'active' &&
+            existing.subscription_end_date &&
+            new Date(existing.subscription_end_date) > startDate
+        ) {
+            endDate = new Date(existing.subscription_end_date)
+            endDate.setDate(endDate.getDate() + 30)
+        } else {
+            endDate = new Date(startDate)
+            endDate.setDate(endDate.getDate() + 30)
+        }
+
         if (existing) {
-            const currentEnd = existing.subscription_end_date && existing.status === 'active'
-                ? new Date(existing.subscription_end_date)
-                : new Date()
-
-            if (currentEnd > new Date()) {
-                endDate.setTime(currentEnd.getTime())
-                endDate.setDate(endDate.getDate() + 30)
-            }
-
-            await adminSupabase
+            const { error: updateError } = await adminSupabase
                 .from('subscriptions')
                 .update({
                     plan_type: planType,
@@ -104,20 +109,31 @@ export async function POST(request: NextRequest) {
                     payment_method: 'wallet',
                     cv_usage: 0,
                     autofill_usage: 0,
+                    updated_at: new Date().toISOString(),
                 })
                 .eq('id', existing.id)
+            if (updateError) {
+                console.error('Failed to update subscription:', updateError)
+                return NextResponse.json({ error: 'সাবস্ক্রিপশন আপডেট করতে ব্যর্থ হয়েছে' }, { status: 500 })
+            }
         } else {
-            await adminSupabase.from('subscriptions').insert({
-                user_id: user.id,
-                plan_type: planType,
-                status: 'active',
-                subscription_start_date: startDate.toISOString(),
-                subscription_end_date: endDate.toISOString(),
-                payment_method: 'wallet',
-                auto_renew: false,
-                cv_usage: 0,
-                autofill_usage: 0,
-            })
+            const { error: insertError } = await adminSupabase
+                .from('subscriptions')
+                .insert({
+                    user_id: user.id,
+                    plan_type: planType,
+                    status: 'active',
+                    subscription_start_date: startDate.toISOString(),
+                    subscription_end_date: endDate.toISOString(),
+                    payment_method: 'wallet',
+                    auto_renew: false,
+                    cv_usage: 0,
+                    autofill_usage: 0,
+                })
+            if (insertError) {
+                console.error('Failed to insert subscription:', insertError)
+                return NextResponse.json({ error: 'সাবস্ক্রিপশন তৈরি করতে ব্যর্থ হয়েছে' }, { status: 500 })
+            }
         }
 
         // Notification

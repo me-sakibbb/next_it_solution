@@ -5,6 +5,12 @@ import { LucideIcon, ArrowUpRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
+interface UsageLimit {
+    used: number
+    total: number
+    label?: string
+}
+
 interface ServiceCardProps {
     title: string
     description: string
@@ -14,6 +20,7 @@ interface ServiceCardProps {
     iconColorClass?: string
     disabled?: boolean
     price?: number | string
+    usageLimit?: UsageLimit
     onClick?: () => void
 }
 
@@ -26,6 +33,7 @@ export function ServiceCard({
     iconColorClass = "text-primary",
     disabled = false,
     price,
+    usageLimit,
     onClick
 }: ServiceCardProps) {
     const formatPrice = (p: number | string) => {
@@ -64,6 +72,41 @@ export function ServiceCard({
                 {disabled && (
                     <div className="mt-4 pt-3 border-t border-border/50">
                         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">শীঘ্রই আসছে</span>
+                    </div>
+                )}
+
+                {usageLimit && (
+                    <div className="mt-4 pt-3 border-t border-border/50 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{usageLimit.label ?? 'ব্যবহার'}</span>
+                            <span className={cn(
+                                "font-medium tabular-nums",
+                                usageLimit.total > 0 && usageLimit.used >= usageLimit.total
+                                    ? "text-destructive"
+                                    : "text-foreground"
+                            )}>
+                                {usageLimit.used} / {usageLimit.total}
+                            </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                            <div
+                                className={cn(
+                                    "h-full rounded-full transition-all duration-500",
+                                    usageLimit.total === 0
+                                        ? "w-0"
+                                        : usageLimit.used / usageLimit.total >= 1
+                                            ? "bg-destructive"
+                                            : usageLimit.used / usageLimit.total >= 0.75
+                                                ? "bg-amber-500"
+                                                : "bg-primary"
+                                )}
+                                style={{
+                                    width: usageLimit.total === 0
+                                        ? '0%'
+                                        : `${Math.min(100, (usageLimit.used / usageLimit.total) * 100)}%`
+                                }}
+                            />
+                        </div>
                     </div>
                 )}
             </CardContent>

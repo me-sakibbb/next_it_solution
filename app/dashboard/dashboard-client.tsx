@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ImageIcon, FileUser, Store, ShoppingBag, Landmark, Briefcase, Globe } from "lucide-react";
+import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace } from "lucide-react";
 import { ServiceCard } from "@/components/dashboard/service-card";
 import { RecentOrdersWidget } from "@/components/dashboard/recent-orders-widget";
 import { ServiceOrder, Service } from "@/lib/types";
 import { ServiceOrderDialog } from "@/components/services/service-order-dialog";
+import { useUsageLimits } from "@/hooks/use-usage-limits";
 
 interface DashboardClientProps {
   totalRevenue: number;
@@ -44,6 +45,16 @@ export function DashboardClient({
 }: DashboardClientProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
+
+  const { usage, limits } = useUsageLimits();
+
+  const cvLimit = limits && usage !== null
+    ? { used: usage.cv_usage, total: limits.cv_makes, label: 'CV তৈরি' }
+    : undefined;
+
+  const autofillLimit = limits && usage !== null
+    ? { used: usage.autofill_usage, total: limits.autofill_applications, label: 'অটোফিল ব্যবহার' }
+    : undefined;
 
   const handleServiceClick = (serviceName: string) => {
     const service = premiumServices.find(s => s.name === serviceName);
@@ -100,6 +111,7 @@ export function DashboardClient({
             href="/dashboard/cv-builder"
             colorClass="bg-blue-500/10 text-blue-600"
             iconColorClass="text-blue-600"
+            usageLimit={cvLimit}
           />
           <ServiceCard
             title="শপ ম্যানেজমেন্ট"
@@ -112,29 +124,32 @@ export function DashboardClient({
           <ServiceCard
             title="জন্ম নিবন্ধনের ফর্ম অটোমেশন এআই"
             description="সহজে এবং নির্ভুলভাবে জন্ম নিবন্ধনের ফর্ম পূরণ করুন।"
-            icon={Landmark}
+            icon={BotMessageSquare}
             href="#"
             onClick={() => handleServiceClick("জন্ম নিবন্ধনের ফর্ম অটোমেশন এআই")}
             colorClass="bg-orange-500/10 text-orange-600"
             iconColorClass="text-orange-600"
+            usageLimit={autofillLimit}
           />
           <ServiceCard
             title="টেলিটক জব ফর্ম অটোমেশন এআই"
             description="টেলিটক জব অ্যাপ্লিকেশনের ফর্ম স্বয়ংক্রিয়ভাবে পূরণ করুন।"
-            icon={Briefcase}
+            icon={BrainCircuit}
             href="#"
             onClick={() => handleServiceClick("টেলিটক জব ফর্ম অটোমেশন এআই")}
             colorClass="bg-sky-500/10 text-sky-600"
             iconColorClass="text-sky-600"
+            usageLimit={autofillLimit}
           />
           <ServiceCard
-            title="ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই"
+            title="ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই"
             description="ইন্ডিয়ান ভিসার জন্য দ্রুত এবং নির্ভুল ফর্ম ফিলিং সার্ভিস।"
-            icon={Globe}
+            icon={ScanFace}
             href="#"
-            onClick={() => handleServiceClick("ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই")}
+            onClick={() => handleServiceClick("ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই")}
             colorClass="bg-indigo-500/10 text-indigo-600"
             iconColorClass="text-indigo-600"
+            usageLimit={autofillLimit}
           />
         </div>
       </section>
@@ -144,19 +159,12 @@ export function DashboardClient({
         {/* Premium Services (Left 2/3) */}
         <div className="lg:col-span-2">
           {premiumServices && premiumServices.length > 0 && (
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 p-8 border border-amber-500/10 h-full">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-3 bg-amber-500/10 rounded-xl">
-                  <ShoppingBag className="w-8 h-8 text-amber-600" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold tracking-tight text-amber-900 dark:text-amber-100">
-                    প্রিমিয়াম সার্ভিসসমূহ
-                  </h2>
-                  <p className="text-amber-700/70 dark:text-amber-400/70">
-                    আপনার ব্যবসার সমৃদ্ধির জন্য বিশেষভাবে সংগৃহীত
-                  </p>
-                </div>
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-1 bg-primary rounded-full" />
+                <h2 className="text-2xl font-bold tracking-tight">
+                  প্রিমিয়াম সার্ভিসসমূহ
+                </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {premiumServices.slice(0, 4).map((service) => (
@@ -167,15 +175,12 @@ export function DashboardClient({
                     icon={ShoppingBag}
                     href="#"
                     onClick={() => handleDirectServiceClick(service)}
-                    colorClass="bg-amber-500/10 text-amber-600"
-                    iconColorClass="text-amber-600"
+                    colorClass="bg-primary/5 hover:bg-primary/10"
+                    iconColorClass="text-primary"
                     price={service.price}
                   />
                 ))}
               </div>
-
-              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
             </div>
           )}
         </div>

@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { executePayment, queryPayment } from '@/lib/bkash'
-
-const PLAN_PRICES: Record<string, number> = {
-    basic_bit: 199,
-    advance_plus: 299,
-    premium_power: 399,
-}
+import { executePayment } from '@/lib/bkash'
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
@@ -61,7 +55,6 @@ export async function GET(request: NextRequest) {
                 .from('bkash_payments')
                 .update({
                     status: 'failed',
-                    bkash_error: bkashError instanceof Error ? bkashError.message : 'Unknown error',
                 })
                 .eq('payment_id', paymentID)
 
@@ -109,30 +102,34 @@ export async function GET(request: NextRequest) {
         } else if (paymentRecord.intent === 'subscribe') {
             const planType = paymentRecord.plan_type
 
-            // Calculate subscription dates
             const startDate = new Date()
-            const endDate = new Date(startDate)
-            endDate.setDate(endDate.getDate() + 30)
 
-            // Upsert subscription
+            // Upsert subscription — find any existing record for this user
             const { data: existing } = await adminSupabase
                 .from('subscriptions')
                 .select('id, subscription_end_date, status')
                 .eq('user_id', userId)
+                .order('subscription_start_date', { ascending: false })
+                .limit(1)
                 .maybeSingle()
 
+            // Calculate end date: extend from current end if still active, otherwise 30 days from now
+            let endDate: Date
+            if (
+                existing &&
+                existing.status === 'active' &&
+                existing.subscription_end_date &&
+                new Date(existing.subscription_end_date) > startDate
+            ) {
+                endDate = new Date(existing.subscription_end_date)
+                endDate.setDate(endDate.getDate() + 30)
+            } else {
+                endDate = new Date(startDate)
+                endDate.setDate(endDate.getDate() + 30)
+            }
+
             if (existing) {
-                // Extend from current end date if still active, otherwise from now
-                const currentEnd = existing.subscription_end_date && existing.status === 'active'
-                    ? new Date(existing.subscription_end_date)
-                    : new Date()
-
-                if (currentEnd > new Date()) {
-                    endDate.setTime(currentEnd.getTime())
-                    endDate.setDate(endDate.getDate() + 30)
-                }
-
-                await adminSupabase
+                const { error: updateError } = await adminSupabase
                     .from('subscriptions')
                     .update({
                         plan_type: planType,
@@ -145,18 +142,26 @@ export async function GET(request: NextRequest) {
                         updated_at: new Date().toISOString(),
                     })
                     .eq('id', existing.id)
+                if (updateError) {
+                    console.error('Failed to update subscription:', updateError)
+                }
             } else {
-                await adminSupabase.from('subscriptions').insert({
-                    user_id: userId,
-                    plan_type: planType,
-                    status: 'active',
-                    subscription_start_date: startDate.toISOString(),
-                    subscription_end_date: endDate.toISOString(),
-                    payment_method: 'bkash',
-                    auto_renew: false,
-                    cv_usage: 0,
-                    autofill_usage: 0,
-                })
+                const { error: insertError } = await adminSupabase
+                    .from('subscriptions')
+                    .insert({
+                        user_id: userId,
+                        plan_type: planType,
+                        status: 'active',
+                        subscription_start_date: startDate.toISOString(),
+                        subscription_end_date: endDate.toISOString(),
+                        payment_method: 'bkash',
+                        auto_renew: false,
+                        cv_usage: 0,
+                        autofill_usage: 0,
+                    })
+                if (insertError) {
+                    console.error('Failed to insert subscription:', insertError)
+                }
             }
 
             const planNames: Record<string, string> = {
@@ -169,7 +174,7 @@ export async function GET(request: NextRequest) {
             await adminSupabase.from('notifications').insert({
                 user_id: userId,
                 title: 'সাবস্ক্রিপশন সক্রিয় হয়েছে 🎉',
-                message: `${planNames[planType] || planType} প্ল্যান সক্রিয় হয়েছে। মেয়াদ: ৩০ দিন। ট্রানজেকশন আইডি: ${trxResult.trxID}`,
+                message: `${planNames[planType] || planType} প্ল্যান সক্রিয় হয়েছে। মেয়াদ: ৩০ দিন পর্যন্ত (${endDate.toLocaleDateString('bn-BD')})। ট্রানজেকশন আইডি: ${trxResult.trxID}`,
                 type: 'payment',
                 action_url: '/dashboard/billing',
             })

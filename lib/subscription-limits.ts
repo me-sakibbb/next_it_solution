@@ -10,18 +10,6 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionPlanType, PlanLimits> = {
         cv_makes: 0,
         autofill_applications: 0
     },
-    basic: { // Legacy or fallback
-        cv_makes: 5,
-        autofill_applications: 10
-    },
-    premium: { // Legacy or fallback
-        cv_makes: 20,
-        autofill_applications: 40
-    },
-    enterprise: { // Legacy or fallback
-        cv_makes: 100,
-        autofill_applications: 200
-    },
     basic_bit: {
         cv_makes: 10,
         autofill_applications: 20

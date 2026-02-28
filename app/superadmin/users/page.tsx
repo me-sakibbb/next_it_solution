@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { getAllUsers } from '@/actions/superadmin'
+import { getAllUsersWithSubscription } from '@/actions/superadmin'
 import { UsersTable } from '@/components/superadmin/users-table'
 
 export default function SuperAdminUsersPage() {
@@ -13,7 +13,7 @@ export default function SuperAdminUsersPage() {
 
     useEffect(() => {
         setLoading(true)
-        getAllUsers(search)
+        getAllUsersWithSubscription(search)
             .then(setUsers)
             .catch(console.error)
             .finally(() => setLoading(false))
@@ -37,3 +37,4 @@ export default function SuperAdminUsersPage() {
         </div>
     )
 }
+

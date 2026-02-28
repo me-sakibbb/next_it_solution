@@ -2,7 +2,7 @@ export type UserRole = 'super_admin' | 'shop_owner' | 'manager' | 'staff'
 
 export type ShopMemberRole = 'owner' | 'manager' | 'staff'
 
-export type SubscriptionPlanType = 'trial' | 'basic' | 'premium' | 'enterprise' | 'basic_bit' | 'advance_plus' | 'premium_power'
+export type SubscriptionPlanType = 'trial' | 'basic_bit' | 'advance_plus' | 'premium_power'
 
 export type SubscriptionStatus = 'active' | 'expired' | 'cancelled' | 'suspended'
 

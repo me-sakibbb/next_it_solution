@@ -118,3 +118,91 @@ export async function updateUserBalance(userId: string, balance: number) {
         .eq('id', userId)
     if (error) throw new Error(error.message)
 }
+
+export async function updateUserInfo(
+    userId: string,
+    fields: { full_name?: string; balance?: number; is_active?: boolean }
+) {
+    const supabase = createClient()
+    const { error } = await supabase
+        .from('users')
+        .update({ ...fields, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+    if (error) throw new Error(error.message)
+}
+
+export async function getAllUsersWithSubscription(search?: string) {
+    const supabase = createClient()
+    let query = supabase
+        .from('users')
+        .select('*, subscription:subscriptions(id, plan_type, status, subscription_start_date, subscription_end_date, trial_end_date)')
+        .order('created_at', { ascending: false })
+
+    if (search) {
+        query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%`)
+    }
+
+    const { data, error } = await query
+    if (error) throw new Error(error.message)
+    return data ?? []
+}
+
+export async function updateUserSubscription(
+    userId: string,
+    planType: string,
+    status: string,
+    subscriptionEndDate?: string
+) {
+    const supabase = createClient()
+    const { error } = await supabase
+        .from('subscriptions')
+        .upsert(
+            {
+                user_id: userId,
+                plan_type: planType,
+                status,
+                subscription_start_date: new Date().toISOString(),
+                subscription_end_date: subscriptionEndDate || null,
+                updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id' }
+        )
+    if (error) throw new Error(error.message)
+}
+
+export async function getAllTransactions(page = 1, pageSize = 20, search?: string) {
+    const supabase = createClient()
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
+    let query = supabase
+        .from('bkash_payments')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to)
+
+    if (search) {
+        query = query.or(`trx_id.ilike.%${search}%,payment_id.ilike.%${search}%`)
+    }
+
+    const { data: payments, error, count } = await query
+    if (error) throw new Error(error.message)
+
+    if (!payments || payments.length === 0) {
+        return { data: [], count: count ?? 0 }
+    }
+
+    // bkash_payments.user_id maps to auth.users (same UUID as public.users.id)
+    const userIds = [...new Set(payments.map((p: any) => p.user_id))]
+    const { data: users } = await supabase
+        .from('users')
+        .select('id, email, full_name')
+        .in('id', userIds)
+
+    const userMap = Object.fromEntries((users ?? []).map((u: any) => [u.id, u]))
+
+    return {
+        data: payments.map((p: any) => ({ ...p, user: userMap[p.user_id] ?? null })),
+        count: count ?? 0,
+    }
+}

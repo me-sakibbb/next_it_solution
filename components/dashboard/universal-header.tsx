@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Store, Menu } from "lucide-react";
+import { LogOut, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,9 +16,10 @@ import { createClient } from "@/lib/supabase/client";
 import { NotificationsDropdown } from "./notifications";
 import { AddBalanceModal } from "./add-balance-modal";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Wallet, Crown } from "lucide-react";
 import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { SubscriptionContext } from "@/lib/subscription-context";
+import { useState, useEffect } from "react";
 
 interface UniversalHeaderProps {
   user: User;
@@ -27,7 +28,33 @@ interface UniversalHeaderProps {
 
 export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
   const router = useRouter();
-  const { status, loading } = useSubscriptionStatus(user.id);
+  const { status, loading, refresh } = useSubscriptionStatus(user.id);
+  const [balance, setBalance] = useState<number>(parseFloat(profile?.balance ?? 0));
+
+  // Keep balance in sync with real-time updates to the users table
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`user-balance-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newBalance = parseFloat(payload.new?.balance ?? 0);
+          setBalance(newBalance);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user.id]);
 
   const formatCurrency = (amount: number) => {
     return `৳${new Intl.NumberFormat("en-BD", {
@@ -37,18 +64,14 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
   };
 
   const planMap: Record<string, string> = {
-    'free': 'ফ্রি',
-    'trial': 'ট্রায়াল',
-    'basic': 'বেসিক',
+    'free': 'ফ্রি প্ল্যান',
+    'trial': 'ফ্রি প্ল্যান',
     'basic_bit': 'বেসিক বিট',
     'advance_plus': 'এডভান্স প্লাস',
     'premium_power': 'প্রিমিয়াম পাওয়ার',
-    'premium': 'প্রিমিয়াম',
-    'enterprise': 'এন্টারপ্রাইজ',
-    'Free': 'ফ্রি'
+    'Free': 'ফ্রি প্ল্যান'
   }
 
-  const balance = profile?.balance || 0.0;
   const planName = planMap[status?.subscription?.plan_type || "Free"] || (status?.subscription?.plan_type || "ফ্রি");
   const isActive = status?.isActive || false;
 
@@ -59,6 +82,7 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
   };
 
   return (
+    <SubscriptionContext.Provider value={{ refresh }}>
     <header className="flex h-16 items-center gap-4 border-b bg-card px-6 sticky top-0 z-50">
       <div className="flex flex-1 items-center gap-6">
         <Link href="/dashboard" className="flex items-center gap-2 group mr-4">
@@ -150,5 +174,6 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
         </DropdownMenu>
       </div>
     </header>
+    </SubscriptionContext.Provider>
   );
 }

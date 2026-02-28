@@ -21,9 +21,10 @@ export function AccountOverview({ subscription, balance }: AccountOverviewProps)
 
     // The hook returns the raw subscription record
     // Calculate active status and days remaining from the record
+    const isFreePlan = !subscription || subscription.plan_type === 'trial'
     const isActive = subscription?.status === 'active'
     let daysRemaining = 0
-    if (isActive) {
+    if (isActive && !isFreePlan) {
         const endDate = subscription.subscription_end_date || subscription.trial_end_date
         if (endDate) {
             const end = new Date(endDate)
@@ -32,22 +33,18 @@ export function AccountOverview({ subscription, balance }: AccountOverviewProps)
         }
     }
 
-    // Calculate progress (assuming 30 days for simplicity or from trial dates)
+    // Calculate progress (assuming 30 days for paid plans)
     const totalDays = 30
     const progress = Math.min(100, Math.max(0, (daysRemaining / totalDays) * 100))
 
     const planMap: Record<string, string> = {
-        'trial': 'ট্রায়াল',
+        'trial': 'ফ্রি প্ল্যান',
         'basic_bit': 'বেসিক বিট',
         'advance_plus': 'এডভান্স প্লাস',
         'premium_power': 'প্রিমিয়াম পাওয়ার',
-        'basic': 'বেসিক',
-        'premium': 'প্রিমিয়াম',
-        'enterprise': 'এন্টারপ্রাইজ'
     }
 
     const planName = planMap[subscription?.plan_type || ''] || 'ফ্রি প্ল্যান'
-    const isTrial = subscription?.plan_type === 'trial'
 
     // Formatter for currency
     const formatCurrency = (amount: number) => {
@@ -81,7 +78,6 @@ export function AccountOverview({ subscription, balance }: AccountOverviewProps)
                             <div>
                                 <h3 className="text-lg font-semibold flex items-center gap-2">
                                     বর্তমান প্ল্যান: <span className="text-primary text-xl ml-2">{planName.charAt(0).toUpperCase() + planName.slice(1)}</span>
-                                    {isTrial && <Badge variant="secondary" className="ml-2">ট্রায়াল</Badge>}
                                     {isActive ? (
                                         <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 border-emerald-500/20">সক্রিয়</Badge>
                                     ) : (
@@ -93,6 +89,7 @@ export function AccountOverview({ subscription, balance }: AccountOverviewProps)
                                 </p>
                             </div>
 
+                            {!isFreePlan && (
                             <div className="flex items-center gap-4 text-sm">
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <Calendar className="w-4 h-4" />
@@ -103,6 +100,7 @@ export function AccountOverview({ subscription, balance }: AccountOverviewProps)
                                     <span>পরবর্তী বিলিং: {subscription?.subscription_end_date ? new Date(subscription.subscription_end_date).toLocaleDateString() : 'প্রযোজ্য নয়'}</span>
                                 </div>
                             </div>
+                            )}
                         </div>
 
                         <div className="w-full md:w-auto flex flex-col gap-3">
@@ -114,7 +112,7 @@ export function AccountOverview({ subscription, balance }: AccountOverviewProps)
                         </div>
                     </div>
 
-                    {isActive && (
+                    {isActive && !isFreePlan && (
                         <div className="mt-6 pt-4 border-t border-primary/10">
                             <div className="flex justify-between text-xs mb-2 text-muted-foreground">
                                 <span>প্ল্যান ব্যবহার</span>

@@ -25,10 +25,27 @@ export default function DashboardPage() {
         const supabase = createClient();
         const [profileRes, subRes] = await Promise.all([
           supabase.from("users").select("*").eq("id", user.id).single(),
-          supabase.from("subscriptions").select("*").eq("user_id", user.id).eq("status", "active").limit(1).maybeSingle()
+          supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("subscription_start_date", { ascending: false })
+            .limit(1)
+            .maybeSingle()
         ]);
         setProfile(profileRes.data);
-        setSubscription(subRes.data);
+        // Only mark subscription as active if status='active' AND end_date in the future
+        const sub = subRes.data;
+        if (
+          sub &&
+          sub.status === "active" &&
+          sub.subscription_end_date &&
+          new Date(sub.subscription_end_date) > new Date()
+        ) {
+          setSubscription(sub);
+        } else {
+          setSubscription(null);
+        }
       }
     }
     fetchUserData();
