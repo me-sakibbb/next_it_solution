@@ -15,6 +15,7 @@ import {
   UserCircle,
   Briefcase,
   CreditCard,
+  ScanText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { User } from '@supabase/supabase-js'
@@ -41,6 +42,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
   const isDashboardHome = pathname === '/dashboard'
   const isPhotoEnhancer = pathname === '/dashboard/photo-enhancer' || pathname.startsWith('/dashboard/photo-enhancer/')
   const isCVBuilder = pathname === '/dashboard/cv-builder' || pathname.startsWith('/dashboard/cv-builder/')
+  const isPrintReady = pathname === '/dashboard/print-ready' || pathname.startsWith('/dashboard/print-ready/')
   const isBilling = pathname === '/dashboard/billing' || pathname.startsWith('/dashboard/billing/')
 
   return (
@@ -95,6 +97,20 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
         >
           <FileUser className="h-5 w-5" />
           AI সিভি বিল্ডার
+        </Link>
+
+        {/* Print Ready */}
+        <Link
+          href="/dashboard/print-ready"
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            isPrintReady
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+          )}
+        >
+          <ScanText className="h-5 w-5" />
+          প্রিন্ট রেডি
         </Link>
 
         {/* Inventory Management - Collapsible */}

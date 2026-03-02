@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace, FolderOpen, FileText } from "lucide-react";
+import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace, FolderOpen, FileText, ScanText } from "lucide-react";
 import { ServiceCard } from "@/components/dashboard/service-card";
 import { RecentOrdersWidget } from "@/components/dashboard/recent-orders-widget";
 import { ServiceOrder, Service } from "@/lib/types";
@@ -116,6 +116,14 @@ export function DashboardClient({
             colorClass="bg-blue-500/10 text-blue-600"
             iconColorClass="text-blue-600"
             usageLimit={cvLimit}
+          />
+          <ServiceCard
+            title="প্রিন্ট রেডি"
+            description="এআই এর মাধ্যমে ডকুমেন্টের ছবিকে স্ক্যান কপিতে রূপান্তর এবং PDF তৈরি করুন।"
+            icon={ScanText}
+            href="/dashboard/print-ready"
+            colorClass="bg-pink-500/10 text-pink-600"
+            iconColorClass="text-pink-600"
           />
           <ServiceCard
             title="শপ ম্যানেজমেন্ট"
