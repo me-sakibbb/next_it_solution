@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
-    "postinstall": "patch-package",
+    "postinstall": "node patch-cropper-2.js",
     "start": "next start"
   },
   "dependencies": {
