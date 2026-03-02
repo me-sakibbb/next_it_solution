@@ -1,9 +1,11 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import { SubscriptionPlans } from './subscription-plans'
 import { useUsageLimits } from '@/hooks/use-usage-limits'
 import { Loader2, Lock } from 'lucide-react'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface SubscriptionWallProps {
     children: React.ReactNode
@@ -13,15 +15,57 @@ interface SubscriptionWallProps {
 export function SubscriptionWall({ children, feature = 'cv' }: SubscriptionWallProps) {
     const { limits, planType, balance, loading, refresh } = useUsageLimits()
     const [showWall, setShowWall] = useState(false)
+    const [actionBlockedOpen, setActionBlockedOpen] = useState(false)
 
     useEffect(() => {
         // Only evaluate wall state after fully loaded
         if (!loading) {
-            setShowWall(!limits)
+            let blocked = false
+            if (!limits) {
+                blocked = true // No active plan
+            } else if (feature === 'shop' && planType === 'trial') {
+                blocked = true // Trial/Free plan doesn't have shop access
+            }
+            setShowWall(blocked)
         }
-    }, [limits, loading])
+    }, [limits, loading, feature, planType])
+
+    const handleReactCapture = (e: React.MouseEvent | React.FormEvent) => {
+        if (!showWall || feature !== 'shop') return
+        const target = e.target as HTMLElement
+
+        if (target.closest('.subscription-modal-content') || target.closest('.subscription-bypass')) {
+            return
+        }
+
+        const isBlockable = target.closest('button') || target.closest('input[type="submit"]') || target.closest('[data-slot="button"]')
+
+        if (isBlockable) {
+            e.preventDefault()
+            e.stopPropagation()
+            // Prevents other React handlers on this element or descendants from firing
+            if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                e.nativeEvent.stopImmediatePropagation()
+            }
+            setActionBlockedOpen(true)
+        }
+    }
+
+    const handleReactSubmit = (e: React.FormEvent) => {
+        if (!showWall || feature !== 'shop') return
+        const target = e.target as HTMLElement
+        if (target.closest('.subscription-modal-content') || target.closest('.subscription-bypass')) return
+
+        e.preventDefault()
+        e.stopPropagation()
+        if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+            e.nativeEvent.stopImmediatePropagation()
+        }
+        setActionBlockedOpen(true)
+    }
 
     const handleSuccess = async () => {
+        setActionBlockedOpen(false)
         // Give the DB a moment to commit before re-checking
         await new Promise(resolve => setTimeout(resolve, 800))
         await refresh()
@@ -31,15 +75,48 @@ export function SubscriptionWall({ children, feature = 'cv' }: SubscriptionWallP
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse">অনমত যচই কর হচছ...</p>
+                <p className="text-muted-foreground animate-pulse">অনুমতি যাচাই করা হচ্ছে...</p>
             </div>
         )
     }
 
     if (showWall) {
+        if (feature === 'shop') {
+            // For shop, render children so they can look around, but open the popup on actions
+            return (
+                <div onClickCapture={handleReactCapture} onSubmitCapture={handleReactSubmit} className="contents">
+                    {children}
+                    <Dialog open={actionBlockedOpen} onOpenChange={setActionBlockedOpen}>
+                        <DialogContent className="max-w-4xl subscription-modal-content p-0 overflow-hidden border-border/50">
+                            <ScrollArea className="max-h-[85vh]">
+                                <div className="p-6 md:p-8 space-y-8 bg-background">
+                                    <div className="text-center space-y-4 pt-4">
+                                        <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                                            <Lock className="w-8 h-8 text-primary" />
+                                        </div>
+                                        <h2 className="text-2xl font-bold tracking-tight text-foreground">অ্যাক্সেস সীমাবদ্ধ</h2>
+                                        <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+                                            শপ ম্যানেজমেন্টের সম্পূর্ণ সুবিধা উপভোগ করতে এবং কাজ করতে একটি প্রিমিয়াম প্ল্যান প্রয়োজন।
+                                        </p>
+                                    </div>
+                                    <SubscriptionPlans
+                                        userBalance={balance}
+                                        currentPlan={planType || undefined}
+                                        onSuccess={handleSuccess}
+                                    />
+                                    <div className="pb-4"></div>
+                                </div>
+                            </ScrollArea>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            )
+        }
+
+        // Standard blocker logic for CV/Autofill 
         return (
             <div className="relative min-h-[600px] w-full flex items-center justify-center rounded-xl overflow-hidden border bg-background/50 backdrop-blur-sm p-8">
-                <div className="max-w-4xl w-full space-y-12">
+                <div className="max-w-4xl w-full space-y-12 subscription-modal-content">
                     <div className="text-center space-y-4">
                         <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                             <Lock className="w-8 h-8 text-primary" />

@@ -63,7 +63,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
       {/* Back to Dashboard Button */}
       <div className="p-4 border-b">
         <Link href="/dashboard">
-          <Button variant="outline" className="w-full justify-start" size="sm">
+          <Button variant="outline" className="w-full justify-start subscription-bypass" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             ড্যাশবোর্ডে ফিরে যান
           </Button>

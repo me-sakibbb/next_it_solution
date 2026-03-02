@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ShopSidebar } from '@/components/dashboard/shop-sidebar'
 
+import { SubscriptionWall } from '@/components/dashboard/subscription-wall'
+
 export default async function ShopLayout({
   children,
 }: {
@@ -28,7 +30,11 @@ export default async function ShopLayout({
     <div className="flex h-screen overflow-hidden bg-background">
       <ShopSidebar user={user} profile={profile} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <SubscriptionWall feature="shop">
+            {children}
+          </SubscriptionWall>
+        </main>
       </div>
     </div>
   )
