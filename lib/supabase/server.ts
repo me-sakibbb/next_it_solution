@@ -18,10 +18,17 @@ export async function createClient() {
           return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
+          const rememberMe = cookieStore.get('remember-me')?.value === 'true'
+
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set({ name, value, ...options })
-            )
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // If remember me is false, we make the auth cookies session-only by removing maxAge
+              const cookieOptions = !rememberMe && name.startsWith('sb-')
+                ? { ...options, maxAge: undefined }
+                : options
+
+              cookieStore.set({ name, value, ...cookieOptions })
+            })
           } catch {
             // The "setAll" method was called from a Server Component.
             // This can be ignored if you have proxy refreshing

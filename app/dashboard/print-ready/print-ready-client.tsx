@@ -8,7 +8,7 @@ import { OpenCvProvider } from 'opencv-react-ts'
 import jsPDF from 'jspdf'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Upload, Download, RefreshCw, Wand2, ArrowLeft, Loader2, Printer } from 'lucide-react'
+import { Upload, Download, RefreshCw, Wand2, ArrowLeft, Loader2, Printer, Camera, Image as ImageIcon } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 
@@ -464,16 +464,36 @@ function PrintReadyClientInner({ shopId }: PrintReadyClientInnerProps) {
                 {/* Upload */}
                 {step === 'upload' && (
                     <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-12 text-center bg-muted/20">
-                        <Upload className="w-16 h-16 text-muted-foreground mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">আপনার ডকুমেন্টের ছবি আপলোড করুন</h3>
-                        <p className="text-muted-foreground mb-6 max-w-sm">ক্যামেরা থেকে সরাসরি ছবি তুলুন অথবা গ্যালারি থেকে সিলেক্ট করুন</p>
-                        <Label htmlFor="picture" className="cursor-pointer">
-                            <div className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 rounded-md inline-flex items-center justify-center font-medium">
-                                ছবি নির্বাচন করুন
+                        <div className="flex gap-4 mb-6">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                                <Camera className="w-8 h-8 text-primary" />
                             </div>
-                            <input id="picture" type="file" accept="image/*" capture="environment"
-                                className="hidden" onChange={onSelectFile} />
-                        </Label>
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                                <ImageIcon className="w-8 h-8 text-primary" />
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">আপনার ডকুমেন্টের ছবি দিন</h3>
+                        <p className="text-muted-foreground mb-8 max-w-sm">সরাসরি ক্যামেরা দিয়ে ছবি তুলুন অথবা গ্যালারি থেকে আপলোড করুন</p>
+
+                        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                            <Label htmlFor="camera-input" className="flex-1 cursor-pointer">
+                                <div className="bg-primary text-primary-foreground hover:bg-primary/90 h-14 px-6 rounded-xl flex items-center justify-center gap-3 font-bold text-lg shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]">
+                                    <Camera className="w-6 h-6" />
+                                    ক্যামেরা (Camera)
+                                </div>
+                                <input id="camera-input" type="file" accept="image/*" capture="environment"
+                                    className="hidden" onChange={onSelectFile} />
+                            </Label>
+
+                            <Label htmlFor="gallery-input" className="flex-1 cursor-pointer">
+                                <div className="bg-background text-foreground border-2 border-primary/20 hover:bg-muted h-14 px-6 rounded-xl flex items-center justify-center gap-3 font-bold text-lg transition-all hover:scale-[1.02]">
+                                    <ImageIcon className="w-6 h-6 text-primary" />
+                                    গ্যালারি (Gallery)
+                                </div>
+                                <input id="gallery-input" type="file" accept="image/*"
+                                    className="hidden" onChange={onSelectFile} />
+                            </Label>
+                        </div>
                     </div>
                 )}
 

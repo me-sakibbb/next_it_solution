@@ -206,11 +206,11 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
 
                             <CardContent className="p-5 space-y-5">
                                 {/* Features */}
-                                <ul className="space-y-2">
+                                <ul className="space-y-2.5">
                                     {plan.features.map((feature, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-sm">
+                                        <li key={i} className="flex items-start gap-3 text-[13px] md:text-sm leading-snug">
                                             <Check className={`w-4 h-4 mt-0.5 shrink-0 ${plan.color}`} />
-                                            <span>{feature}</span>
+                                            <span className="font-medium text-foreground/90">{feature}</span>
                                         </li>
                                     ))}
                                 </ul>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { SubscriptionPlans } from './subscription-plans'
 import { useUsageLimits } from '@/hooks/use-usage-limits'
 import { Loader2, Lock } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface SubscriptionWallProps {
@@ -87,18 +87,18 @@ export function SubscriptionWall({ children, feature = 'cv' }: SubscriptionWallP
                 <div onClickCapture={handleReactCapture} onSubmitCapture={handleReactSubmit} className="contents">
                     {children}
                     <Dialog open={actionBlockedOpen} onOpenChange={setActionBlockedOpen}>
-                        <DialogContent className="max-w-4xl subscription-modal-content p-0 overflow-hidden border-border/50">
-                            <ScrollArea className="max-h-[85vh]">
+                        <DialogContent className="w-full sm:max-w-[95vw] md:max-w-6xl lg:max-w-7xl subscription-modal-content p-0 overflow-hidden border-border/50">
+                            <ScrollArea className="max-h-[95vh]">
                                 <div className="p-6 md:p-8 space-y-8 bg-background">
-                                    <div className="text-center space-y-4 pt-4">
-                                        <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                                    <DialogHeader className="text-center space-y-4 pt-4 sm:text-center">
+                                        <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2">
                                             <Lock className="w-8 h-8 text-primary" />
                                         </div>
-                                        <h2 className="text-2xl font-bold tracking-tight text-foreground">অ্যাক্সেস সীমাবদ্ধ</h2>
-                                        <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+                                        <DialogTitle className="text-3xl font-bold tracking-tight text-foreground">অ্যাক্সেস সীমাবদ্ধ</DialogTitle>
+                                        <DialogDescription className="text-muted-foreground text-lg max-w-2xl mx-auto">
                                             শপ ম্যানেজমেন্টের সম্পূর্ণ সুবিধা উপভোগ করতে এবং কাজ করতে একটি প্রিমিয়াম প্ল্যান প্রয়োজন।
-                                        </p>
-                                    </div>
+                                        </DialogDescription>
+                                    </DialogHeader>
                                     <SubscriptionPlans
                                         userBalance={balance}
                                         currentPlan={planType || undefined}
@@ -116,7 +116,7 @@ export function SubscriptionWall({ children, feature = 'cv' }: SubscriptionWallP
         // Standard blocker logic for CV/Autofill 
         return (
             <div className="relative min-h-[600px] w-full flex items-center justify-center rounded-xl overflow-hidden border bg-background/50 backdrop-blur-sm p-8">
-                <div className="max-w-4xl w-full space-y-12 subscription-modal-content">
+                <div className="max-w-7xl w-full space-y-12 subscription-modal-content">
                     <div className="text-center space-y-4">
                         <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
                             <Lock className="w-8 h-8 text-primary" />
