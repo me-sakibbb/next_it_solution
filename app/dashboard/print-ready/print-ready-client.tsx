@@ -8,8 +8,9 @@ import { OpenCvProvider } from 'opencv-react-ts'
 import jsPDF from 'jspdf'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Upload, Download, RefreshCw, Wand2, ArrowLeft, Loader2 } from 'lucide-react'
+import { Upload, Download, RefreshCw, Wand2, ArrowLeft, Loader2, Printer } from 'lucide-react'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = 'upload' | 'crop' | 'preview'
@@ -32,45 +33,89 @@ function orderQuad(pts: Pt[]): Quad {
 // ─── OpenCV document detection ───────────────────────────────────────────────
 function detectDocument(cv: any, canvas: HTMLCanvasElement): Quad {
     const W = canvas.width, H = canvas.height
-    const scale = Math.min(1, 800 / Math.max(W, H))
+    const scale = Math.min(1, 1000 / Math.max(W, H))
     const rW = Math.round(W * scale), rH = Math.round(H * scale)
 
     const src = cv.imread(canvas)
     const small = new cv.Mat(); cv.resize(src, small, new cv.Size(rW, rH))
     const gray = new cv.Mat(); cv.cvtColor(small, gray, cv.COLOR_RGBA2GRAY)
-    const blurred = new cv.Mat(); cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0)
-    const edges = new cv.Mat(); cv.Canny(blurred, edges, 50, 150)
+
+    // Use Bilateral Filter to reduce noise while preserving edges
+    const filtered = new cv.Mat(); cv.bilateralFilter(gray, filtered, 9, 75, 75)
+
+    // Multiple edge detection attempts
+    const edges = new cv.Mat(); cv.Canny(filtered, edges, 75, 200)
     const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3))
-    const dilated = new cv.Mat(); cv.dilate(edges, dilated, kernel, new cv.Point(-1, -1), 2)
+    const dilated = new cv.Mat(); cv.dilate(edges, dilated, kernel, new cv.Point(-1, -1), 1)
+
     const contours = new cv.MatVector(); const hier = new cv.Mat()
     cv.findContours(dilated, contours, hier, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-    let bestPts: Pt[] | null = null
-    let maxArea = 0
-    const minArea = rW * rH * 0.05   // must cover at least 5% of image
+    let bestQuad: Pt[] | null = null
+    let maxScore = -1
+    const totalArea = rW * rH
 
     for (let i = 0; i < contours.size(); i++) {
         const cnt = contours.get(i)
         const area = cv.contourArea(cnt)
-        if (area >= minArea) {
-            const approx = new cv.Mat()
-            cv.approxPolyDP(cnt, approx, 0.02 * cv.arcLength(cnt, true), true)
-            if (approx.rows === 4 && cv.isContourConvex(approx) && area > maxArea) {
-                maxArea = area
-                bestPts = Array.from({ length: 4 }, (_, j) => ({
-                    x: approx.data32S[j * 2] / scale,
-                    y: approx.data32S[j * 2 + 1] / scale,
-                }))
+        if (area < totalArea * 0.03) { cnt.delete(); continue }
+
+        const peri = cv.arcLength(cnt, true)
+        const approx = new cv.Mat()
+        cv.approxPolyDP(cnt, approx, 0.02 * peri, true)
+
+        // CamScanner looks for roughly rectangular shapes
+        // We accept 4 to 10 points and try to simplify
+        if (approx.rows >= 4 && approx.rows <= 10) {
+            const rect = cv.minAreaRect(cnt)
+            const rectArea = rect.size.width * rect.size.height
+            const solidity = area / rectArea
+
+            // Score based on area + solidity (how rectangular it is)
+            const score = area * solidity
+
+            if (score > maxScore) {
+                maxScore = score
+                const pts: Pt[] = []
+                for (let j = 0; j < approx.rows; j++) {
+                    pts.push({
+                        x: approx.data32S[j * 2] / scale,
+                        y: approx.data32S[j * 2 + 1] / scale,
+                    })
+                }
+
+                // Simplified logic: pick points furthest towards corners
+                bestQuad = findExtremePoints(pts)
             }
-            approx.delete()
         }
+        approx.delete()
         cnt.delete()
     }
-    ;[src, small, gray, blurred, edges, kernel, dilated, contours, hier].forEach(m => m.delete?.())
 
-    if (bestPts) return orderQuad(bestPts)
-    const inset = Math.min(W, H) * 0.06
-    return [{ x: inset, y: inset }, { x: W - inset, y: inset }, { x: W - inset, y: H - inset }, { x: inset, y: H - inset }]
+    ;[src, small, gray, filtered, edges, kernel, dilated, contours, hier].forEach(m => m.delete?.())
+
+    if (bestQuad && bestQuad.length === 4) return orderQuad(bestQuad)
+
+    // Robust fallback: center rectangle
+    const insetW = W * 0.1, insetH = H * 0.1
+    return [{ x: insetW, y: insetH }, { x: W - insetW, y: insetH }, { x: W - insetW, y: H - insetH }, { x: insetW, y: H - insetH }]
+}
+
+// Helper to find 4 corners from a set of points (simplified)
+function findExtremePoints(pts: Pt[]): Pt[] {
+    // Pick pts that maximize/minimize (x+y) and (x-y)
+    let tl = pts[0], tr = pts[0], br = pts[0], bl = pts[0]
+    let minSum = Infinity, maxSum = -Infinity, minDiff = Infinity, maxDiff = -Infinity
+
+    pts.forEach(p => {
+        const sum = p.x + p.y
+        const diff = p.x - p.y
+        if (sum < minSum) { minSum = sum; tl = p }
+        if (sum > maxSum) { maxSum = sum; br = p }
+        if (diff > maxDiff) { maxDiff = diff; tr = p }
+        if (diff < minDiff) { minDiff = diff; bl = p }
+    })
+    return [tl, tr, br, bl]
 }
 
 // ─── Coordinate helpers ───────────────────────────────────────────────────────
@@ -84,7 +129,7 @@ function getImgRenderArea(imgEl: HTMLImageElement, natW: number, natH: number) {
 }
 
 // ─── Custom Document Cropper ──────────────────────────────────────────────────
-export interface CropperHandle { process(filter: FilterType): Promise<string> }
+export interface CropperHandle { process(filter: FilterType, options?: { bwThreshold?: number; colorContrast?: number }): Promise<string> }
 
 const DocCropper = forwardRef<CropperHandle, { imageFile: File; cvLoaded: boolean }>(
     ({ imageFile, cvLoaded }, ref) => {
@@ -155,13 +200,25 @@ const DocCropper = forwardRef<CropperHandle, { imageFile: File; cvLoaded: boolea
 
         // Expose process() via ref
         useImperativeHandle(ref, () => ({
-            async process(filter: FilterType): Promise<string> {
+            async process(filter: FilterType, options?: { bwThreshold?: number; colorContrast?: number }): Promise<string> {
                 if (!quad || !canvasRef.current) throw new Error('Not ready')
+                const bwThreshold = options?.bwThreshold ?? 10
+                const colorContrast = options?.colorContrast ?? 1.3
                 const cv = (window as any).cv
                 const [tl, tr, br, bl] = quad
                 const canvas = canvasRef.current
-                const outW = Math.round(Math.max(Math.hypot(tr.x - tl.x, tr.y - tl.y), Math.hypot(br.x - bl.x, br.y - bl.y)))
-                const outH = Math.round(Math.max(Math.hypot(bl.x - tl.x, bl.y - tl.y), Math.hypot(br.x - tr.x, br.y - tr.y)))
+
+                // Calculate realistic output dimensions (Straighten by calculating max lengths)
+                const widthTop = Math.hypot(tr.x - tl.x, tr.y - tl.y)
+                const widthBottom = Math.hypot(br.x - bl.x, br.y - bl.y)
+                const outW = Math.round(Math.max(widthTop, widthBottom))
+
+                const heightLeft = Math.hypot(bl.x - tl.x, bl.y - tl.y)
+                const heightRight = Math.hypot(br.x - tr.x, br.y - tr.y)
+                const outH = Math.round(Math.max(heightLeft, heightRight))
+
+                // Optional: Snap to common aspect ratios (A4 is ~1.41)
+                // if (Math.abs((outH/outW) - 1.41) < 0.1) ... 
 
                 const src = cv.imread(canvas)
                 const srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y])
@@ -172,21 +229,34 @@ const DocCropper = forwardRef<CropperHandle, { imageFile: File; cvLoaded: boolea
 
                 if (filter === 'bw') {
                     cv.cvtColor(warped, warped, cv.COLOR_RGBA2GRAY)
-                    cv.adaptiveThreshold(warped, warped, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 15, 10)
+                    cv.adaptiveThreshold(warped, warped, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 15, bwThreshold)
                 } else if (filter === 'color') {
-                    // Mild contrast stretch on canvas after warp
+                    // Magic Color effect: Sharpen + Contrast
+                    const sharpened = new cv.Mat()
+                    const kernel = cv.matFromArray(3, 3, cv.CV_32F, [
+                        0, -1, 0,
+                        -1, 5, -1,
+                        0, -1, 0
+                    ])
+                    cv.filter2D(warped, sharpened, -1, kernel)
+
                     const out = document.createElement('canvas')
-                    cv.imshow(out, warped)
-                        ;[src, srcPts, dstPts, M, warped].forEach(m => m.delete())
+                    cv.imshow(out, sharpened)
+
                     const ctx = out.getContext('2d')!
                     const id = ctx.getImageData(0, 0, out.width, out.height)
                     const d = id.data
                     for (let i = 0; i < d.length; i += 4) {
-                        d[i] = Math.min(255, (d[i] - 100) * 1.3 + 100 + 8)
-                        d[i + 1] = Math.min(255, (d[i + 1] - 100) * 1.3 + 100 + 8)
-                        d[i + 2] = Math.min(255, (d[i + 2] - 100) * 1.3 + 100 + 8)
+                        // Apply contrast enhancement
+                        d[i] = Math.min(255, (d[i] - 100) * colorContrast + 100 + 10)
+                        d[i + 1] = Math.min(255, (d[i + 1] - 100) * colorContrast + 100 + 10)
+                        d[i + 2] = Math.min(255, (d[i + 2] - 100) * colorContrast + 100 + 10)
                     }
                     ctx.putImageData(id, 0, 0)
+
+                    kernel.delete(); sharpened.delete(); warped.delete();
+                    [src, srcPts, dstPts, M].forEach(m => m.delete())
+
                     return out.toDataURL('image/png')
                 }
 
@@ -266,7 +336,10 @@ function PrintReadyClientInner({ shopId }: PrintReadyClientInnerProps) {
     const [imgFile, setImgFile] = useState<File | null>(null)
     const [processedUrl, setProcessedUrl] = useState('')
     const [filter, setFilter] = useState<FilterType>('bw')
+    const [bwThreshold, setBwThreshold] = useState(10)
+    const [colorContrast, setColorContrast] = useState(1.3)
     const [isProcessing, setIsProcessing] = useState(false)
+    const processingRef = useRef(false)
     const [cvLoaded, setCvLoaded] = useState(false)
     const cropperRef = useRef<CropperHandle>(null)
 
@@ -286,25 +359,32 @@ function PrintReadyClientInner({ shopId }: PrintReadyClientInnerProps) {
     }
 
     async function handleScan() {
-        if (!cropperRef.current) return
+        if (!cropperRef.current || processingRef.current) return
+        processingRef.current = true
         setIsProcessing(true)
         try {
-            const url = await cropperRef.current.process(filter)
-            if (processedUrl.startsWith('blob:')) URL.revokeObjectURL(processedUrl)
+            const url = await cropperRef.current.process(filter, { bwThreshold, colorContrast })
+            if (processedUrl && processedUrl.startsWith('blob:')) URL.revokeObjectURL(processedUrl)
             setProcessedUrl(url)
             setStep('preview')
         } catch (err) {
             console.error('Processing failed', err)
         } finally {
             setIsProcessing(false)
+            processingRef.current = false
         }
     }
 
-    // Re-scan when filter changes while on preview
+    // Re-scan when settings change while on preview
     useEffect(() => {
-        if (step === 'preview') handleScan()
+        if (step === 'preview') {
+            const timer = setTimeout(() => {
+                handleScan()
+            }, 300)
+            return () => clearTimeout(timer)
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filter])
+    }, [step, filter, bwThreshold, colorContrast])
 
     const handleDownloadPDF = async () => {
         if (!processedUrl) return
@@ -332,6 +412,33 @@ function PrintReadyClientInner({ shopId }: PrintReadyClientInnerProps) {
                 (pw - fw) / 2, (ph - fh) / 2, fw, fh)
             doc.save('scanned-document.pdf')
         } catch (e) { console.error('PDF failed', e) }
+    }
+
+    const handleDirectPrint = () => {
+        if (!processedUrl) return
+        const printWindow = window.open('', '_blank')
+        if (printWindow) {
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print Document</title>
+                        <style>
+                            body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: white; }
+                            img { max-width: 100%; max-height: 100vh; object-contain: contain; }
+                            @page { margin: 0; size: auto; }
+                            @media print {
+                                body { margin: 0; }
+                                img { width: 100vw; height: auto; max-height: none; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <img src="${processedUrl}" onload="window.print(); window.onafterprint = () => window.close();" />
+                    </body>
+                </html>
+            `)
+            printWindow.document.close()
+        }
     }
 
     const resetAll = () => {
@@ -370,9 +477,9 @@ function PrintReadyClientInner({ shopId }: PrintReadyClientInnerProps) {
                     </div>
                 )}
 
-                {/* Crop */}
-                {step === 'crop' && (
-                    <div className="flex-1 flex flex-col space-y-4">
+                {/* Crop & Main Processing Context */}
+                {imgFile && (
+                    <div className={step === 'crop' ? 'flex-1 flex flex-col space-y-4' : 'hidden'}>
                         <p className="text-sm font-medium text-center">
                             ডকুমেন্টের কোণাগুলো স্বয়ংক্রিয়ভাবে শনাক্ত করা হয়েছে — প্রয়োজনে নীল বিন্দু টেনে ঠিক করুন
                         </p>
@@ -382,7 +489,7 @@ function PrintReadyClientInner({ shopId }: PrintReadyClientInnerProps) {
                                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                                     <p className="text-sm text-muted-foreground">Image Processing AI লোড হচ্ছে...</p>
                                 </div>
-                            ) : imgFile && (
+                            ) : (
                                 <DocCropper ref={cropperRef} imageFile={imgFile} cvLoaded={cvLoaded} />
                             )}
                         </div>
@@ -401,18 +508,22 @@ function PrintReadyClientInner({ shopId }: PrintReadyClientInnerProps) {
 
                 {/* Preview */}
                 {step === 'preview' && (
-                    <div className="flex-1 flex flex-col md:flex-row gap-8 mt-4">
+                    <div className="flex-1 flex flex-col md:flex-row gap-8 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="flex-1 flex flex-col space-y-4">
-                            <div className="flex-1 min-h-[400px] border rounded-lg bg-black/5 flex items-center justify-center p-4 overflow-hidden">
-                                {isProcessing ? (
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                                        <p className="text-sm text-muted-foreground">ফিল্টার প্রয়োগ হচ্ছে...</p>
-                                    </div>
-                                ) : processedUrl && (
+                            <div className="flex-1 min-h-[400px] border rounded-lg bg-black/5 flex items-center justify-center p-4 overflow-hidden relative">
+                                {processedUrl && (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={processedUrl} alt="Processed result"
-                                        className="max-w-full max-h-[60vh] object-contain shadow-lg" />
+                                        className={`max-w-full max-h-[60vh] object-contain shadow-lg transition-opacity duration-200 ${isProcessing ? 'opacity-50' : 'opacity-100'}`} />
+                                )}
+
+                                {isProcessing && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/20 backdrop-blur-[1px]">
+                                        <div className="bg-background/80 p-4 rounded-full shadow-lg flex items-center gap-3 border">
+                                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                            <span className="text-sm font-medium">প্রসেসিং হচ্ছে...</span>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -436,9 +547,41 @@ function PrintReadyClientInner({ shopId }: PrintReadyClientInnerProps) {
                                     </Button>
                                 </div>
                             </div>
+
+                            {filter !== 'none' && (
+                                <div className="space-y-4 pt-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-medium">
+                                            {filter === 'bw' ? 'সাদাকালো ঘনত্ব (Threshold)' : 'রঙিন উজ্জ্বলতা (Contrast)'}
+                                        </Label>
+                                        <span className="text-xs text-muted-foreground">
+                                            {filter === 'bw' ? bwThreshold : colorContrast.toFixed(1)}
+                                        </span>
+                                    </div>
+                                    <Slider
+                                        value={filter === 'bw' ? [bwThreshold] : [colorContrast * 10]}
+                                        min={filter === 'bw' ? 0 : 10}
+                                        max={filter === 'bw' ? 40 : 30}
+                                        step={filter === 'bw' ? 1 : 1}
+                                        onValueChange={(val) => {
+                                            if (filter === 'bw') setBwThreshold(val[0])
+                                            else setColorContrast(val[0] / 10)
+                                        }}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground italic">
+                                        {filter === 'bw'
+                                            ? '* ঘনত্ব বাড়ালে ব্যাকগ্রাউন্ড আরও পরিষ্কার হবে।'
+                                            : '* ব্রাইটনেস বাড়ালে কালার আরও উজ্জ্বল হবে।'}
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="flex-1 border-t pt-6 flex flex-col justify-end">
                                 <Button onClick={handleDownloadPDF} size="lg" className="w-full gap-2 text-lg h-14">
                                     <Download className="w-5 h-5" /> PDF ডাউনলোড করুন
+                                </Button>
+                                <Button onClick={handleDirectPrint} variant="outline" size="lg" className="w-full gap-2 text-lg h-14 mt-3">
+                                    <Printer className="w-5 h-5" /> সরাসরি প্রিন্ট করুন
                                 </Button>
                             </div>
                             <div className="pt-4 flex justify-between">

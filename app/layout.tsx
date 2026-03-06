@@ -1,12 +1,25 @@
 import React from "react"
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Hind_Siliguri } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const _geist = Geist({
+  subsets: ["latin"],
+  variable: '--font-geist'
+});
+
+const _geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: '--font-geist-mono'
+});
+
+const _hindSiliguri = Hind_Siliguri({
+  weight: ['300', '400', '500', '600', '700'],
+  subsets: ['bengali', 'latin'],
+  variable: '--font-hind-siliguri',
+})
 
 export const metadata: Metadata = {
   title: 'Next IT Solution - IT Retail Management',
@@ -38,7 +51,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
+      <body className={`${_geist.variable} ${_geistMono.variable} ${_hindSiliguri.variable} font-sans antialiased`}>
         {children}
         <Analytics />
         <Toaster />

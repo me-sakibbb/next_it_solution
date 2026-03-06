@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, Gift } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { checkEmailExists } from '@/actions/auth'
 
 function SignUpForm() {
   const [fullName, setFullName] = useState('')
@@ -33,12 +34,35 @@ function SignUpForm() {
     }
   }, [searchParams])
 
+  const validatePassword = (pass: string) => {
+    if (pass.length < 8) return 'Password must be at least 8 characters long'
+    if (!/[A-Z]/.test(pass)) return 'Password must contain at least one uppercase letter'
+    if (!/[0-9]/.test(pass)) return 'Password must contain at least one number'
+    if (!/[!@#$%^&*]/.test(pass)) return 'Password must contain at least one special character (!@#$%^&*)'
+    return null
+  }
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
+    const passwordError = validatePassword(password)
+    if (passwordError) {
+      setError(passwordError)
+      setLoading(false)
+      return
+    }
+
     try {
+      // Check if email already exists
+      const emailExists = await checkEmailExists(email)
+      if (emailExists) {
+        setError('This email is already registered. Please try logging in instead.')
+        setLoading(false)
+        return
+      }
+
       const supabase = createClient()
       const { error: signUpError } = await supabase.auth.signUp({
         email,
@@ -85,7 +109,7 @@ function SignUpForm() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
               <Input
@@ -129,7 +153,7 @@ function SignUpForm() {
                 <option value="online">Online Store</option>
               </select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -142,7 +166,7 @@ function SignUpForm() {
                 disabled={loading}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -152,11 +176,11 @@ function SignUpForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 disabled={loading}
               />
               <p className="text-xs text-muted-foreground">
-                {'Must be at least 6 characters'}
+                {'At least 8 characters with uppercase, number, and symbol'}
               </p>
             </div>
 
