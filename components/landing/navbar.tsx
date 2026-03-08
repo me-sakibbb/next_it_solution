@@ -37,9 +37,7 @@ export function Navbar() {
             <div className="container mx-auto px-4 md:px-6">
                 <div className="flex items-center justify-between w-full">
                     <Link href="/" className="flex items-center gap-2 group">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md">
-                            <ShoppingCart className="h-5 w-5" />
-                        </div>
+                        <img src="/logo.png" alt="Nex IT Solution" className="h-10 w-auto" />
                         <span className="text-xl font-bold tracking-tight text-foreground">Nex IT Solution</span>
                     </Link>
 

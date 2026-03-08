@@ -3,10 +3,18 @@
 import { useState } from 'react'
 import { fetchAllBkashTransactions } from '@/actions/superadmin-server'
 import { useRouter } from 'next/navigation'
-import { Search, ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, Ban } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, Ban, Banknote, Wallet, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import { Card, CardContent } from '@/components/ui/card'
 import {
     Table,
     TableBody,
@@ -35,9 +43,14 @@ interface Transaction {
     } | null
 }
 
+type TimeRange = 'today' | 'this_month' | 'all'
+
 interface TransactionHistoryProps {
     initialData: Transaction[]
     initialCount: number
+    initialRevenue: number
+    initialAddBalanceRevenue: number
+    initialSubscriptionRevenue: number
     initialPage: number
     pageSize: number
 }
@@ -64,6 +77,9 @@ const PLAN_LABELS: Record<string, string> = {
 export function TransactionHistory({
     initialData,
     initialCount,
+    initialRevenue,
+    initialAddBalanceRevenue,
+    initialSubscriptionRevenue,
     initialPage,
     pageSize,
 }: TransactionHistoryProps) {
@@ -71,18 +87,27 @@ export function TransactionHistory({
     const [search, setSearch] = useState('')
     const [data, setData] = useState<Transaction[]>(initialData)
     const [count, setCount] = useState(initialCount)
+    const [revenue, setRevenue] = useState(initialRevenue)
+    const [addBalanceRevenue, setAddBalanceRevenue] = useState(initialAddBalanceRevenue)
+    const [subscriptionRevenue, setSubscriptionRevenue] = useState(initialSubscriptionRevenue)
     const [page, setPage] = useState(initialPage)
+    const [range, setRange] = useState<TimeRange>('all')
     const [loading, setLoading] = useState(false)
 
     const totalPages = Math.ceil(count / pageSize)
 
-    const fetchPage = async (newPage: number, newSearch?: string) => {
+    const fetchPage = async (newPage: number, newSearch?: string, newRange?: TimeRange) => {
         setLoading(true)
+        const activeRange = newRange ?? range
         try {
-            const result = await fetchAllBkashTransactions(newPage, pageSize, newSearch)
+            const result = await fetchAllBkashTransactions(newPage, pageSize, newSearch, activeRange)
             setData(result.data as Transaction[])
             setCount(result.count)
+            setRevenue(result.totalRevenue)
+            setAddBalanceRevenue(result.addBalanceRevenue)
+            setSubscriptionRevenue(result.subscriptionRevenue)
             setPage(newPage)
+            if (newRange) setRange(newRange)
         } catch (err) {
             console.error(err)
         } finally {
@@ -96,19 +121,65 @@ export function TransactionHistory({
     }
 
     return (
-        <div className="space-y-4">
-            <form onSubmit={handleSearch} className="flex gap-2">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                        placeholder="Search by TxID or Payment ID..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-8"
-                    />
+        <div className="space-y-6">
+            {/* Minimal Revenue Summary Card */}
+            <Card className="border shadow-none bg-transparent max-w-lg">
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                            <Banknote className="h-5 w-5 text-indigo-600" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Revenue ({range.replace('_', ' ')})</p>
+                            <h3 className="text-2xl font-bold tracking-tight">৳{revenue.toLocaleString()}</h3>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1.5 border-l pl-6">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground font-medium">Add Balance:</span>
+                            <span className="text-xs font-semibold">৳{addBalanceRevenue.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground font-medium">Subscription:</span>
+                            <span className="text-xs font-semibold">৳{subscriptionRevenue.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div className="flex flex-col md:flex-row gap-4 items-end md:items-center justify-between bg-muted/30 p-4 rounded-xl border border-dashed">
+                <form onSubmit={handleSearch} className="flex gap-2 w-full max-w-sm">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                        <Input
+                            placeholder="Search TxID or Email..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-8 bg-background border-muted-foreground/20 focus-visible:ring-indigo-500"
+                        />
+                    </div>
+                    <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700">Search</Button>
+                </form>
+
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap font-bold uppercase tracking-widest text-[10px]">Filter:</span>
+                    <Select
+                        value={range}
+                        onValueChange={(v: TimeRange) => fetchPage(1, search || undefined, v)}
+                        disabled={loading}
+                    >
+                        <SelectTrigger className="w-full md:w-[160px] bg-background border-muted-foreground/20">
+                            <SelectValue placeholder="Period" />
+                        </SelectTrigger>
+                        <SelectContent className="border-indigo-100">
+                            <SelectItem value="all">All History</SelectItem>
+                            <SelectItem value="this_month">Current Month</SelectItem>
+                            <SelectItem value="today">Today's Total</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
-                <Button type="submit" disabled={loading}>Search</Button>
-            </form>
+            </div>
 
             <div className="rounded-md border">
                 <Table>
@@ -136,7 +207,7 @@ export function TransactionHistory({
                                     No transactions found.
                                 </TableCell>
                             </TableRow>
-                        ) : data.map((tx) => {
+                        ) : data.map((tx: Transaction) => {
                             const statusCfg = STATUS_CONFIG[tx.status] ?? { label: tx.status, variant: 'outline' as const, icon: Clock }
                             const StatusIcon = statusCfg.icon
                             return (

@@ -17,6 +17,7 @@ import { CreativeTemplate } from './templates/CreativeTemplate'
 import { MinimalistTemplate } from './templates/MinimalistTemplate'
 import { AcademicTemplate } from './templates/AcademicTemplate'
 import { EuropassTemplate } from './templates/EuropassTemplate'
+import { MaritalTemplate } from './templates/MaritalTemplate'
 import { useReactToPrint } from 'react-to-print'
 
 import Cropper from 'react-easy-crop'
@@ -36,6 +37,7 @@ const TEMPLATES = [
     { id: 'minimalist', name: 'Minimalist', description: 'Simple and elegant', component: MinimalistTemplate },
     { id: 'academic', name: 'Academic', description: 'Detailed and scholarly', component: AcademicTemplate },
     { id: 'europass', name: 'Europass', description: 'Official EU-style CV format', component: EuropassTemplate },
+    { id: 'marital', name: 'Marital CV', description: 'Biodata format for marriage', component: MaritalTemplate },
 ]
 
 export function CVBuilderWizard() {
@@ -143,6 +145,23 @@ export function CVBuilderWizard() {
             linkedin: 'linkedin.com/in/alexmorgan',
             summary: 'Results-driven software engineer with 5+ years of experience in full-stack development. Proven track record of delivering scalable web applications and leading cross-functional teams. Passionate about clean code and user-centric design.',
             photo: photo // Use uploaded photo if available for preview
+        },
+        maritalInfo: {
+            dateOfBirth: '10 December 2001',
+            age: '24 Years',
+            height: '5 Feet 5 Inches',
+            religion: 'Islam',
+            nationality: 'Bangladeshi',
+            maritalStatus: 'Unmarried',
+            bloodGroup: 'O+',
+            fatherName: '',
+            fatherOccupation: '',
+            motherName: '',
+            motherOccupation: '',
+            siblings: '',
+            permanentAddress: '',
+            guardianName: '',
+            guardianRelationship: '',
         },
         education: [
             {

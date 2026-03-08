@@ -137,7 +137,7 @@ export function AddBalanceModal({ children }: { children?: React.ReactNode }) {
                 </div>
 
                 <div className="flex justify-center text-[10px] text-muted-foreground uppercase tracking-widest font-medium pt-2">
-                    Next IT Solution • Secured by bKash
+                    Nex IT Solution • Secured by bKash
                 </div>
             </DialogContent>
         </Dialog>

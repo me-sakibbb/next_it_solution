@@ -57,9 +57,12 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
+          <div className="flex justify-center mb-4">
+            <img src="/logo.png" alt="Nex IT Solution" className="h-12 w-auto" />
+          </div>
           <CardTitle className="text-2xl font-bold text-center">{'Welcome Back'}</CardTitle>
           <CardDescription className="text-center">
-            {'Sign in to your Next IT Solution account'}
+            {'Sign in to your Nex IT Solution account'}
           </CardDescription>
         </CardHeader>
         <CardContent>

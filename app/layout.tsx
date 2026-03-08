@@ -22,25 +22,25 @@ const _hindSiliguri = Hind_Siliguri({
 })
 
 export const metadata: Metadata = {
-  title: 'Next IT Solution - IT Retail Management',
+  title: 'Nex IT Solution - IT Retail Management',
   description: 'Comprehensive IT retail management platform with inventory, POS, staff management, and photo editing capabilities',
-  generator: 'Next IT Solution',
+  generator: 'Nex IT Solution',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/logo.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/logo.png',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: '/logo.png',
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/logo.png',
   },
 }
 

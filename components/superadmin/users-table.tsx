@@ -74,6 +74,7 @@ const PLAN_LABELS: Record<SubscriptionPlanType, string> = {
 
 interface EditState {
     full_name: string
+    phone: string
     balance: string
     is_active: boolean
     subPlan: SubscriptionPlanType
@@ -91,10 +92,10 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
 
     const filtered = search
         ? users.filter(
-              (u) =>
-                  u.email.toLowerCase().includes(search.toLowerCase()) ||
-                  (u.full_name ?? '').toLowerCase().includes(search.toLowerCase())
-          )
+            (u) =>
+                u.email.toLowerCase().includes(search.toLowerCase()) ||
+                (u.full_name ?? '').toLowerCase().includes(search.toLowerCase())
+        )
         : users
 
     const handleSearch = (e: React.FormEvent) => {
@@ -106,6 +107,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
         setEditUser(user)
         setEditState({
             full_name: user.full_name ?? '',
+            phone: user.phone ?? '',
             balance: user.balance?.toString() ?? '0',
             is_active: user.is_active ?? true,
             subPlan: (user.subscription?.plan_type ?? 'trial') as SubscriptionPlanType,
@@ -122,6 +124,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
         try {
             await updateUserInfo(editUser.id, {
                 full_name: editState.full_name,
+                phone: editState.phone,
                 balance: parseFloat(editState.balance),
                 is_active: editState.is_active,
             })
@@ -137,25 +140,26 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                 prev.map((u): UserWithSubscription =>
                     u.id === editUser.id
                         ? {
-                              ...u,
-                              full_name: editState.full_name,
-                              balance: parseFloat(editState.balance),
-                              is_active: editState.is_active,
-                              subscription: {
-                                  ...(u.subscription ?? {
-                                      id: '',
-                                      user_id: u.id,
-                                      auto_renew: false,
-                                      created_at: new Date().toISOString(),
-                                      updated_at: new Date().toISOString(),
-                                  }),
-                                  plan_type: editState.subPlan as SubscriptionPlanType,
-                                  status: editState.subStatus as SubscriptionStatus,
-                                  subscription_end_date: editState.subEndDate
-                                      ? new Date(editState.subEndDate).toISOString()
-                                      : undefined,
-                              } as Subscription,
-                          }
+                            ...u,
+                            full_name: editState.full_name,
+                            phone: editState.phone,
+                            balance: parseFloat(editState.balance),
+                            is_active: editState.is_active,
+                            subscription: {
+                                ...(u.subscription ?? {
+                                    id: '',
+                                    user_id: u.id,
+                                    auto_renew: false,
+                                    created_at: new Date().toISOString(),
+                                    updated_at: new Date().toISOString(),
+                                }),
+                                plan_type: editState.subPlan as SubscriptionPlanType,
+                                status: editState.subStatus as SubscriptionStatus,
+                                subscription_end_date: editState.subEndDate
+                                    ? new Date(editState.subEndDate).toISOString()
+                                    : undefined,
+                            } as Subscription,
+                        }
                         : u
                 )
             )
@@ -189,6 +193,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>User</TableHead>
+                            <TableHead>Phone</TableHead>
                             <TableHead>Role</TableHead>
                             <TableHead>Balance</TableHead>
                             <TableHead>Status</TableHead>
@@ -212,6 +217,9 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                                             <div className="font-medium">{user.full_name || 'No Name'}</div>
                                             <div className="text-sm text-gray-500">{user.email}</div>
                                         </div>
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                                        {user.phone || '—'}
                                     </TableCell>
                                     <TableCell className="capitalize">{user.role}</TableCell>
                                     <TableCell className="font-medium">
@@ -241,8 +249,8 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                                                     sub.status === 'active'
                                                         ? 'default'
                                                         : sub.status === 'expired' || sub.status === 'cancelled'
-                                                        ? 'destructive'
-                                                        : 'secondary'
+                                                            ? 'destructive'
+                                                            : 'secondary'
                                                 }
                                                 className="text-xs"
                                             >
@@ -256,8 +264,8 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                                         {sub?.subscription_end_date
                                             ? new Date(sub.subscription_end_date).toLocaleDateString()
                                             : sub?.trial_end_date
-                                            ? `Free: ${new Date(sub.trial_end_date).toLocaleDateString()}`
-                                            : '—'}
+                                                ? `Free: ${new Date(sub.trial_end_date).toLocaleDateString()}`
+                                                : '—'}
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground">
                                         {new Date(user.created_at).toLocaleDateString()}
@@ -309,6 +317,16 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                                             setEditState((s) => s && { ...s, full_name: e.target.value })
                                         }
                                         placeholder="Full name"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Phone Number</Label>
+                                    <Input
+                                        value={editState.phone}
+                                        onChange={(e) =>
+                                            setEditState((s) => s && { ...s, phone: e.target.value })
+                                        }
+                                        placeholder="Phone number"
                                     />
                                 </div>
                                 <div className="space-y-2">

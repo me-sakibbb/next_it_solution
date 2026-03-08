@@ -34,7 +34,8 @@ export function useCVAI() {
                 -   **Content**: Focus on achievements, metrics, and impact. Use strong action verbs (e.g., "Led", "Developed", "Optimized").
             5.  **ATS Optimization**: Include relevant keywords from the experience text naturally within the descriptions and skills section.
             6.  **Clean-up**: Remove placeholders like "Refer to plain text". If data is missing, omit the field.
-            7.  **Tone**: Professional, active voice, and result-oriented.
+            7.  **Marital / Biodata**: If the input appears to be for a marriage biodata, carefully extract fields like height, religion, blood group, family information (parents' names and occupations, siblings), and permanent addresses into the \`maritalInfo\` object. If not present, you can leave them empty or omit the \`maritalInfo\` object.
+            8.  **Tone**: Professional, active voice, and result-oriented.
             
             Structure the response EXACTLY as this JSON object:
             {
@@ -45,6 +46,23 @@ export function useCVAI() {
                     "linkedin": "",
                     "location": "",
                     "summary": "" 
+                },
+                "maritalInfo": {
+                    "dateOfBirth": "",
+                    "age": "",
+                    "height": "",
+                    "religion": "",
+                    "nationality": "",
+                    "maritalStatus": "",
+                    "bloodGroup": "",
+                    "fatherName": "",
+                    "fatherOccupation": "",
+                    "motherName": "",
+                    "motherOccupation": "",
+                    "siblings": "",
+                    "permanentAddress": "",
+                    "guardianName": "",
+                    "guardianRelationship": ""
                 },
                 "experience": [
                     {

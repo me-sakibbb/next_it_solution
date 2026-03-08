@@ -37,6 +37,23 @@ export interface CVData {
         date: string;
     }>;
     languages?: string[];
+    maritalInfo?: {
+        dateOfBirth?: string;
+        age?: string;
+        height?: string;
+        religion?: string;
+        nationality?: string;
+        maritalStatus?: string;
+        bloodGroup?: string;
+        fatherName?: string;
+        fatherOccupation?: string;
+        motherName?: string;
+        motherOccupation?: string;
+        siblings?: string;
+        permanentAddress?: string;
+        guardianName?: string;
+        guardianRelationship?: string;
+    };
 }
 
 export interface DesignSettings {

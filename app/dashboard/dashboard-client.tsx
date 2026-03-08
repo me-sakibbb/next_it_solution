@@ -101,6 +101,14 @@ export function DashboardClient({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <ServiceCard
+            title="শপ ম্যানেজমেন্ট"
+            description="দোকান চালানো এখন আরও স্মার্ট। ইনভেন্টরি, সেলস, প্রতিদিনের খরচ, লাভ এবং বিস্তারিত রিপোর্ট দেখুন এক ক্লিকে।"
+            icon={Store}
+            href="/dashboard/shop"
+            colorClass="bg-emerald-500/10 text-emerald-600"
+            iconColorClass="text-emerald-600"
+          />
+          <ServiceCard
             title="এআই ফটো এডিটর"
             description="সাধারণ ছবিকে বানান স্টুডিও কোয়ালিটির প্রফেশনাল ফটো। ব্যাকগ্রাউন্ড রিমুভ, লাইটিং এনহ্যান্স এবং স্মার্ট এআই এডিটিং—সবকিছু এক ক্লিকেই।"
             icon={ImageIcon}
@@ -124,14 +132,6 @@ export function DashboardClient({
             href="/dashboard/print-ready"
             colorClass="bg-pink-500/10 text-pink-600"
             iconColorClass="text-pink-600"
-          />
-          <ServiceCard
-            title="শপ ম্যানেজমেন্ট"
-            description="দোকান চালানো এখন আরও স্মার্ট। ইনভেন্টরি, সেলস, প্রতিদিনের খরচ, লাভ এবং বিস্তারিত রিপোর্ট দেখুন এক ক্লিকে।"
-            icon={Store}
-            href="/dashboard/shop"
-            colorClass="bg-emerald-500/10 text-emerald-600"
-            iconColorClass="text-emerald-600"
           />
           <ServiceCard
             title="জন্ম নিবন্ধনের ফর্ম অটোমেশন এআই"

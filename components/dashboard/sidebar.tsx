@@ -49,10 +49,8 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
     <div className="flex w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Store className="h-5 w-5" />
-          </div>
-          <span className="font-semibold text-foreground">Next IT</span>
+          <img src="/logo.png" alt="Nex IT Solution" className="h-8 w-auto" />
+          <span className="font-semibold text-foreground">Nex IT Solution</span>
         </Link>
       </div>
 

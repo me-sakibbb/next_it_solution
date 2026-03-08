@@ -10,10 +10,8 @@ export function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
                     <div className="lg:col-span-2 space-y-4">
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                <ShoppingCart className="h-5 w-5" />
-                            </div>
-                            <span className="text-xl font-bold">Next IT Solution</span>
+                            <img src="/logo.png" alt="Nex IT Solution" className="h-8 w-auto" />
+                            <span className="text-xl font-bold">Nex IT Solution</span>
                         </Link>
                         <p className="text-muted-foreground max-w-xs">
                             The complete operating system for IT retail businesses. Manage everything from one place.
@@ -63,9 +61,9 @@ export function Footer() {
                 </div>
 
                 <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-                    <p>© {new Date().getFullYear()} Next IT Solution. All rights reserved.</p>
+                    <p>© {new Date().getFullYear()} Nex IT Solution. All rights reserved.</p>
                     <div className="flex items-center gap-4">
-                        <p>Made with ❤️ for retailers</p>
+                        <p>Made with passion for retailers</p>
                     </div>
                 </div>
             </div>

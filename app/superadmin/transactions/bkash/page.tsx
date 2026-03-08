@@ -10,6 +10,9 @@ const PAGE_SIZE = 20
 export default function SuperAdminBkashTransactionsPage() {
     const [data, setData] = useState<any[]>([])
     const [count, setCount] = useState(0)
+    const [revenue, setRevenue] = useState(0)
+    const [addBalanceRevenue, setAddBalanceRevenue] = useState(0)
+    const [subscriptionRevenue, setSubscriptionRevenue] = useState(0)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -18,6 +21,9 @@ export default function SuperAdminBkashTransactionsPage() {
             .then((result) => {
                 setData(result.data)
                 setCount(result.count)
+                setRevenue(result.totalRevenue)
+                setAddBalanceRevenue(result.addBalanceRevenue)
+                setSubscriptionRevenue(result.subscriptionRevenue)
             })
             .catch(console.error)
             .finally(() => setLoading(false))
@@ -35,8 +41,8 @@ export default function SuperAdminBkashTransactionsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
-                        <CreditCard className="h-5 w-5 text-pink-500" />
+                    <div className="h-10 w-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <CreditCard className="h-5 w-5 text-indigo-500" />
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">bKash Transactions</h1>
@@ -51,6 +57,9 @@ export default function SuperAdminBkashTransactionsPage() {
             <TransactionHistory
                 initialData={data}
                 initialCount={count}
+                initialRevenue={revenue}
+                initialAddBalanceRevenue={addBalanceRevenue}
+                initialSubscriptionRevenue={subscriptionRevenue}
                 initialPage={1}
                 pageSize={PAGE_SIZE}
             />

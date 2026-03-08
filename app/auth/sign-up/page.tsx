@@ -16,6 +16,7 @@ import { checkEmailExists } from '@/actions/auth'
 
 function SignUpForm() {
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
   const [shopName, setShopName] = useState('')
   const [businessType, setBusinessType] = useState('retail')
   const [email, setEmail] = useState('')
@@ -71,6 +72,7 @@ function SignUpForm() {
           emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             full_name: fullName,
+            phone: phone,
             shop_name: shopName || `${fullName}'s Shop`,
             business_type: businessType,
             role: 'shop_owner',
@@ -96,9 +98,12 @@ function SignUpForm() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
+          <div className="flex justify-center mb-4">
+            <img src="/logo.png" alt="Nex IT Solution" className="h-12 w-auto" />
+          </div>
           <CardTitle className="text-2xl font-bold text-center">{'Create an Account'}</CardTitle>
           <CardDescription className="text-center">
-            {'Get started with Next IT Solution'}
+            {'Get started with Nex IT Solution'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -118,6 +123,19 @@ function SignUpForm() {
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="01XXXXXXXXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 required
                 disabled={loading}
               />
