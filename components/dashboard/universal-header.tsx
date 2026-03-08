@@ -89,7 +89,10 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
             <img src="/logo.png" alt="Nex IT Solution" className="h-10 w-auto transition-all group-hover:scale-110 group-active:scale-95" />
             <div className="flex flex-col">
               <span className="font-bold text-lg leading-none tracking-tight text-foreground transition-colors group-hover:text-primary">
-                Nex IT Solution
+                Nex IT
+              </span>
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                Solution
               </span>
             </div>
           </Link>

@@ -47,7 +47,7 @@ export default function LoginPage() {
       router.push('/dashboard')
       router.refresh()
     } catch (err) {
-      setError('An unexpected error occurred')
+      setError('একটি অপ্রত্যাশিত ত্রুটি ঘটেছে')
     } finally {
       setLoading(false)
     }
@@ -60,9 +60,9 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <img src="/logo.png" alt="Nex IT Solution" className="h-12 w-auto" />
           </div>
-          <CardTitle className="text-2xl font-bold text-center">{'Welcome Back'}</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">{'স্বাগতম ফিরে এসেছেন'}</CardTitle>
           <CardDescription className="text-center">
-            {'Sign in to your Nex IT Solution account'}
+            {'আপনার Nex IT Solution অ্যাকাউন্টে সাইন ইন করুন'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -75,11 +75,11 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">ইমেইল</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="আপনার ইমেইল"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -89,12 +89,12 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">পাসওয়ার্ড</Label>
                 <Link
                   href="/auth/forgot-password"
                   className="text-sm text-primary hover:underline font-medium"
                 >
-                  Forgot password?
+                  পাসওয়ার্ড ভুলে গেছেন?
                 </Link>
               </div>
               <Input
@@ -119,20 +119,20 @@ export default function LoginPage() {
                 htmlFor="remember"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
               >
-                Remember me
+                আমাকে মনে রাখুন
               </Label>
             </div>
 
             <Button type="submit" className="w-full h-11 text-lg font-bold" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'প্রবেশ করা হচ্ছে...' : 'প্রবেশ করুন'}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-muted-foreground text-center">
-            {'Don\'t have an account? '}
+            {'অ্যাকাউন্ট নেই? '}
             <Link href="/auth/sign-up" className="text-primary hover:underline font-medium">
-              Sign up
+              অ্যাকাউন্ট তৈরি করুন
             </Link>
           </div>
         </CardFooter>

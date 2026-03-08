@@ -18,7 +18,6 @@ function SignUpForm() {
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [shopName, setShopName] = useState('')
-  const [businessType, setBusinessType] = useState('retail')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [referralCode, setReferralCode] = useState('')
@@ -36,10 +35,10 @@ function SignUpForm() {
   }, [searchParams])
 
   const validatePassword = (pass: string) => {
-    if (pass.length < 8) return 'Password must be at least 8 characters long'
-    if (!/[A-Z]/.test(pass)) return 'Password must contain at least one uppercase letter'
-    if (!/[0-9]/.test(pass)) return 'Password must contain at least one number'
-    if (!/[!@#$%^&*]/.test(pass)) return 'Password must contain at least one special character (!@#$%^&*)'
+    if (pass.length < 8) return 'পাসওয়ার্ডটি কমপক্ষে ৮ অক্ষরের হতে হবে'
+    if (!/[A-Z]/.test(pass)) return 'পাসওয়ার্ডে অন্তত একটি বড় হাতের অক্ষর (A-Z) থাকতে হবে'
+    if (!/[0-9]/.test(pass)) return 'পাসওয়ার্ডে অন্তত একটি সংখ্যা (0-9) থাকতে হবে'
+    if (!/[!@#$%^&*]/.test(pass)) return 'পাসওয়ার্ডে অন্তত একটি বিশেষ অক্ষর (!@#$%^&*) থাকতে হবে'
     return null
   }
 
@@ -59,7 +58,7 @@ function SignUpForm() {
       // Check if email already exists
       const emailExists = await checkEmailExists(email)
       if (emailExists) {
-        setError('This email is already registered. Please try logging in instead.')
+        setError('এই ইমেইল দিয়ে ইতঃপূর্বেই অ্যাকাউন্ট তৈরি করা হয়েছে। অনুগ্রহ করে লগ ইন করুন।')
         setLoading(false)
         return
       }
@@ -73,8 +72,7 @@ function SignUpForm() {
           data: {
             full_name: fullName,
             phone: phone,
-            shop_name: shopName || `${fullName}'s Shop`,
-            business_type: businessType,
+            shop_name: shopName,
             role: 'shop_owner',
             referred_by: referralCode || undefined,
           },
@@ -88,7 +86,7 @@ function SignUpForm() {
 
       router.push('/auth/sign-up-success')
     } catch (err) {
-      setError('An unexpected error occurred')
+      setError('একটি অপ্রত্যাশিত ত্রুটি ঘটেছে')
     } finally {
       setLoading(false)
     }
@@ -101,9 +99,9 @@ function SignUpForm() {
           <div className="flex justify-center mb-4">
             <img src="/logo.png" alt="Nex IT Solution" className="h-12 w-auto" />
           </div>
-          <CardTitle className="text-2xl font-bold text-center">{'Create an Account'}</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">{'নতুন অ্যাকাউন্ট তৈরি করুন'}</CardTitle>
           <CardDescription className="text-center">
-            {'Get started with Nex IT Solution'}
+            {'Nex IT Solution -এ স্বাগতম'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -116,11 +114,11 @@ function SignUpForm() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">পুরো নাম</Label>
               <Input
                 id="fullName"
                 type="text"
-                placeholder="John Doe"
+                placeholder="রহিম মিয়া"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -129,7 +127,7 @@ function SignUpForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">মোবাইল নম্বর</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -142,42 +140,24 @@ function SignUpForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="shopName">Shop Name</Label>
+              <Label htmlFor="shopName">দোকানের নাম</Label>
               <Input
                 id="shopName"
                 type="text"
-                placeholder="My IT Shop"
+                placeholder="আমার দোকান"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
+                required
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">
-                {'Leave blank to use "[Your Name]\'s Shop"'}
-              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="businessType">Business Type</Label>
-              <select
-                id="businessType"
-                value={businessType}
-                onChange={(e) => setBusinessType(e.target.value)}
-                disabled={loading}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <option value="retail">Retail Store</option>
-                <option value="wholesale">Wholesale</option>
-                <option value="service">Service Center</option>
-                <option value="online">Online Store</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">ইমেইল</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="আপনার ইমেইল"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -186,7 +166,7 @@ function SignUpForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">পাসওয়ার্ড</Label>
               <Input
                 id="password"
                 type="password"
@@ -198,19 +178,19 @@ function SignUpForm() {
                 disabled={loading}
               />
               <p className="text-xs text-muted-foreground">
-                {'At least 8 characters with uppercase, number, and symbol'}
+                {'অক্ষর, সংখ্যা এবং চিহ্ন সহ কমপক্ষে ৮ ক্যারেক্টার হতে হবে'}
               </p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="referralCode" className="flex items-center gap-1.5">
                 <Gift className="h-3.5 w-3.5 text-primary" />
-                Referral Code (Optional)
+                রেফারেল কোড (ঐচ্ছিক)
               </Label>
               <Input
                 id="referralCode"
                 type="text"
-                placeholder="e.g. ABC12345"
+                placeholder="যেমন: ABC12345"
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                 disabled={loading}
@@ -222,16 +202,16 @@ function SignUpForm() {
               </p>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Sign Up'}
+            <Button type="submit" className="w-full h-11 text-lg font-bold" disabled={loading}>
+              {loading ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : 'অ্যাকাউন্ট তৈরি করুন'}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-muted-foreground text-center">
-            {'Already have an account? '}
+            {'আগে থেকেই অ্যাকাউন্ট আছে? '}
             <Link href="/auth/login" className="text-primary hover:underline font-medium">
-              Sign in
+              প্রবেশ করুন
             </Link>
           </div>
         </CardFooter>

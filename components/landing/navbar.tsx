@@ -38,7 +38,10 @@ export function Navbar() {
                 <div className="flex items-center justify-between w-full">
                     <Link href="/" className="flex items-center gap-2 group">
                         <img src="/logo.png" alt="Nex IT Solution" className="h-10 w-auto" />
-                        <span className="text-xl font-bold tracking-tight text-foreground">Nex IT Solution</span>
+                        <div className="flex flex-col">
+                            <span className="text-xl font-bold leading-none tracking-tight text-foreground">Nex IT</span>
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Solution</span>
+                        </div>
                     </Link>
 
                     {/* Desktop Nav */}
