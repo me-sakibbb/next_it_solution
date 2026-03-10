@@ -15,7 +15,7 @@ export async function updateUserBalance(userId: string, balance: number) {
 
 export async function updateUserInfo(
     userId: string,
-    fields: { full_name?: string; balance?: number; is_active?: boolean; phone?: string }
+    fields: { full_name?: string; balance?: number; is_active?: boolean; phone?: string; shop_address?: string }
 ) {
     const supabase = createAdminClient()
     const { error } = await supabase
@@ -100,7 +100,7 @@ export async function fetchAllBkashTransactions(
     const userIds = [...new Set(payments.map((p: any) => p.user_id))]
     const { data: users } = await supabase
         .from('users')
-        .select('id, email, full_name')
+        .select('id, email, full_name, shop_address')
         .in('id', userIds)
 
     const userMap = Object.fromEntries((users ?? []).map((u: any) => [u.id, u]))
@@ -139,7 +139,7 @@ export async function fetchAllBalanceTransactions(page = 1, pageSize = PAGE_SIZE
     const userIds = [...new Set(txns.map((t: any) => t.user_id))]
     const { data: users } = await supabase
         .from('users')
-        .select('id, email, full_name')
+        .select('id, email, full_name, shop_address')
         .in('id', userIds)
 
     const userMap = Object.fromEntries((users ?? []).map((u: any) => [u.id, u]))
@@ -147,5 +147,59 @@ export async function fetchAllBalanceTransactions(page = 1, pageSize = PAGE_SIZE
     return {
         data: txns.map((t: any) => ({ ...t, user: userMap[t.user_id] ?? null })),
         count: count ?? 0,
+    }
+}
+import { getPaginationRange } from '@/lib/pagination'
+
+export async function fetchPaginatedUsers(params: {
+    page: number
+    pageSize: number
+    search?: string
+    plan?: string
+    balanceFilter?: 'all' | 'zero' | 'positive'
+    sortBy?: 'balance' | 'created_at'
+    sortOrder?: 'asc' | 'desc'
+}) {
+    const supabase = createAdminClient()
+    const { from, to } = getPaginationRange(params.page, params.pageSize)
+
+    // Construct query
+    // If we have a plan filter, we need to use an inner join for efficient server-side filtering
+    const selectStr = params.plan
+        ? '*, subscription:subscriptions!inner(id, plan_type, status, subscription_start_date, subscription_end_date, trial_end_date)'
+        : '*, subscription:subscriptions(id, plan_type, status, subscription_start_date, subscription_end_date, trial_end_date)'
+
+    let query = supabase
+        .from('users')
+        .select(selectStr, { count: 'exact' })
+
+    // Filters
+    if (params.search) {
+        query = query.or(`email.ilike.%${params.search}%,full_name.ilike.%${params.search}%`)
+    }
+
+    if (params.plan && params.plan !== 'all') {
+        query = query.eq('subscription.plan_type', params.plan)
+    }
+
+    if (params.balanceFilter === 'zero') {
+        query = query.eq('balance', 0)
+    } else if (params.balanceFilter === 'positive') {
+        query = query.gt('balance', 0)
+    }
+
+    // Sort
+    query = query.order(params.sortBy || 'created_at', { ascending: params.sortOrder === 'asc' })
+
+    const { data: users, count, error } = await query.range(from, to)
+
+    if (error) throw new Error(error.message)
+
+    return {
+        data: (users || []) as any[],
+        total: count ?? 0,
+        page: params.page,
+        pageSize: params.pageSize,
+        totalPages: count ? Math.ceil(count / params.pageSize) : 0
     }
 }

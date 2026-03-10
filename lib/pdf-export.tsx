@@ -60,8 +60,9 @@ export function generateInvoicePDF(invoice: InvoiceData, size: InvoiceSize = 'A4
     .text-right { text-align: right; }
     .bold { font-weight: bold; }
     .divider { border-top: 1px dashed #000; margin: 2mm 0; }
-    .header { margin-bottom: 3mm; }
-    .shop-name { font-size: 14pt; font-weight: bold; margin-bottom: 1mm; }
+    .header { margin-bottom: 5mm; }
+    .shop-name { font-size: 16pt; font-weight: bold; margin-bottom: 2mm; line-height: 1.2; }
+    .shop-info { font-size: 10pt; line-height: 1.4; margin-bottom: 1mm; display: block; }
     .items-table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
     .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 1mm 0; font-size: 10pt; }
     .items-table td { padding: 1mm 0; vertical-align: top; font-size: 10pt; }
@@ -71,9 +72,9 @@ export function generateInvoicePDF(invoice: InvoiceData, size: InvoiceSize = 'A4
 </head>
 <body>
   <div class="header text-center">
-    <div class="shop-name">${invoice.shop.name.toUpperCase()}</div>
-    ${invoice.shop.address ? `<div>${invoice.shop.address}</div>` : ''}
-    ${invoice.shop.phone ? `<div>Tel: ${invoice.shop.phone}</div>` : ''}
+    <div class="shop-name">${(invoice.shop.name || 'SHOP').toUpperCase()}</div>
+    ${invoice.shop.address ? `<div class="shop-info">${invoice.shop.address}</div>` : ''}
+    ${invoice.shop.phone ? `<div class="shop-info">Tel: ${invoice.shop.phone}</div>` : ''}
     <div class="divider"></div>
     <div class="bold">INVOICE: ${invoice.invoice_number}</div>
     <div>Date: ${new Date(invoice.sale_date).toLocaleString()}</div>
@@ -167,9 +168,15 @@ export function generateInvoicePDF(invoice: InvoiceData, size: InvoiceSize = 'A4
       padding-bottom: 20px;
     }
     .company-info h1 {
-      margin: 0;
+      margin: 0 0 5px 0;
       color: #22c55e;
       font-size: 28px;
+      text-transform: uppercase;
+    }
+    .company-info p {
+      margin: 0;
+      font-size: 14px;
+      color: #666;
     }
     .invoice-info {
       text-align: right;
@@ -246,7 +253,7 @@ export function generateInvoicePDF(invoice: InvoiceData, size: InvoiceSize = 'A4
     <div class="company-info">
       <h1>${invoice.shop.name}</h1>
       ${invoice.shop.address ? `<p>${invoice.shop.address}</p>` : ''}
-      ${invoice.shop.phone ? `<p>Phone: ${invoice.shop.phone}</p>` : ''}
+      ${invoice.shop.phone ? `<p>Tel: ${invoice.shop.phone}</p>` : ''}
       ${invoice.shop.email ? `<p>Email: ${invoice.shop.email}</p>` : ''}
     </div>
     <div class="invoice-info">

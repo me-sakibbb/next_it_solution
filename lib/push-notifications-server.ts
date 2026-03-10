@@ -19,6 +19,7 @@ export interface PushPayload {
     body: string;
     icon?: string;
     url?: string;
+    notificationId?: string;
 }
 
 /**
@@ -53,7 +54,8 @@ export async function sendPushNotificationToUser(userId: string, payload: PushPa
             body: payload.body,
             icon: payload.icon || '/VP_logo.svg', // Default icon
             data: {
-                url: payload.url || '/dashboard' // Default URL to open on click
+                url: payload.url || '/dashboard', // Default URL to open on click
+                notificationId: payload.notificationId
             }
         });
 

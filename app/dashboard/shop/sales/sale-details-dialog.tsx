@@ -48,7 +48,12 @@ export function SaleDetailsDialog({ open, onOpenChange, sale }: SaleDetailsDialo
           invoice_number: fullSale.sale_number,
           sale_date: fullSale.created_at,
           customer: fullSale.customer,
-          shop: fullSale.shop,
+          shop: {
+            name: fullSale.shop?.name || 'My Shop',
+            address: fullSale.shop?.address || '',
+            phone: fullSale.shop?.phone || '',
+            email: fullSale.shop?.email || ''
+          },
           items: fullSale.sale_items.map((item: any) => ({
             product_name: item.product?.name || 'Unknown Product',
             quantity: item.quantity,

@@ -1,40 +1,65 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { getAllUsersWithSubscription } from '@/actions/superadmin'
+import { useCallback, useEffect, useState } from 'react'
+import { fetchPaginatedUsers } from '@/actions/superadmin-server'
 import { UsersTable } from '@/components/superadmin/users-table'
+import { Loader2 } from 'lucide-react'
 
 export default function SuperAdminUsersPage() {
-    const searchParams = useSearchParams()
-    const search = searchParams.get('search') ?? undefined
     const [users, setUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [total, setTotal] = useState(0)
+
+    const [params, setParams] = useState({
+        page: 1,
+        pageSize: 10,
+        search: '',
+        plan: 'all',
+        balanceFilter: 'all' as 'all' | 'zero' | 'positive',
+        sortBy: 'created_at' as 'balance' | 'created_at',
+        sortOrder: 'desc' as 'asc' | 'desc'
+    })
+
+    const fetchUsers = useCallback(async () => {
+        setLoading(true)
+        try {
+            const response = await fetchPaginatedUsers(params)
+            setUsers(response.data)
+            setTotal(response.total)
+        } catch (error) {
+            console.error('Error fetching users:', error)
+        } finally {
+            setLoading(false)
+        }
+    }, [params])
 
     useEffect(() => {
-        setLoading(true)
-        getAllUsersWithSubscription(search)
-            .then(setUsers)
-            .catch(console.error)
-            .finally(() => setLoading(false))
-    }, [search])
+        fetchUsers()
+    }, [fetchUsers])
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <span className="text-gray-500">Loading users...</span>
-            </div>
-        )
+    const handleParamsChange = (newParams: any) => {
+        setParams(prev => ({ ...prev, ...newParams }))
     }
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
+                <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
             </div>
 
-            <UsersTable initialUsers={users} />
+            <UsersTable
+                initialUsers={users}
+                totalCount={total}
+                currentPage={params.page}
+                onParamsChange={handleParamsChange}
+                params={params}
+            />
+
+            {loading && (
+                <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            )}
         </div>
     )
 }
-

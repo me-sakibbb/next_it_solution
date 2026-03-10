@@ -5,12 +5,20 @@ import { Button } from '@/components/ui/button'
 import { ShoppingCart, Menu, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
+import { User } from '@supabase/supabase-js'
 
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [user, setUser] = useState<User | null>(null)
 
     useEffect(() => {
+        const supabase = createClient()
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            setUser(user)
+        })
+
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 10)
         }
@@ -58,12 +66,22 @@ export function Navbar() {
                     </nav>
 
                     <div className="hidden md:flex items-center gap-4">
-                        <Button asChild variant="ghost" size="sm" className="font-bold">
-                            <Link href="/auth/login">লগইন</Link>
-                        </Button>
-                        <Button asChild size="sm" className="bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-all px-6 font-bold rounded-lg">
-                            <Link href="/auth/sign-up">ফ্রি ট্রায়াল শুরু করুন</Link>
-                        </Button>
+                        {user ? (
+                            <Button asChild className="bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-all px-6 font-bold rounded-lg group">
+                                <Link href="/dashboard" className="flex items-center gap-2">
+                                    ড্যাশবোর্ড <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </Link>
+                            </Button>
+                        ) : (
+                            <>
+                                <Button asChild variant="ghost" size="sm" className="font-bold">
+                                    <Link href="/auth/login">লগইন</Link>
+                                </Button>
+                                <Button asChild size="sm" className="bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-all px-6 font-bold rounded-lg">
+                                    <Link href="/auth/sign-up">ফ্রি ট্রায়াল শুরু করুন</Link>
+                                </Button>
+                            </>
+                        )}
                     </div>
 
                     {/* Mobile Menu Toggle */}
@@ -91,12 +109,20 @@ export function Navbar() {
                             </Link>
                         ))}
                         <div className="flex flex-col gap-3 pt-4">
-                            <Button asChild variant="outline" className="w-full h-11 rounded-lg font-bold">
-                                <Link href="/auth/login">লগইন</Link>
-                            </Button>
-                            <Button asChild className="w-full h-11 rounded-lg bg-primary font-bold">
-                                <Link href="/auth/sign-up">ফ্রি ট্রায়াল শুরু করুন</Link>
-                            </Button>
+                            {user ? (
+                                <Button asChild className="w-full h-11 rounded-lg bg-primary font-bold" onClick={() => setMobileMenuOpen(false)}>
+                                    <Link href="/dashboard">ড্যাশবোর্ড</Link>
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button asChild variant="outline" className="w-full h-11 rounded-lg font-bold" onClick={() => setMobileMenuOpen(false)}>
+                                        <Link href="/auth/login">লগইন</Link>
+                                    </Button>
+                                    <Button asChild className="w-full h-11 rounded-lg bg-primary font-bold" onClick={() => setMobileMenuOpen(false)}>
+                                        <Link href="/auth/sign-up">ফ্রি ট্রায়াল শুরু করুন</Link>
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </nav>
                 </div>

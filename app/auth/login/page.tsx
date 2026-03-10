@@ -26,6 +26,17 @@ export default function LoginPage() {
   const [unconfirmedEmail, setUnconfirmedEmail] = useState('')
   const router = useRouter()
 
+  React.useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push('/dashboard')
+      }
+    }
+    checkUser()
+  }, [router])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -35,8 +46,9 @@ export default function LoginPage() {
       const supabase = createClient()
 
       // Store remember me preference in a cookie for the middleware/server to see
-      // We use document.cookie for simplicity in the client-side
-      document.cookie = `remember-me=${rememberMe}; path=/; max-age=${60 * 60 * 24 * 365}`
+      // Using SameSite=Lax for compatibility
+      const cookieExpire = 60 * 60 * 24 * 365 // 1 year
+      document.cookie = `remember-me=${rememberMe}; path=/; max-age=${cookieExpire}; SameSite=Lax`
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,

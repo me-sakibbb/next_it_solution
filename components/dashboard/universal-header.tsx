@@ -108,12 +108,15 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
               </div>
               <AddBalanceModal />
             </div>
-            <div className="flex items-center gap-1.5 text-sm font-medium">
+            <Link
+              href="/dashboard/billing"
+              className="flex items-center gap-1.5 text-sm font-medium hover:text-primary transition-colors hover:bg-muted/80 px-2 py-0.5 rounded-md"
+            >
               <Crown
                 className={`w-4 h-4 ${isActive ? "text-amber-500" : "text-muted-foreground"}`}
               />
               <span className="capitalize">{planName}</span>
-            </div>
+            </Link>
           </div>
 
           <NotificationsDropdown userId={user.id} />

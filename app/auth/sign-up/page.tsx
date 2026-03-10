@@ -19,6 +19,7 @@ function SignUpForm() {
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [shopName, setShopName] = useState('')
+  const [shopAddress, setShopAddress] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -78,6 +79,7 @@ function SignUpForm() {
             full_name: fullName,
             phone: phone,
             shop_name: shopName,
+            shop_address: shopAddress,
             role: 'shop_owner',
             referred_by: referralCode || undefined,
           },
@@ -159,6 +161,19 @@ function SignUpForm() {
                 placeholder="আমার দোকান"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="shopAddress">দোকানের ঠিকানা</Label>
+              <Input
+                id="shopAddress"
+                type="text"
+                placeholder="দোকানের পূর্ণ ঠিকানা"
+                value={shopAddress}
+                onChange={(e) => setShopAddress(e.target.value)}
                 required
                 disabled={loading}
               />

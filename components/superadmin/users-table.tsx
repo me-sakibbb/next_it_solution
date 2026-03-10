@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { updateUserSubscription } from '@/actions/superadmin'
 import { updateUserInfo } from '@/actions/superadmin-server'
 import { useRouter } from 'next/navigation'
@@ -40,6 +40,24 @@ type UserWithSubscription = User & {
 
 interface UsersTableProps {
     initialUsers: UserWithSubscription[]
+    totalCount: number
+    currentPage: number
+    onParamsChange: (params: {
+        page?: number
+        search?: string
+        plan?: string
+        balanceFilter?: string
+        sortBy?: string
+        sortOrder?: 'asc' | 'desc'
+    }) => void
+    params: {
+        search: string
+        plan: string
+        balanceFilter: string
+        sortBy: string
+        sortOrder: 'asc' | 'desc'
+        pageSize: number
+    }
 }
 
 // Matches SubscriptionPlanType in lib/types.ts
@@ -75,6 +93,7 @@ const PLAN_LABELS: Record<SubscriptionPlanType, string> = {
 interface EditState {
     full_name: string
     phone: string
+    shop_address: string
     balance: string
     is_active: boolean
     subPlan: SubscriptionPlanType
@@ -82,25 +101,46 @@ interface EditState {
     subEndDate: string
 }
 
-export function UsersTable({ initialUsers }: UsersTableProps) {
-    const router = useRouter()
-    const [search, setSearch] = useState('')
+export function UsersTable({
+    initialUsers,
+    totalCount,
+    currentPage,
+    onParamsChange,
+    params
+}: UsersTableProps) {
+    const [search, setSearch] = useState(params.search)
     const [users, setUsers] = useState(initialUsers)
     const [editUser, setEditUser] = useState<UserWithSubscription | null>(null)
     const [editState, setEditState] = useState<EditState | null>(null)
     const [loading, setLoading] = useState(false)
 
-    const filtered = search
-        ? users.filter(
-            (u) =>
-                u.email.toLowerCase().includes(search.toLowerCase()) ||
-                (u.full_name ?? '').toLowerCase().includes(search.toLowerCase())
-        )
-        : users
+    // Sync local users when prop changes
+    useEffect(() => {
+        setUsers(initialUsers)
+    }, [initialUsers])
+
+    // Sync local search when reset or changed from outside
+    useEffect(() => {
+        setSearch(params.search)
+    }, [params.search])
+
+    const filtered = users // Data is now filtered server-side
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
-        router.push(`/superadmin/users?search=${search}`)
+        onParamsChange({ search, page: 1 })
+    }
+
+    const clearFilters = () => {
+        setSearch('')
+        onParamsChange({
+            search: '',
+            plan: 'all',
+            balanceFilter: 'all',
+            sortBy: 'created_at',
+            sortOrder: 'desc',
+            page: 1
+        })
     }
 
     const handleOpenEdit = (user: UserWithSubscription) => {
@@ -108,6 +148,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
         setEditState({
             full_name: user.full_name ?? '',
             phone: user.phone ?? '',
+            shop_address: user.shop_address ?? '',
             balance: user.balance?.toString() ?? '0',
             is_active: user.is_active ?? true,
             subPlan: (user.subscription?.plan_type ?? 'trial') as SubscriptionPlanType,
@@ -125,6 +166,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
             await updateUserInfo(editUser.id, {
                 full_name: editState.full_name,
                 phone: editState.phone,
+                shop_address: editState.shop_address,
                 balance: parseFloat(editState.balance),
                 is_active: editState.is_active,
             })
@@ -143,6 +185,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                             ...u,
                             full_name: editState.full_name,
                             phone: editState.phone,
+                            shop_address: editState.shop_address,
                             balance: parseFloat(editState.balance),
                             is_active: editState.is_active,
                             subscription: {
@@ -175,18 +218,75 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
 
     return (
         <div className="space-y-4">
-            <form onSubmit={handleSearch} className="flex gap-2">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                        placeholder="Search users..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-8"
-                    />
+            <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
+                <form onSubmit={handleSearch} className="flex-1 min-w-[200px] space-y-1.5">
+                    <Label className="text-xs">Search</Label>
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Email or Name..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-8"
+                        />
+                    </div>
+                </form>
+
+                <div className="w-[140px] space-y-1.5">
+                    <Label className="text-xs">Plan</Label>
+                    <Select value={params.plan} onValueChange={(val) => onParamsChange({ plan: val, page: 1 })}>
+                        <SelectTrigger className="bg-background">
+                            <SelectValue placeholder="Plan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Plans</SelectItem>
+                            {PLAN_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
-                <Button type="submit">Search</Button>
-            </form>
+
+                <div className="w-[140px] space-y-1.5">
+                    <Label className="text-xs">Balance</Label>
+                    <Select value={params.balanceFilter} onValueChange={(val) => onParamsChange({ balanceFilter: val, page: 1 })}>
+                        <SelectTrigger className="bg-background">
+                            <SelectValue placeholder="Balance" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="zero">Zero Balance</SelectItem>
+                            <SelectItem value="positive">Has Balance</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="w-[180px] space-y-1.5">
+                    <Label className="text-xs">Sort By</Label>
+                    <Select
+                        value={`${params.sortBy}:${params.sortOrder}`}
+                        onValueChange={(val) => {
+                            const [sortBy, sortOrder] = val.split(':') as [string, 'asc' | 'desc']
+                            onParamsChange({ sortBy, sortOrder, page: 1 })
+                        }}
+                    >
+                        <SelectTrigger className="bg-background">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="created_at:desc">Newest First</SelectItem>
+                            <SelectItem value="created_at:asc">Oldest First</SelectItem>
+                            <SelectItem value="balance:desc">Highest Balance</SelectItem>
+                            <SelectItem value="balance:asc">Lowest Balance</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="flex gap-2">
+                    <Button type="submit">Filter</Button>
+                    <Button variant="ghost" type="button" onClick={clearFilters}>Reset</Button>
+                </div>
+            </div>
 
             <div className="rounded-md border">
                 <Table>
@@ -194,6 +294,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                         <TableRow>
                             <TableHead>User</TableHead>
                             <TableHead>Phone</TableHead>
+                            <TableHead>Address</TableHead>
                             <TableHead>Role</TableHead>
                             <TableHead>Balance</TableHead>
                             <TableHead>Status</TableHead>
@@ -220,6 +321,9 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                                         {user.phone || '—'}
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                                        {user.shop_address || '—'}
                                     </TableCell>
                                     <TableCell className="capitalize">{user.role}</TableCell>
                                     <TableCell className="font-medium">
@@ -288,6 +392,34 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                 </Table>
             </div>
 
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-2">
+                <div className="text-sm text-muted-foreground">
+                    Total {totalCount} users
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onParamsChange({ page: currentPage - 1 })}
+                        disabled={currentPage <= 1 || loading}
+                    >
+                        Previous
+                    </Button>
+                    <div className="text-sm font-medium">
+                        Page {currentPage} of {Math.ceil(totalCount / params.pageSize)}
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onParamsChange({ page: currentPage + 1 })}
+                        disabled={currentPage >= Math.ceil(totalCount / params.pageSize) || loading}
+                    >
+                        Next
+                    </Button>
+                </div>
+            </div>
+
             {/* Unified Edit Modal */}
             <Dialog
                 open={!!editUser}
@@ -327,6 +459,16 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                                             setEditState((s) => s && { ...s, phone: e.target.value })
                                         }
                                         placeholder="Phone number"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Shop Address</Label>
+                                    <Input
+                                        value={editState.shop_address}
+                                        onChange={(e) =>
+                                            setEditState((s) => s && { ...s, shop_address: e.target.value })
+                                        }
+                                        placeholder="Shop address"
                                     />
                                 </div>
                                 <div className="space-y-2">

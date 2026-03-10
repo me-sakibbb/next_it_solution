@@ -102,7 +102,7 @@ export function DashboardClient({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <ServiceCard
             title="শপ ম্যানেজমেন্ট"
-            description="দোকান চালানো এখন আরও স্মার্ট। ইনভেন্টরি, সেলস, প্রতিদিনের খরচ, লাভ এবং বিস্তারিত রিপোর্ট দেখুন এক ক্লিকে।"
+            description="দোকানের ইনভেন্টরি ও সেলস ম্যানেজমেন্ট।"
             icon={Store}
             href="/dashboard/shop"
             colorClass="bg-emerald-500/10 text-emerald-600"
@@ -110,7 +110,7 @@ export function DashboardClient({
           />
           <ServiceCard
             title="এআই ফটো এডিটর"
-            description="সাধারণ ছবিকে বানান স্টুডিও কোয়ালিটির প্রফেশনাল ফটো। ব্যাকগ্রাউন্ড রিমুভ, লাইটিং এনহ্যান্স এবং স্মার্ট এআই এডিটিং—সবকিছু এক ক্লিকেই।"
+            description="এআই দিয়ে প্রফেশনাল ফটো এডিটিং।"
             icon={ImageIcon}
             href="/dashboard/photo-enhancer"
             colorClass="bg-purple-500/10 text-purple-600"
@@ -118,7 +118,7 @@ export function DashboardClient({
           />
           <ServiceCard
             title="এআই সিভি বিল্ডার"
-            description="স্মার্ট এআই দিয়ে বানান পারফেক্ট সিভি। মিনিটেই পেয়ে যান আধুনিক ডিজাইন ও পেশাদার কনটেন্ট।"
+            description="এআই দিয়ে স্মার্ট সিভি তৈরি।"
             icon={FileUser}
             href="/dashboard/cv-builder"
             colorClass="bg-blue-500/10 text-blue-600"
@@ -127,7 +127,7 @@ export function DashboardClient({
           />
           <ServiceCard
             title="প্রিন্ট রেডি"
-            description="মোবাইলে তোলা ছবিকে মুহূর্তেই অপ্টিমাইজ করে স্ক্যান করা ডকুমেন্টের মতো করুন এবং প্রিন্ট-রেডি PDF তৈরি করুন।"
+            description="ছবিকে স্ক্যান করা ডকুমেন্টে রূপান্তর।"
             icon={ScanText}
             href="/dashboard/print-ready"
             colorClass="bg-pink-500/10 text-pink-600"
@@ -135,7 +135,7 @@ export function DashboardClient({
           />
           <ServiceCard
             title="জন্ম নিবন্ধনের ফর্ম অটোমেশন এআই"
-            description="সহজে এবং নির্ভুলভাবে জন্ম নিবন্ধনের ফর্ম পূরণ করুন।"
+            description="অটোমেটিক জন্ম নিবন্ধন ফর্ম পূরণ।"
             icon={BotMessageSquare}
             href="#"
             onClick={() => handleServiceClick("জন্ম নিবন্ধনের ফর্ম অটোমেশন এআই")}
@@ -145,7 +145,7 @@ export function DashboardClient({
           />
           <ServiceCard
             title="টেলিটক জব ফর্ম অটোমেশন এআই"
-            description="টেলিটক জব অ্যাপ্লিকেশনের ফর্ম স্বয়ংক্রিয়ভাবে পূরণ করুন।"
+            description="জব অ্যাপ্লিকেশনের ফর্ম অটোমেটিক পূরণ।"
             icon={BrainCircuit}
             href="#"
             onClick={() => handleServiceClick("টেলিটক জব ফর্ম অটোমেশন এআই")}
@@ -155,7 +155,7 @@ export function DashboardClient({
           />
           <ServiceCard
             title="ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই"
-            description="ইন্ডিয়ান ভিসার জন্য দ্রুত এবং নির্ভুল ফর্ম ফিলিং সার্ভিস।"
+            description="ভিসার ফর্ম দ্রুত ও নির্ভুলভাবে পূরণ।"
             icon={ScanFace}
             href="#"
             onClick={() => handleServiceClick("ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই")}
@@ -165,7 +165,7 @@ export function DashboardClient({
           />
           <ServiceCard
             title="প্রয়োজনীয় গ্রাফিক্স ফাইল"
-            description="ব্যবসায়িক কাজে প্রয়োজনীয় গ্রাফিক্স টেমপ্লেট ও রেডিমেড ফাইল—দ্রুত ব্যবহার করুন এবং আপনার কাজকে দিন প্রফেশনাল লুক।"
+            description="রেডিমেড গ্রাফিক্স টেমপ্লেট সংগ্রহ।"
             icon={FolderOpen}
             href="#"
             externalHref={graphicsFilesUrl || undefined}
@@ -175,7 +175,7 @@ export function DashboardClient({
           />
           <ServiceCard
             title="গুরুত্বপূর্ণ সনদ ফরমেট"
-            description="স্মার্টভাবে ডিজাইন করা অফিসিয়াল টেমপ্লেটের সমাহার—যা সময় বাঁচায় এবং কাজের মান বাড়ায়।"
+            description="অফিসিয়াল ডকুমেন্ট ও সনদ ফরমেট।"
             icon={FileText}
             href="#"
             externalHref={certificateFormatsUrl || undefined}

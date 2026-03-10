@@ -13,13 +13,13 @@ export async function notifyUser(
     const supabase = await createAdminClient()
 
     // 1. Insert into database for in-app realtime
-    const { error } = await supabase.from('notifications').insert({
+    const { data: notification, error } = await supabase.from('notifications').insert({
         user_id: userId,
         title,
         message,
         action_url: url,
         type
-    })
+    }).select().single()
 
     if (error) {
         console.error('Error inserting DB notification:', error)
@@ -29,7 +29,8 @@ export async function notifyUser(
     await sendPushNotificationToUser(userId, {
         title,
         body: message,
-        url
+        url,
+        notificationId: notification?.id
     })
 }
 
@@ -63,19 +64,20 @@ export async function notifySuperAdmins(
 
     for (const user of users) {
         // 1. DB Insert
-        await supabase.from('notifications').insert({
+        const { data: notification } = await supabase.from('notifications').insert({
             user_id: user.id,
             title,
             message,
             action_url: url,
             type
-        })
+        }).select().single()
 
         // 2. Push Notification
         await sendPushNotificationToUser(user.id, {
             title,
             body: message,
-            url
+            url,
+            notificationId: notification?.id
         })
     }
 }

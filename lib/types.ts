@@ -35,6 +35,7 @@ export interface User {
   email: string
   full_name?: string
   phone?: string
+  shop_address?: string
   avatar_url?: string
   role: UserRole
   balance: number

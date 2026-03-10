@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
+import { ToastAction } from '@/components/ui/toast'
 import type { Notification } from '@/lib/types'
 import { subscribeToPushNotifications, unsubscribeFromPushNotifications } from '@/lib/push-notifications'
 
@@ -11,6 +14,7 @@ export function useNotifications(userId?: string) {
   const [isPushEnabled, setIsPushEnabled] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const supabase = createClient()
+  const router = useRouter()
 
   const fetchNotifications = useCallback(async () => {
     if (!userId) return
@@ -51,6 +55,18 @@ export function useNotifications(userId?: string) {
     }
   }, [userId]) // supabase removed from deps as it is now a stable singleton
 
+  const { toast } = useToast()
+
+  const playNotificationSound = useCallback(() => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3')
+      audio.volume = 0.5
+      audio.play().catch(e => console.error('Audio play failed:', e))
+    } catch (e) {
+      console.error('Sound error:', e)
+    }
+  }, [])
+
   useEffect(() => {
     if (userId) {
       fetchNotifications()
@@ -66,7 +82,28 @@ export function useNotifications(userId?: string) {
             table: 'notifications',
             filter: `user_id=eq.${userId}`
           },
-          () => {
+          (payload) => {
+            // If it's a new notification, show toast and play sound
+            if (payload.eventType === 'INSERT') {
+              const newNotif = payload.new as Notification
+              playNotificationSound()
+              toast({
+                title: newNotif.title,
+                description: newNotif.message,
+                variant: 'default',
+                action: newNotif.action_url ? (
+                  <ToastAction
+                    altText="দেখুন"
+                    onClick={() => {
+                      markAsRead(newNotif.id)
+                      if (newNotif.action_url) router.push(newNotif.action_url)
+                    }}
+                  >
+                    দেখুন
+                  </ToastAction>
+                ) : undefined
+              })
+            }
             fetchNotifications()
           }
         )
@@ -76,32 +113,41 @@ export function useNotifications(userId?: string) {
         supabase.removeChannel(channel)
       }
     }
-  }, [userId, fetchNotifications])
+  }, [userId, fetchNotifications, playNotificationSound, toast])
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     // Optimistic update
-    setNotifications(current =>
-      current.map(n => n.id === id ? { ...n, read: true } : n)
-    )
-    setUnreadCount(current => Math.max(0, current - 1))
+    setNotifications(current => {
+      const notification = current.find(n => n.id === id)
+      if (!notification || notification.read) return current
+
+      setUnreadCount(prev => Math.max(0, prev - 1))
+      return current.map(n => n.id === id ? { ...n, read: true } : n)
+    })
 
     const { error } = await supabase
       .from('notifications')
       .update({ read: true })
       .eq('id', id)
+      .eq('read', false)
 
     if (error) {
-      fetchNotifications()
       console.error('Error marking notification as read', error)
+      fetchNotifications()
     }
-  }
+  }, [supabase, fetchNotifications])
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     if (!userId) return
 
     // Optimistic
-    setNotifications(current => current.map(n => ({ ...n, read: true })))
-    setUnreadCount(0)
+    setNotifications(current => {
+      const unread = current.filter(n => !n.read).length
+      if (unread === 0) return current
+
+      setUnreadCount(0)
+      return current.map(n => ({ ...n, read: true }))
+    })
 
     const { error } = await supabase
       .from('notifications')
@@ -112,7 +158,7 @@ export function useNotifications(userId?: string) {
     if (error) {
       fetchNotifications()
     }
-  }
+  }, [userId, supabase, fetchNotifications])
 
   const enablePush = async () => {
     const success = await subscribeToPushNotifications()

@@ -11,8 +11,8 @@ self.addEventListener('push', function (event) {
                 vibrate: [100, 50, 100],
                 data: {
                     dateOfArrival: Date.now(),
-                    primaryKey: '2',
-                    url: data.data?.url || '/'
+                    url: data.data?.url || '/',
+                    notificationId: data.data?.notificationId
                 }
             }
 
@@ -31,11 +31,23 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', function (event) {
     event.notification.close()
 
-    // This looks to see if the current is already open and focuses if it is
+    const targetUrl = event.notification.data?.url || '/'
+    const notificationId = event.notification.data?.notificationId
+
+    // 1. Mark as read in the background
+    if (notificationId) {
+        event.waitUntil(
+            fetch('/api/notifications/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notificationId })
+            }).catch(err => console.error('Failed to mark notification as read in SW:', err))
+        )
+    }
+
+    // 2. This looks to see if the current is already open and focuses if it is
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-            const targetUrl = event.notification.data?.url || '/'
-
             // If window already open, focus it and navigate
             for (let i = 0; i < clientList.length; i++) {
                 const client = clientList[i]

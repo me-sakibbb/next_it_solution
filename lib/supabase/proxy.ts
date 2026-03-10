@@ -26,12 +26,23 @@ export async function updateSession(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
-            const rememberMe = request.cookies.get('remember-me')?.value === 'true'
+            const rememberMeCookie = request.cookies.get('remember-me')
+            const rememberMe = rememberMeCookie?.value === 'true'
 
             cookiesToSet.forEach(({ name, value, options }) => {
-              const cookieOptions = !rememberMe && name.startsWith('sb-')
-                ? { ...options, maxAge: undefined }
-                : options
+              let cookieOptions = options
+
+              if (name.startsWith('sb-')) {
+                if (rememberMeCookie) {
+                  if (rememberMe) {
+                    // Force 30 days for remember me
+                    cookieOptions = { ...options, maxAge: 60 * 60 * 24 * 30 }
+                  } else {
+                    // Force session cookie
+                    cookieOptions = { ...options, maxAge: undefined }
+                  }
+                }
+              }
 
               request.cookies.set({ name, value, ...cookieOptions })
             })
@@ -39,9 +50,17 @@ export async function updateSession(request: NextRequest) {
               request,
             })
             cookiesToSet.forEach(({ name, value, options }) => {
-              const cookieOptions = !rememberMe && name.startsWith('sb-')
-                ? { ...options, maxAge: undefined }
-                : options
+              let cookieOptions = options
+
+              if (name.startsWith('sb-')) {
+                if (rememberMeCookie) {
+                  if (rememberMe) {
+                    cookieOptions = { ...options, maxAge: 60 * 60 * 24 * 30 }
+                  } else {
+                    cookieOptions = { ...options, maxAge: undefined }
+                  }
+                }
+              }
 
               supabaseResponse.cookies.set({ name, value, ...cookieOptions })
             })

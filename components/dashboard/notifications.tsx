@@ -32,9 +32,16 @@ export function NotificationsDropdown({ userId }: { userId?: string }) {
   const [isPushLoading, setIsPushLoading] = useState(false)
   const router = useRouter()
 
-  const handleNotificationClick = async (id: string, url?: string) => {
-    await markAsRead(id)
+  const handleNotificationClick = async (id: string, url?: string, isRead?: boolean) => {
+    // If not already read, mark it as read
+    if (!isRead) {
+      await markAsRead(id)
+    }
+
+    // Close the popover
     setIsOpen(false)
+
+    // If there's a URL, navigate to it
     if (url) {
       router.push(url)
     }
@@ -146,7 +153,7 @@ export function NotificationsDropdown({ userId }: { userId?: string }) {
               {notifications.map((notification) => (
                 <button
                   key={notification.id}
-                  onClick={() => handleNotificationClick(notification.id, notification.action_url)}
+                  onClick={() => handleNotificationClick(notification.id, notification.action_url, notification.read)}
                   className={cn(
                     "flex flex-col items-start gap-1 p-4 text-left transition-colors hover:bg-muted/50 border-b border-gray-100 dark:border-gray-800 relative",
                     !notification.read && "bg-primary/5"
