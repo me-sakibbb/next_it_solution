@@ -48,10 +48,10 @@ export default function ForgotPasswordPage() {
                         <Link href="/auth/login" className="text-muted-foreground hover:text-primary transition-colors">
                             <ArrowLeft className="h-4 w-4" />
                         </Link>
-                        <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
+                        <CardTitle className="text-2xl font-bold">পাসওয়ার্ড ভুলে গেছেন?</CardTitle>
                     </div>
                     <CardDescription>
-                        Enter your email address and we'll send you a link to reset your password.
+                        আপনার ইমেইল অ্যাড্রেস দিন এবং আমরা আপনাকে আপনার পাসওয়ার্ড রিসেট করার জন্য একটি লিঙ্ক পাঠাব।
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -60,11 +60,11 @@ export default function ForgotPasswordPage() {
                             <Alert className="bg-green-500/10 text-green-600 border-green-500/20">
                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                                 <AlertDescription>
-                                    Reset link sent! Please check your email inbox (and spam folder) for instructions.
+                                    রিসেট লিঙ্ক পাঠানো হয়েছে! অনুগ্রহ করে আপনার ইমেইল ইনবক্স চেক করুন।
                                 </AlertDescription>
                             </Alert>
                             <Button asChild className="w-full" variant="outline">
-                                <Link href="/auth/login">Return to Login</Link>
+                                <Link href="/auth/login">লগ ইন এ ফিরে যান</Link>
                             </Button>
                         </div>
                     ) : (
@@ -77,11 +77,11 @@ export default function ForgotPasswordPage() {
                             )}
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
+                                <Label htmlFor="email">ইমেইল অ্যাড্রেস</Label>
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="you@example.com"
+                                    placeholder="your@email.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
                             </div>
 
                             <Button type="submit" className="w-full" disabled={loading}>
-                                {loading ? 'Sending link...' : 'Send Reset Link'}
+                                {loading ? 'লিঙ্ক পাঠানো হচ্ছে...' : 'রিসেট লিঙ্ক পাঠান'}
                             </Button>
                         </form>
                     )}
@@ -98,9 +98,9 @@ export default function ForgotPasswordPage() {
                 {!success && (
                     <CardFooter className="flex flex-col space-y-2">
                         <div className="text-sm text-muted-foreground text-center">
-                            {'Remember your password? '}
+                            {'পাসওয়ার্ড মনে আছে? '}
                             <Link href="/auth/login" className="text-primary hover:underline font-medium">
-                                Back to login
+                                লগ ইন এ ফিরে যান
                             </Link>
                         </div>
                     </CardFooter>

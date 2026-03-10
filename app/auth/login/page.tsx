@@ -10,16 +10,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Lock } from 'lucide-react'
+import { AlertCircle, Lock, Eye, EyeOff } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
+import { OTPVerificationModal } from '@/components/auth/otp-verification-modal'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState('')
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -40,12 +44,18 @@ export default function LoginPage() {
       })
 
       if (signInError) {
-        setError(signInError.message)
+        if (signInError.message === 'Email not confirmed') {
+          setUnconfirmedEmail(email)
+          setError('আপনার ইমেইল ভেরিফাই করা হয়নি। অনুগ্রহ করে ইমেইল ভেরিফাই করুন।')
+        } else if (signInError.message === 'Invalid login credentials') {
+          setError('ভুল ইমেইল অথবা পাসওয়ার্ড।')
+        } else {
+          setError(signInError.message)
+        }
         return
       }
 
-      router.push('/dashboard')
-      router.refresh()
+      window.location.href = '/dashboard'
     } catch (err) {
       setError('একটি অপ্রত্যাশিত ত্রুটি ঘটেছে')
     } finally {
@@ -70,7 +80,18 @@ export default function LoginPage() {
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription className="flex items-center justify-between gap-4">
+                  <span>{error}</span>
+                  {unconfirmedEmail && (
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-destructive underline font-bold"
+                      onClick={() => setIsOtpModalOpen(true)}
+                    >
+                      ভেরিফাই করুন
+                    </Button>
+                  )}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -97,15 +118,30 @@ export default function LoginPage() {
                   পাসওয়ার্ড ভুলে গেছেন?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center space-x-2 py-2">
@@ -137,6 +173,15 @@ export default function LoginPage() {
           </div>
         </CardFooter>
       </Card>
+
+      <OTPVerificationModal
+        email={unconfirmedEmail}
+        isOpen={isOtpModalOpen}
+        onOpenChange={setIsOtpModalOpen}
+        onSuccess={() => {
+          // Redirect is handled inside the modal
+        }}
+      />
     </div>
   )
 }

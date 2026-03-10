@@ -10,9 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Gift } from 'lucide-react'
+import { AlertCircle, Gift, Eye, EyeOff } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { checkEmailExists } from '@/actions/auth'
+import { OTPVerificationModal } from '@/components/auth/otp-verification-modal'
 
 function SignUpForm() {
   const [fullName, setFullName] = useState('')
@@ -20,9 +21,12 @@ function SignUpForm() {
   const [shopName, setShopName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [referralCode, setReferralCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -64,8 +68,9 @@ function SignUpForm() {
       }
 
       const supabase = createClient()
+      const cleanEmail = email.trim().toLowerCase()
       const { error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/dashboard`,
@@ -80,11 +85,18 @@ function SignUpForm() {
       })
 
       if (signUpError) {
-        setError(signUpError.message)
+        if (signUpError.message === 'User already registered') {
+          setError('এই ইমেইল দিয়ে ইতঃপূর্বেই অ্যাকাউন্ট তৈরি করা হয়েছে। অনুগ্রহ করে লগ ইন করুন।')
+        } else {
+          setError(signUpError.message)
+        }
         return
       }
 
-      router.push('/auth/sign-up-success')
+      setRegisteredEmail(cleanEmail)
+      setIsOtpModalOpen(true)
+      // We don't redirect yet, let the OTP modal handle verification
+      // router.push('/auth/sign-up-success')
     } catch (err) {
       setError('একটি অপ্রত্যাশিত ত্রুটি ঘটেছে')
     } finally {
@@ -167,16 +179,31 @@ function SignUpForm() {
 
             <div className="space-y-2">
               <Label htmlFor="password">পাসওয়ার্ড</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                disabled={loading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  disabled={loading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 {'অক্ষর, সংখ্যা এবং চিহ্ন সহ কমপক্ষে ৮ ক্যারেক্টার হতে হবে'}
               </p>
@@ -216,6 +243,15 @@ function SignUpForm() {
           </div>
         </CardFooter>
       </Card>
+
+      <OTPVerificationModal
+        email={registeredEmail}
+        isOpen={isOtpModalOpen}
+        onOpenChange={setIsOtpModalOpen}
+        onSuccess={() => {
+          // Redirect is handled inside the modal for better session synchronization
+        }}
+      />
     </div>
   )
 }

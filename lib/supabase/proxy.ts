@@ -61,7 +61,7 @@ export async function updateSession(request: NextRequest) {
       error,
     } = await supabase.auth.getUser()
 
-    if (error) {
+    if (error && error.name !== 'AuthSessionMissingError') {
       console.error('Middleware: Error fetching user', error)
       // We don't return here, we let the flow continue, but user will be null
     }
