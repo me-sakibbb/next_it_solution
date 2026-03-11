@@ -6,10 +6,8 @@ export default async function PhotoEditorPage() {
   const { shop } = await getUserShop()
 
   return (
-    <div className="h-[calc(100vh-12rem)]">
-      <SubscriptionWall feature="cv">
-        <PhotoEditorClient shopId={shop.id} />
-      </SubscriptionWall>
-    </div>
+    <SubscriptionWall feature="cv">
+      <PhotoEditorClient shopId={shop.id} />
+    </SubscriptionWall>
   )
 }

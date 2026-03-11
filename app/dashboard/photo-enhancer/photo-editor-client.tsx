@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from "react"
 
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Upload, Download, RotateCw, RotateCcw, Crop, Contrast, Sun, ImageIcon, Scissors, Printer, Maximize2, Sparkles, Palette, ZoomIn, ZoomOut, Eraser, Check, Undo2 } from 'lucide-react'
+import { Upload, Download, RotateCw, RotateCcw, Crop, Contrast, Sun, ImageIcon, Scissors, Printer, Maximize2, Sparkles, Palette, ZoomIn, ZoomOut, Eraser, Check, Undo2, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import jsPDF from 'jspdf'
 
@@ -118,6 +118,9 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   const [originalBeforeEnhance, setOriginalBeforeEnhance] = useState<HTMLImageElement | null>(null)
   const [enhancedPreview, setEnhancedPreview] = useState<string | null>(null)
   const [showEnhanceComparison, setShowEnhanceComparison] = useState(false)
+  // Ref mirror so that handleUndo can synchronously read the latest comparison state
+  const showEnhanceComparisonRef = useRef(false)
+  useEffect(() => { showEnhanceComparisonRef.current = showEnhanceComparison }, [showEnhanceComparison])
 
   // Download/Print dialog state
   const [showPrintDialog, setShowPrintDialog] = useState(false)
@@ -149,6 +152,20 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   }, [image, brightness, contrast, saturation, rotation, blur, bgRemoved, bgColor])
 
   const handleUndo = useCallback(() => {
+    // If enhance comparison is showing, the first undo press dismisses it
+    if (showEnhanceComparisonRef.current) {
+      setShowEnhanceComparison(false)
+      setEnhancedPreview(null)
+      setOriginalBeforeEnhance(null)
+      filterDirtyRef.current = true
+      // Re-trigger Fit to Screen so the canvas shows up properly
+      setTimeout(() => {
+        handleFitToScreen()
+      }, 50)
+      toast({ title: 'Undo', description: 'Enhancement discarded' })
+      return
+    }
+
     setHistory(prev => {
       if (prev.length === 0) return prev
       const next = [...prev]
@@ -876,63 +893,84 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     pushHistory()
     setIsRemovingBg(true)
     setBgProgress(1)
+
     try {
-      // Revert to @imgly/background-removal for free local processing
+      // 1. Lazy load the processing library
       const { removeBackground: removeBg } = await import('@imgly/background-removal')
 
-      // Check for WebGPU support for faster processing
-      const hasWebGPU = 'gpu' in navigator;
+      // 2. High-Speed Client Correction: 
+      // We downscale to 512px for the AI model. This is the "sweet spot" 
+      // where inference takes < 3s on most devices but mask quality remains high.
+      const INFERENCE_SIZE = 512
+      const scale = Math.min(1, INFERENCE_SIZE / Math.max(image.width, image.height))
+      const downW = Math.round(image.width * scale)
+      const downH = Math.round(image.height * scale)
 
-      const blob = await (await fetch(image.src)).blob()
+      const downCanvas = document.createElement('canvas')
+      downCanvas.width = downW
+      downCanvas.height = downH
+      const downCtx = downCanvas.getContext('2d')!
+      downCtx.drawImage(image, 0, 0, downW, downH)
 
-      const result = await removeBg(blob, {
-        // use isnet_fp16 for GPU as it's much faster than quint8 on most GPUs
-        // use isnet_quint8 for CPU as it's the smallest download
+      const downBlob = await new Promise<Blob>(resolve =>
+        downCanvas.toBlob(b => resolve(b!), 'image/png')
+      )
+
+      // 3. Auto-detect best compute device
+      const hasWebGPU = 'gpu' in navigator
+
+      // 4. Run AI locally on user machine
+      const result = await removeBg(downBlob, {
         model: hasWebGPU ? 'isnet_fp16' : 'isnet_quint8',
         device: hasWebGPU ? 'gpu' : 'cpu',
         proxyToWorker: true,
         publicPath: "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/",
         progress: (key, current, total) => {
-          if (total > 0) {
-            setBgProgress(Math.round((current / total) * 100))
-          }
+          if (total > 0) setBgProgress(Math.round((current / total) * 100))
         },
-        output: {
-          format: 'image/png',
-          quality: 0.8,
-        }
+        output: { format: 'image/png', quality: 0.8 },
       })
 
-      const url = URL.createObjectURL(result)
-      const img = new Image()
-      img.onload = () => {
-        setImage(img)
-        setBgRemoved(true)
-        setIsRemovingBg(false)
-        setBgProgress(0)
-        toast({
-          title: "Success",
-          description: "Background removed locally using AI",
-        })
+      // 5. High-Res Mask Application
+      // We take the alpha-mask generated at 512px and apply it back to 
+      // the full-resolution original image for a professional finish.
+      const maskUrl = URL.createObjectURL(result)
+      const maskImg = new Image()
+
+      maskImg.onload = () => {
+        const resultCanvas = document.createElement('canvas')
+        resultCanvas.width = image.width
+        resultCanvas.height = image.height
+        const rctx = resultCanvas.getContext('2d')!
+
+        rctx.drawImage(image, 0, 0) // Draw original high-res
+        rctx.globalCompositeOperation = 'destination-in'
+        rctx.drawImage(maskImg, 0, 0, image.width, image.height) // Apply mask
+
+        const finalUrl = resultCanvas.toDataURL('image/png')
+        const finalImg = new Image()
+        finalImg.onload = () => {
+          setImage(finalImg)
+          setBgRemoved(true)
+          setBgColor('#06b6d4') // Default Sky Blue
+          setIsRemovingBg(false)
+          setBgProgress(0)
+          setTimeout(() => handleFitToScreen(), 50)
+          toast({ title: 'Success', description: 'Background removed in record time' })
+          URL.revokeObjectURL(maskUrl)
+        }
+        finalImg.src = finalUrl
       }
-      img.onerror = () => {
-        setIsRemovingBg(false)
-        setBgProgress(0)
-        toast({
-          title: "Error",
-          description: "Failed to load processed image",
-          variant: "destructive",
-        })
-      }
-      img.src = url
-    } catch (error) {
+      maskImg.src = maskUrl
+
+    } catch (error: any) {
       console.error('Background removal error:', error)
       setIsRemovingBg(false)
       setBgProgress(0)
       toast({
-        title: "Error",
-        description: "Local background removal failed. Your browser might not support the required features.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Local processing failed. Ensure your browser is up to date.',
+        variant: 'destructive',
       })
     }
   }
@@ -1242,7 +1280,7 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
       // Dimensions
       ctx.fillStyle = '#3b82f6'
       ctx.font = 'bold 14px sans-serif'
-      ctx.fillText(`${Math.round(cw)} × ${Math.round(ch)}px`, cx + 10, cy + 25)
+      ctx.fillText(`${Math.round(cw)} Ã— ${Math.round(ch)}px`, cx + 10, cy + 25)
     }
   }, [image, isCropping, isPhotoMode, buildFilteredCanvas, bgRemoved, bgColor, viewZoom, isErasing, brushSize])
 
@@ -1268,16 +1306,42 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   }
 
   const handleDownload = () => {
-    if (canvasRef.current) {
-      const link = document.createElement('a')
-      link.download = `edited-image-${Date.now()}.png`
-      link.href = canvasRef.current.toDataURL()
-      link.click()
-      toast({
-        title: "Success",
-        description: "Image downloaded successfully",
-      })
+    if (!image) return
+
+    // 1. Get the high-resolution filtered image (filters + rotation + erase)
+    // buildFilteredCanvas already creates a canvas with image.width/height
+    const filtered = buildFilteredCanvas()
+    if (!filtered) return
+
+    // 2. Create an export canvas at exact original resolution
+    const exportCanvas = document.createElement('canvas')
+    exportCanvas.width = image.width
+    exportCanvas.height = image.height
+    const ctx = exportCanvas.getContext('2d')
+    if (!ctx) return
+
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+
+    // 3. Draw background layer if needed
+    if (bgRemoved && bgColor !== 'transparent') {
+      ctx.fillStyle = bgColor
+      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height)
     }
+
+    // 4. Draw the actual filtered high-res image
+    ctx.drawImage(filtered, 0, 0)
+
+    // 5. Trigger download
+    const link = document.createElement('a')
+    link.download = `photo-studio-export-${Date.now()}.png`
+    link.href = exportCanvas.toDataURL('image/png', 1.0)
+    link.click()
+
+    toast({
+      title: "Success",
+      description: `High-resolution image (${exportCanvas.width}x${exportCanvas.height}) downloaded`,
+    })
   }
 
   const handlePrintDownload = () => {
@@ -1386,837 +1450,478 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   }
 
   return (
-    <>
-      <div className="flex h-full gap-6">
-        {/* Editor Canvas */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold">Photo Editor</h1>
-              <p className="text-muted-foreground">Edit product photos with advanced tools</p>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept="image/*"
-                className="hidden"
-              />
-              <Button onClick={() => fileInputRef.current?.click()}>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Image
+    <div
+      className="rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col"
+      style={{ height: '85vh' }}
+    >
+      {/*  STUDIO HEADER BAR  */}
+      <div className="flex items-center justify-between px-6 py-3.5 border-b bg-background shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <ImageIcon className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold leading-tight">Photo Studio</h1>
+            <p className="text-xs text-muted-foreground">
+              {image ? `${image.width} x ${image.height}px` : 'Upload a photo to begin'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-3.5 w-3.5 mr-1.5" />Upload
+          </Button>
+          {originalImage && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                pushHistory()
+                setImage(originalImage)
+                setBrightness(100)
+                setContrast(100)
+                setSaturation(100)
+                setBlur(0)
+                setRotation(0)
+                setBgRemoved(false)
+                setBgColor('transparent')
+                eraseCanvasRef.current = null
+                filterDirtyRef.current = true
+                setShowEnhanceComparison(false)
+                setEnhancedPreview(null)
+                setOriginalBeforeEnhance(null)
+                toast({ title: 'Restored', description: 'Reverted to original image' })
+              }}
+              title="Restore exact original image"
+            >
+              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />Restore Original
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+            <Undo2 className="h-3.5 w-3.5 mr-1.5" />Undo
+            {canUndo && (
+              <span className="ml-1.5 text-[10px] bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {history.length}
+              </span>
+            )}
+          </Button>
+          <Button
+            size="sm"
+            className="gap-1.5 font-semibold"
+            style={{ backgroundColor: '#7c3aed' }}
+            onClick={() => setShowPrintDialog(true)}
+          >
+            <Printer className="h-3.5 w-3.5" />Print Sheet
+          </Button>
+          <Button size="sm" className="gap-1.5 font-semibold bg-green-600 hover:bg-green-700" onClick={handleDownload}>
+            <Download className="h-3.5 w-3.5" />Download PNG
+          </Button>
+        </div>
+      </div>
+
+      {/*  3-COLUMN BODY  */}
+      <div className="flex flex-1 min-h-0">
+
+        {/*  COLUMN 1: TOOLS + FILTERS  */}
+        <div className="w-60 shrink-0 border-r bg-background flex flex-col overflow-y-auto">
+
+          {/* Tool buttons */}
+          <div className="p-4 border-b">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Tools</p>
+            <div className="flex flex-col gap-2">
+
+              {/* Crop  full width toggle */}
+              <Button
+                variant={isCropping ? 'default' : 'outline'}
+                className="h-11 text-sm justify-start gap-2.5 w-full"
+                onClick={isCropping ? applyCrop : startCropping}
+              >
+                <Crop className="h-4 w-4" />
+                {isCropping ? 'Apply Crop' : 'Crop'}
               </Button>
-              {image && (
-                <>
-                  <Button
-                    onClick={handleUndo}
-                    variant="outline"
-                    disabled={!canUndo}
-                    title="Undo last step (Ctrl+Z)"
-                    className="relative group"
-                  >
-                    <Undo2 className="h-4 w-4 mr-2" />
-                    Undo
-                    {canUndo && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                        {history.length}
-                      </span>
-                    )}
+
+              {/* Crop controls  inline when cropping */}
+              {isCropping && (
+                <div className="space-y-2 pt-1">
+                  <Select value={cropPreset} onValueChange={(value) => { setCropPreset(value); if (value !== 'Custom') { const p = CROP_PRESETS.find(p => p.name === value); if (p) { setCropWidth(p.width); setCropHeight(p.height) } } }}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Crop preset" /></SelectTrigger>
+                    <SelectContent>{CROP_PRESETS.map(p => <SelectItem key={p.name} value={p.name} className="text-xs">{p.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                  {cropPreset === 'Custom' && (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div><Label className="text-xs">W</Label><Input type="number" value={customWidth} onChange={(e) => { const v = parseInt(e.target.value) || 0; setCustomWidth(v); setCropWidth(v) }} className="h-8 mt-0.5 text-xs" /></div>
+                      <div><Label className="text-xs">H</Label><Input type="number" value={customHeight} onChange={(e) => { const v = parseInt(e.target.value) || 0; setCustomHeight(v); setCropHeight(v) }} className="h-8 mt-0.5 text-xs" /></div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="ar" checked={maintainAspectRatio} onChange={e => setMaintainAspectRatio(e.target.checked)} className="w-3.5 h-3.5 accent-primary" />
+                    <Label htmlFor="ar" className="text-xs cursor-pointer">Lock ratio</Label>
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full h-8 text-xs border-destructive/40 text-destructive" onClick={() => { setIsCropping(false); setIsPhotoMode(false) }}>
+                    <X className="h-3.5 w-3.5 mr-1.5" />Cancel Crop
                   </Button>
-                  <Button onClick={handleDownload} variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                  <Button onClick={() => setShowPrintDialog(true)} variant="outline">
-                    <Printer className="h-4 w-4 mr-2" />
-                    Print Layout
-                  </Button>
-                </>
+                </div>
+              )}
+
+              {/* 2-col tool grid */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="h-14 text-xs flex flex-col gap-1 py-2" disabled={isEnhancing} onClick={enhanceImage}>
+                  <Sparkles className={`h-5 w-5 ${isEnhancing ? 'animate-spin' : ''}`} />
+                  <span>{isEnhancing ? `${enhanceProgress}%` : 'Enhance'}</span>
+                </Button>
+
+                <Button
+                  variant={bgRemoved ? 'secondary' : 'default'}
+                  className="h-14 text-xs flex flex-col gap-1 py-2 relative overflow-hidden"
+                  disabled={isRemovingBg || bgRemoved}
+                  onClick={removeBackground}
+                >
+                  <div className="relative z-10 flex flex-col items-center gap-1">
+                    <Scissors className="h-5 w-5" />
+                    <span>{isRemovingBg ? `${bgProgress}%` : bgRemoved ? 'Removed' : 'Remove BG'}</span>
+                  </div>
+                  {isRemovingBg && <div className="absolute left-0 top-0 bottom-0 bg-primary-foreground/20 transition-all" style={{ width: `${bgProgress}%` }} />}
+                </Button>
+
+                <Button
+                  variant={isErasing ? 'default' : 'outline'}
+                  className="h-14 text-xs flex flex-col gap-1 py-2"
+                  disabled={!bgRemoved}
+                  onClick={() => { setIsErasing(!isErasing); if (isCropping) setIsCropping(false) }}
+                >
+                  <Eraser className="h-5 w-5" />
+                  <span>{isErasing ? 'Erasing' : 'Erase'}</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-14 text-xs flex flex-col gap-1 py-2"
+                  disabled={!bgRemoved}
+                  onClick={() => { if (originalImage) { pushHistory(); setImage(originalImage); setBgRemoved(false); setBgColor('transparent'); eraseCanvasRef.current = null; filterDirtyRef.current = true; setIsErasing(false); toast({ title: 'BG Restored' }) } }}
+                >
+                  <RotateCcw className="h-5 w-5" />
+                  <span>Restore BG</span>
+                </Button>
+
+                <Button variant="outline" className="h-14 text-xs flex flex-col gap-1 py-2" onClick={() => { pushHistory(); handleRotate() }}>
+                  <RotateCw className="h-5 w-5" />
+                  <span>Rotate 90</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-14 text-xs flex flex-col gap-1 py-2 relative"
+                  disabled={!canUndo}
+                  onClick={handleUndo}
+                >
+                  <Undo2 className="h-5 w-5" />
+                  <span>Undo</span>
+                  {canUndo && <span className="absolute top-1 right-1 text-[9px] bg-primary text-primary-foreground rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold">{history.length}</span>}
+                </Button>
+              </div>
+
+              {/* Erase brush size  contextual */}
+              {isErasing && (
+                <div className="space-y-2 pt-1">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-xs font-semibold">Brush Size</Label>
+                    <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded-full">{brushSize}px</span>
+                  </div>
+                  <Slider value={[brushSize]} onValueChange={([v]) => setBrushSize(v)} min={5} max={100} step={1} />
+                  <div className="flex gap-1.5">
+                    {[15, 30, 60].map(s => (
+                      <Button key={s} variant="ghost" size="sm" className={`flex-1 h-7 text-xs ${brushSize === s ? 'bg-primary/20 text-primary font-bold' : ''}`} onClick={() => setBrushSize(s)}>
+                        {s === 15 ? 'S' : s === 30 ? 'M' : 'L'}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>
 
-          <Card className="flex-1 flex bg-muted/30 overflow-hidden min-h-0 relative group/canvas">
-            <div
-              ref={viewportRef}
-              className="flex-1 overflow-auto p-4 flex items-center justify-center"
-              style={{ cursor: isPanning ? 'grabbing' : (!isCropping && !isErasing ? 'grab' : 'default') }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onWheel={handleWheel}
-            >
-              {!image ? (
-                <div className="text-center">
-                  <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No Image Loaded</h3>
-                  <p className="text-muted-foreground mb-4">Upload an image to start editing</p>
-                  <Button onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Image
-                  </Button>
+          {/* Filters */}
+          <div className="p-4 flex-1">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Filters</p>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-2"><Sun className="h-3.5 w-3.5 text-amber-500" />Brightness</Label>
+                  <span className="text-xs font-mono">{brightness}%</span>
                 </div>
-              ) : showEnhanceComparison && enhancedPreview && originalBeforeEnhance ? (
-                <div className="flex-1 flex items-center justify-center p-6 gap-6 w-full">
-                  {/* Before */}
-                  <div className="flex-1 flex flex-col items-center gap-2 max-w-[50%]">
-                    <div className="relative rounded-xl overflow-hidden border-2 border-border shadow-lg w-full">
-                      <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-3 py-1 rounded-full font-semibold z-10 backdrop-blur-sm">Before</div>
-                      <img
-                        src={originalBeforeEnhance.src}
-                        alt="Before enhancement"
-                        className="w-full h-auto object-contain max-h-[60vh]"
-                      />
-                    </div>
-                  </div>
-                  {/* After */}
-                  <div className="flex-1 flex flex-col items-center gap-2 max-w-[50%]">
-                    <div className="relative rounded-xl overflow-hidden border-2 border-primary/50 shadow-lg shadow-primary/10 w-full">
-                      <div className="absolute top-3 left-3 bg-primary/90 text-primary-foreground text-xs px-3 py-1 rounded-full font-semibold z-10 backdrop-blur-sm">After</div>
-                      <img
-                        src={enhancedPreview}
-                        alt="After enhancement"
-                        className="w-full h-auto object-contain max-h-[60vh]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="relative inline-block mx-auto transition-all duration-200">
-                  <canvas
-                    ref={canvasRef}
-                    className={`shadow-2xl bg-white border border-border/50 max-w-none ${isErasing ? '' : (isCropping ? 'cursor-move' : 'cursor-grab')}`}
-                    style={{ cursor: isErasing ? 'none' : undefined }}
-                    onDoubleClick={handleDoubleClick}
-                  />
-
-                  {isCropping && (
-                    <div className={`absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg animate-bounce ${isPhotoMode ? 'bg-green-500' : 'bg-primary'}`}>
-                      {isPhotoMode ? 'IMAGE MODE: Drag/resize photo • Double-click to exit' : 'CROP MODE: Drag handles to adjust crop'}
-                    </div>
-                  )}
-
-                  {isErasing && (
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg animate-pulse bg-red-500">
-                      ERASE MODE: {brushSize}px brush • Drag to erase
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Viewport Zoom Controls - Always Visible at the Bottom */}
-            {image && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1 bg-background/90 backdrop-blur-md border border-border/50 shadow-2xl rounded-full z-50 transition-all hover:scale-103">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-full hover:bg-primary/10 transition-colors"
-                  onClick={() => setViewZoom(prev => Math.max(0.2, Math.round((prev - 0.2) * 10) / 10))}
-                  title="Zoom Out"
-                >
-                  <ZoomOut className="h-5 w-5" />
-                </Button>
-                <div
-                  className="px-3 min-w-[70px] text-center text-sm font-black cursor-pointer hover:text-primary select-none transition-colors"
-                  onClick={() => setViewZoom(1.0)}
-                  title="Reset to 100%"
-                >
-                  {Math.round(viewZoom * 100)}%
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-full hover:bg-primary/10 transition-colors"
-                  onClick={() => setViewZoom(prev => Math.min(3.0, Math.round((prev + 0.2) * 10) / 10))}
-                  title="Zoom In"
-                >
-                  <ZoomIn className="h-5 w-5" />
-                </Button>
+                <Slider value={[brightness]} onValueChange={(v) => { if (!sliderPreDragSnapshot.current && image) handleSliderPointerDown(); setBrightness(v[0]) }} onValueCommit={handleSliderCommit} min={0} max={200} step={1} />
               </div>
-            )}
-          </Card>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-2"><Contrast className="h-3.5 w-3.5 text-blue-500" />Contrast</Label>
+                  <span className="text-xs font-mono">{contrast}%</span>
+                </div>
+                <Slider value={[contrast]} onValueChange={(v) => { if (!sliderPreDragSnapshot.current && image) handleSliderPointerDown(); setContrast(v[0]) }} onValueCommit={handleSliderCommit} min={0} max={200} step={1} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-2"><Palette className="h-3.5 w-3.5 text-pink-500" />Saturation</Label>
+                  <span className="text-xs font-mono">{saturation}%</span>
+                </div>
+                <Slider value={[saturation]} onValueChange={(v) => { if (!sliderPreDragSnapshot.current && image) handleSliderPointerDown(); setSaturation(v[0]) }} onValueCommit={handleSliderCommit} min={0} max={200} step={1} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Blur</Label>
+                  <span className="text-xs font-mono">{blur}px</span>
+                </div>
+                <Slider value={[blur]} onValueChange={(v) => { if (!sliderPreDragSnapshot.current && image) handleSliderPointerDown(); setBlur(v[0]) }} onValueCommit={handleSliderCommit} min={0} max={20} step={0.5} />
+              </div>
+            </div>
+          </div>
+
+          {/* Apply / Reset */}
+          <div className="p-4 border-t grid grid-cols-2 gap-2">
+            <Button className="h-11" onClick={() => { filterDirtyRef.current = true; drawCanvas() }} disabled={!image}>Apply</Button>
+            <Button variant="outline" className="h-11" onClick={() => { if (image) { pushHistory(); setBrightness(100); setContrast(100); setSaturation(100); setBlur(0); setRotation(0) } }} disabled={!image}>Reset</Button>
+          </div>
         </div>
 
-        {/* Controls Panel */}
-        {image && (
-          <Card className="w-80 p-6 shrink-0 overflow-y-auto">
-            <Tabs defaultValue="adjust" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4 text-xs">
-                <TabsTrigger value="adjust">Adjust</TabsTrigger>
-                <TabsTrigger value="crop">Crop</TabsTrigger>
-                <TabsTrigger value="resize">Resize</TabsTrigger>
-                <TabsTrigger value="effects">Effects</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="adjust" className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-2">
-                      <Sun className="h-4 w-4" />
-                      Brightness
-                    </Label>
-                    <span className="text-sm text-muted-foreground">{brightness}%</span>
-                  </div>
-                  <Slider
-                    value={[brightness]}
-                    onValueChange={(values) => {
-                      if (!sliderPreDragSnapshot.current && image) {
-                        handleSliderPointerDown()
-                      }
-                      setBrightness(values[0])
-                    }}
-                    onValueCommit={handleSliderCommit}
-                    min={0}
-                    max={200}
-                    step={1}
-                  />
+        {/*  COLUMN 2: CANVAS  */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 relative bg-muted/10">
+          <div
+            ref={viewportRef}
+            className="absolute inset-0 flex items-center justify-center overflow-auto"
+            style={{ cursor: isPanning ? 'grabbing' : (!isCropping && !isErasing ? 'grab' : 'default') }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onWheel={handleWheel}
+          >
+            {!image ? (
+              <div className="flex flex-col items-center gap-6 text-center select-none cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+                <div className="w-36 h-36 rounded-3xl bg-primary/10 group-hover:bg-primary/15 border-2 border-dashed border-primary/30 group-hover:border-primary/60 flex items-center justify-center transition-all">
+                  <Upload className="h-14 w-14 text-primary/50 group-hover:text-primary/70 transition-colors" />
                 </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-2">
-                      <Contrast className="h-4 w-4" />
-                      Contrast
-                    </Label>
-                    <span className="text-sm text-muted-foreground">{contrast}%</span>
-                  </div>
-                  <Slider
-                    value={[contrast]}
-                    onValueChange={(values) => {
-                      if (!sliderPreDragSnapshot.current && image) {
-                        handleSliderPointerDown()
-                      }
-                      setContrast(values[0])
-                    }}
-                    onValueCommit={handleSliderCommit}
-                    min={0}
-                    max={200}
-                    step={1}
-                  />
+                <div>
+                  <p className="text-2xl font-bold">Upload Image</p>
+                  <p className="text-base text-muted-foreground mt-1">Or just drop image here</p>
                 </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="flex items-center gap-2">
-                      <Palette className="h-4 w-4" />
-                      Saturation
-                    </Label>
-                    <span className="text-sm text-muted-foreground">{saturation}%</span>
-                  </div>
-                  <Slider
-                    value={[saturation]}
-                    onValueChange={(values) => {
-                      if (!sliderPreDragSnapshot.current && image) {
-                        handleSliderPointerDown()
-                      }
-                      setSaturation(values[0])
-                    }}
-                    onValueCommit={handleSliderCommit}
-                    min={0}
-                    max={200}
-                    step={1}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Blur</Label>
-                    <span className="text-sm text-muted-foreground">{blur}px</span>
-                  </div>
-                  <Slider
-                    value={[blur]}
-                    onValueChange={(values) => {
-                      if (!sliderPreDragSnapshot.current && image) {
-                        handleSliderPointerDown()
-                      }
-                      setBlur(values[0])
-                    }}
-                    onValueCommit={handleSliderCommit}
-                    min={0}
-                    max={20}
-                    step={0.5}
-                  />
-                </div>
-
-                <div className="pt-4 border-t space-y-2">
-                  <Button onClick={() => { pushHistory(); handleRotate() }} variant="outline" className="w-full">
-                    <RotateCw className="h-4 w-4 mr-2" />
-                    Rotate 90°
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      pushHistory()
-                      setBrightness(100)
-                      setContrast(100)
-                      setSaturation(100)
-                      setRotation(0)
-                      setBlur(0)
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Reset Adjustments
-                  </Button>
-                </div>
-
-                <div className="pt-4 border-t space-y-3">
-                  <Button
-                    onClick={removeBackground}
-                    variant="default"
-                    className="w-full relative overflow-hidden"
-                    disabled={isRemovingBg || bgRemoved}
-                  >
-                    <div className="relative z-10 flex items-center">
-                      <Scissors className="h-4 w-4 mr-2" />
-                      {isRemovingBg ? `Removing ${bgProgress}%...` : bgRemoved ? 'Background Removed' : 'Remove Background'}
+              </div>
+            ) : showEnhanceComparison && enhancedPreview && originalBeforeEnhance ? (
+              <div className="flex flex-col w-full h-full p-6 gap-4">
+                <div className="flex-1 flex items-stretch gap-4 min-h-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="relative rounded-xl overflow-hidden border-2 border-border shadow-lg h-full bg-black/5">
+                      <div className="absolute top-3 left-3 bg-black/70 text-white text-[10px] sm:text-xs px-3 py-1 rounded-full font-bold z-10 uppercase tracking-wider">Before</div>
+                      <img src={originalBeforeEnhance.src} alt="Before" className="w-full h-full object-contain" />
                     </div>
-                    {isRemovingBg && (
-                      <div
-                        className="absolute left-0 top-0 bottom-0 bg-primary-foreground/20 transition-all duration-300"
-                        style={{ width: `${bgProgress}%` }}
-                      />
-                    )}
-                  </Button>
-
-                  <Button
-                    onClick={enhanceImage}
-                    variant="outline"
-                    className="w-full relative overflow-hidden border-primary/30 hover:border-primary transition-all group/enhance"
-                    disabled={isEnhancing}
-                  >
-                    <div className="relative z-10 flex items-center">
-                      <Sparkles className={`h-4 w-4 mr-2 transition-transform duration-500 ${isEnhancing ? 'animate-spin' : 'group-hover/enhance:rotate-12 group-hover/enhance:scale-120'}`} />
-                      {isEnhancing ? `Enhancing ${enhanceProgress}%...` : 'Auto Enhance'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="relative rounded-xl overflow-hidden border-2 border-primary shadow-lg h-full bg-black/5">
+                      <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-[10px] sm:text-xs px-3 py-1 rounded-full font-bold z-10 uppercase tracking-wider">After</div>
+                      <img src={enhancedPreview} alt="After" className="w-full h-full object-contain" />
                     </div>
-                    {isEnhancing && (
-                      <div
-                        className="absolute left-0 top-0 bottom-0 bg-primary/10 transition-all duration-300"
-                        style={{ width: `${enhanceProgress}%` }}
-                      />
-                    )}
-                    {!isEnhancing && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover/enhance:translate-x-[100%] transition-transform duration-1000" />
-                    )}
-                  </Button>
+                  </div>
+                </div>
+                {/* Embedded Actions */}
+                <div className="flex items-center justify-center gap-6 py-4 px-6 bg-background/50 border-t backdrop-blur-sm rounded-b-xl">
+                  <div className="flex flex-col items-center gap-1.5 min-w-[120px]">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Keep original</p>
+                    <Button
+                      variant="outline"
+                      className="h-12 px-8 border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50 transition-all font-bold"
+                      onClick={() => {
+                        if (originalBeforeEnhance) {
+                          setImage(originalBeforeEnhance)
+                        }
+                        setShowEnhanceComparison(false)
+                        setEnhancedPreview(null)
+                        setOriginalBeforeEnhance(null)
+                        filterDirtyRef.current = true
+                        setTimeout(() => handleFitToScreen(), 50)
+                        toast({ title: 'Discarded', description: 'Kept current edited photo' })
+                      }}
+                    >
+                      <X className="h-5 w-5 mr-2" />
+                      Reject Result
+                    </Button>
+                  </div>
 
-                  {showEnhanceComparison && enhancedPreview && originalBeforeEnhance && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          pushHistory()
-                          const img = new window.Image()
-                          img.onload = () => {
-                            setImage(img)
-                            setShowEnhanceComparison(false)
-                            setEnhancedPreview(null)
-                            setOriginalBeforeEnhance(null)
-                            toast({
-                              title: "Enhancement Applied",
-                              description: "Auto Levels, Sharpening, Vibrance & Gamma applied.",
-                            })
-                          }
-                          img.src = enhancedPreview
-                        }}
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Accept
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          if (originalBeforeEnhance) {
-                            setImage(originalBeforeEnhance)
-                            setResizeWidth(originalBeforeEnhance.width)
-                            setResizeHeight(originalBeforeEnhance.height)
-                            setIsCropping(false)
-                          }
+                  <div className="flex flex-col items-center gap-1.5 min-w-[120px]">
+                    <p className="text-[10px] font-bold text-primary uppercase">Apply improvement</p>
+                    <Button
+                      className="h-12 px-12 bg-green-600 hover:bg-green-700 shadow-xl shadow-green-600/30 transition-all font-bold text-white border-0"
+                      onClick={() => {
+                        pushHistory()
+                        const img = new window.Image()
+                        img.onload = () => {
+                          setImage(img)
                           setShowEnhanceComparison(false)
                           setEnhancedPreview(null)
                           setOriginalBeforeEnhance(null)
-                          toast({
-                            title: "Original Restored",
-                            description: "Enhancement discarded, original image restored.",
-                          })
-                        }}
-                      >
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        Restore Original
-                      </Button>
-                    </div>
-                  )}
-
-                  {bgRemoved && (
-                    <div className="space-y-4 p-4 bg-muted/40 rounded-xl border border-primary/20 shadow-sm relative overflow-hidden group">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-primary/40" />
-
-                      <div className="flex items-center justify-between mb-1">
-                        <Label className="text-sm font-semibold flex items-center gap-2">
-                          <Eraser className="h-4 w-4 text-primary" />
-                          Manual Erase Tool
-                        </Label>
-                        <Button
-                          variant={isErasing ? "default" : "outline"}
-                          size="sm"
-                          className={`h-8 px-3 transition-all ${isErasing ? 'bg-primary shadow-lg scale-105' : 'hover:border-primary/50'}`}
-                          onClick={() => {
-                            setIsErasing(!isErasing)
-                            if (isCropping) setIsCropping(false)
-                          }}
-                        >
-                          {isErasing ? "Tool Active" : "Enable Eraser"}
-                        </Button>
-                      </div>
-
-                      {isErasing && (
-                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <p className="text-[11px] text-muted-foreground leading-tight italic">
-                            * Click and drag on the photo to manually remove any remaining background parts.
-                          </p>
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="font-medium">Brush Size</span>
-                              <span className="bg-primary/10 px-2 py-0.5 rounded-full font-bold text-primary">{brushSize}px</span>
-                            </div>
-                            <Slider
-                              value={[brushSize]}
-                              onValueChange={([val]) => setBrushSize(val)}
-                              min={5}
-                              max={100}
-                              step={1}
-                              className="py-2"
-                            />
-                            <div className="flex gap-1">
-                              {[15, 30, 60].map(size => (
-                                <Button
-                                  key={size}
-                                  variant="ghost"
-                                  size="sm"
-                                  className={`flex-1 h-7 text-[10px] ${brushSize === size ? 'bg-primary/20 text-primary font-bold' : ''}`}
-                                  onClick={() => setBrushSize(size)}
-                                >
-                                  {size === 15 ? 'Small' : size === 30 ? 'Medium' : 'Large'}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {bgRemoved && (
-                    <div className="space-y-2 p-3 bg-muted/40 rounded-lg border">
-                      <Label className="text-xs font-medium">Background Color</Label>
-                      <div className="flex gap-2 flex-wrap pb-1">
-                        <button
-                          onClick={() => { pushHistory(); setBgColor('transparent'); }}
-                          className={`w-6 h-6 rounded-md border-2 ${bgColor === 'transparent' ? 'border-primary scale-110' : 'border-transparent'} bg-[url('/checkers.png')] bg-repeat bg-[length:10px_10px] bg-slate-200 transition-all`}
-                          title="Transparent"
-                        />
-                        <button
-                          onClick={() => { pushHistory(); setBgColor('#ffffff'); }}
-                          className={`w-6 h-6 rounded-md border text-slate-200 shadow-sm transition-all ${bgColor === '#ffffff' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
-                          style={{ backgroundColor: '#ffffff' }}
-                          title="White"
-                        />
-                        <button
-                          onClick={() => { pushHistory(); setBgColor('#000000'); }}
-                          className={`w-6 h-6 rounded-md shadow-sm transition-all ${bgColor === '#000000' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
-                          style={{ backgroundColor: '#000000' }}
-                          title="Black"
-                        />
-                        <button
-                          onClick={() => { pushHistory(); setBgColor('#3b82f6'); }}
-                          className={`w-6 h-6 rounded-md shadow-sm transition-all ${bgColor === '#3b82f6' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
-                          style={{ backgroundColor: '#3b82f6' }}
-                          title="Blue"
-                        />
-                        <button
-                          onClick={() => { pushHistory(); setBgColor('#ef4444'); }}
-                          className={`w-6 h-6 rounded-md shadow-sm transition-all ${bgColor === '#ef4444' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
-                          style={{ backgroundColor: '#ef4444' }}
-                          title="Red"
-                        />
-                        <button
-                          onClick={() => { pushHistory(); setBgColor('#10b981'); }}
-                          className={`w-6 h-6 rounded-md shadow-sm transition-all ${bgColor === '#10b981' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
-                          style={{ backgroundColor: '#10b981' }}
-                          title="Green"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Input
-                          type="color"
-                          value={bgColor === 'transparent' ? '#ffffff' : bgColor}
-                          onFocus={handleSliderPointerDown}
-                          onChange={(e) => {
-                            if (sliderPreDragSnapshot.current) {
-                              handleSliderCommit()
-                            }
-                            setBgColor(e.target.value)
-                          }}
-                          className="h-8 w-12 p-1 cursor-pointer"
-                        />
-                        <span className="text-xs text-muted-foreground mr-auto">{bgColor === 'transparent' ? 'No color' : bgColor}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {bgRemoved && (
-                    <Button
-                      onClick={() => {
-                        if (originalImage) {
-                          pushHistory()
-                          setImage(originalImage)
-                          setBgRemoved(false)
-                          setBgColor('transparent')
-                          eraseCanvasRef.current = null
-                          toast({
-                            title: "Restored",
-                            description: "Original image restored",
-                          })
+                          filterDirtyRef.current = true
+                          setTimeout(() => handleFitToScreen(), 100)
+                          toast({ title: 'Applied', description: 'Image enhanced successfully' })
                         }
+                        img.src = enhancedPreview!
                       }}
-                      variant="outline"
-                      className="w-full"
                     >
-                      Restore Original
-                    </Button>
-                  )}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="crop" className="space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <Label>Crop Preset</Label>
-                    <Select value={cropPreset} onValueChange={(value) => {
-                      setCropPreset(value)
-                      if (value !== 'Custom') {
-                        const preset = CROP_PRESETS.find(p => p.name === value)
-                        if (preset) {
-                          setCropWidth(preset.width)
-                          setCropHeight(preset.height)
-                        }
-                      }
-                    }}>
-                      <SelectTrigger className="w-full mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CROP_PRESETS.map((preset) => (
-                          <SelectItem key={preset.name} value={preset.name}>
-                            {preset.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {cropPreset === 'Custom' && (
-                    <div className="space-y-3">
-                      <div>
-                        <Label>Width (px)</Label>
-                        <Input
-                          type="number"
-                          value={customWidth}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 0
-                            setCustomWidth(val)
-                            setCropWidth(val)
-                          }}
-                          className="mt-2"
-                        />
-                      </div>
-                      <div>
-                        <Label>Height (px)</Label>
-                        <Input
-                          type="number"
-                          value={customHeight}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 0
-                            setCustomHeight(val)
-                            setCropHeight(val)
-                          }}
-                          className="mt-2"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="aspect-ratio"
-                      checked={maintainAspectRatio}
-                      onChange={(e) => setMaintainAspectRatio(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <Label htmlFor="aspect-ratio" className="text-sm cursor-pointer">
-                      Lock aspect ratio
-                    </Label>
-                  </div>
-
-                  {isCropping && (
-                    <div className={`p-3 rounded-lg space-y-1 ${isPhotoMode ? 'bg-green-50 dark:bg-green-950' : 'bg-blue-50 dark:bg-blue-950'}`}>
-                      <p className={`text-xs font-medium ${isPhotoMode ? 'text-green-900 dark:text-green-100' : 'text-blue-900 dark:text-blue-100'}`}>
-                        {isPhotoMode ? "📸 Photo Mode — Crop locked" : "✂️ Crop Box Mode"}
-                      </p>
-                      {isPhotoMode ? (
-                        <>
-                          <p className="text-xs text-green-700 dark:text-green-300">
-                            • Drag the photo to reposition it
-                          </p>
-                          <p className="text-xs text-green-700 dark:text-green-300">
-                            • Drag corner handles to resize photo
-                          </p>
-                          <p className="text-xs text-green-700 dark:text-green-300">
-                            • Scroll to zoom photo in/out
-                          </p>
-                          <p className="text-xs text-green-700 dark:text-green-300">
-                            • Double-click to go back to crop mode
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-xs text-blue-700 dark:text-blue-300">
-                            • Double-click inside crop to adjust photo
-                          </p>
-                          <p className="text-xs text-blue-700 dark:text-blue-300">
-                            • Drag to move crop box
-                          </p>
-                          <p className="text-xs text-blue-700 dark:text-blue-300">
-                            • Drag corners/edges to resize crop box
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="pt-4 space-y-2">
-                    {!isCropping ? (
-                      <Button onClick={startCropping} className="w-full">
-                        <Crop className="h-4 w-4 mr-2" />
-                        Start Cropping
-                      </Button>
-                    ) : (
-                      <>
-                        <Button onClick={applyCrop} className="w-full">
-                          <Crop className="h-4 w-4 mr-2" />
-                          Apply Crop
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            setIsCropping(false)
-                            setIsPhotoMode(false)
-                            setPhotoX(0)
-                            setPhotoY(0)
-                            setPhotoScale(1)
-                            setCropX(0)
-                            setCropY(0)
-                          }}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          Cancel
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="resize" className="space-y-4">
-                <div className="space-y-4">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-1">Current Size</p>
-                    <p className="text-sm text-muted-foreground">
-                      {image.width} × {image.height} pixels
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label>New Width (px)</Label>
-                    <Input
-                      type="number"
-                      value={resizeWidth}
-                      onChange={(e) => handleResizeWidthChange(parseInt(e.target.value) || 0)}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div>
-                    <Label>New Height (px)</Label>
-                    <Input
-                      type="number"
-                      value={resizeHeight}
-                      onChange={(e) => handleResizeHeightChange(parseInt(e.target.value) || 0)}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="resize-aspect"
-                      checked={maintainResizeAspect}
-                      onChange={(e) => setMaintainResizeAspect(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <Label htmlFor="resize-aspect" className="text-sm cursor-pointer">
-                      Maintain aspect ratio
-                    </Label>
-                  </div>
-
-                  <div className="space-y-2 pt-2">
-                    <Button
-                      onClick={() => {
-                        handleResizeWidthChange(Math.round(image.width * 0.5))
-                      }}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      50% Size
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        handleResizeWidthChange(Math.round(image.width * 2))
-                      }}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      200% Size
+                      <Check className="h-5 w-5 mr-2" />
+                      Accept Result
                     </Button>
                   </div>
-
-                  <Button onClick={applyResize} className="w-full">
-                    <Maximize2 className="h-4 w-4 mr-2" />
-                    Apply Resize
-                  </Button>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="effects" className="space-y-3">
-                <Button
-                  onClick={() => applyPreset('vivid')}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Sun className="h-4 w-4 mr-2" />
-                  Vivid
-                </Button>
-                <Button
-                  onClick={() => applyPreset('bw')}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Contrast className="h-4 w-4 mr-2" />
-                  Black & White
-                </Button>
-                <Button
-                  onClick={() => applyPreset('vintage')}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Vintage
-                </Button>
-                <Button
-                  onClick={() => applyPreset('cool')}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Cool Tone
-                </Button>
-                <Button
-                  onClick={() => applyPreset('warm')}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Sun className="h-4 w-4 mr-2" />
-                  Warm Tone
-                </Button>
-                <Button
-                  onClick={() => applyPreset('reset')}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <RotateCw className="h-4 w-4 mr-2" />
-                  Original
-                </Button>
-              </TabsContent>
-            </Tabs>
-          </Card>
-        )}
-
-        {/* Print Dialog */}
-        <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Print Layout</DialogTitle>
-              <DialogDescription>
-                Configure your print layout with multiple copies on A4 paper (210 x 297 mm)
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Number of Copies</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={printCopies}
-                  onChange={(e) => setPrintCopies(parseInt(e.target.value) || 1)}
+              </div>
+            ) : (
+              <div className="relative inline-block">
+                <canvas
+                  ref={canvasRef}
+                  className={`shadow-2xl bg-white border border-border/30 max-w-none ${isErasing ? '' : (isCropping ? 'cursor-crosshair' : 'cursor-grab')}`}
+                  style={{ cursor: isErasing ? 'none' : undefined }}
+                  onDoubleClick={handleDoubleClick}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Maximum 50 copies per sheet
-                </p>
+                {isCropping && (
+                  <div className={`absolute top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg animate-bounce ${isPhotoMode ? 'bg-green-500' : 'bg-primary'}`}>
+                    {isPhotoMode ? 'IMAGE MODE  Double-click to exit' : 'CROP MODE  Drag handles'}
+                  </div>
+                )}
+                {isErasing && (
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-lg animate-pulse bg-red-500">
+                    ERASE  {brushSize}px brush
+                  </div>
+                )}
               </div>
+            )}
+          </div>
 
-              <div className="space-y-2">
-                <Label>Spacing Between Images (px)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={printSpacing}
-                  onChange={(e) => setPrintSpacing(parseInt(e.target.value) || 0)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Standard spacing is 10px
-                </p>
-              </div>
-
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-2">Preview Layout</p>
-                <p className="text-sm text-muted-foreground">
-                  {Math.ceil(Math.sqrt(printCopies))} columns × {Math.ceil(printCopies / Math.ceil(Math.sqrt(printCopies)))} rows
-                </p>
-              </div>
+          {/* Zoom pill */}
+          {image && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1 bg-background/90 backdrop-blur-md border border-border/50 shadow-xl rounded-full z-10">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setViewZoom(prev => Math.max(0.2, Math.round((prev - 0.2) * 10) / 10))}><ZoomOut className="h-3.5 w-3.5" /></Button>
+              <span className="text-sm font-bold min-w-[52px] text-center cursor-pointer hover:text-primary" onClick={() => setViewZoom(1)}>{Math.round(viewZoom * 100)}%</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setViewZoom(prev => Math.min(3.0, Math.round((prev + 0.2) * 10) / 10))}><ZoomIn className="h-3.5 w-3.5" /></Button>
             </div>
+          )}
+        </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPrintDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handlePrintDownload}>
-                <Download className="h-4 w-4 mr-2" />
-                Download Print Layout
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/*  COLUMN 3: RIGHT PANEL  */}
+        <div className="w-60 shrink-0 border-l bg-background flex flex-col overflow-y-auto">
+
+          {/* Image Tray */}
+          <div className="p-4 border-b">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Image Tray</p>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full h-24 rounded-xl border-2 border-dashed border-primary/40 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center gap-2 transition-all group"
+            >
+              <Upload className="h-8 w-8 text-primary/60 group-hover:text-primary transition-colors" />
+              <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Upload Photo</span>
+            </button>
+          </div>
+
+          {/* Presets */}
+          <div className="p-4 border-b">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Presets</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { id: 'vivid', label: 'Vivid' },
+                { id: 'bw', label: 'B&W' },
+                { id: 'vintage', label: 'Vintage' },
+                { id: 'cool', label: 'Cool' },
+                { id: 'warm', label: 'Warm' },
+                { id: 'reset', label: 'Original' },
+              ].map(p => (
+                <button key={p.id} onClick={() => applyPreset(p.id)} className="h-10 rounded-lg border border-border bg-muted/30 hover:bg-primary/10 hover:border-primary/50 text-xs font-semibold transition-all">
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Background Colors */}
+          <div className="p-4 border-b">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Background Color</p>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { color: 'transparent', label: 'None' },
+                { color: '#ffffff', label: 'White' },
+                { color: '#e5e7eb', label: 'Gray' },
+                { color: '#000000', label: 'Black' },
+                { color: '#06b6d4', label: 'Cyan' },
+                { color: '#3b82f6', label: 'Blue' },
+                { color: '#f59e0b', label: 'Amber' },
+                { color: '#10b981', label: 'Green' },
+              ].map(b => (
+                <button
+                  key={b.color}
+                  onClick={() => { pushHistory(); setBgColor(b.color) }}
+                  title={b.label}
+                  className={`w-11 h-11 rounded-xl transition-all hover:scale-110 ${bgColor === b.color ? 'ring-2 ring-primary ring-offset-2 scale-110' : ''} ${b.color === 'transparent' ? 'bg-white border-2 border-dashed border-muted-foreground/40' : ''}`}
+                  style={b.color !== 'transparent' ? { backgroundColor: b.color, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' } : {}}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <Input
+                type="color"
+                value={bgColor === 'transparent' ? '#ffffff' : bgColor}
+                onFocus={handleSliderPointerDown}
+                onChange={(e) => { if (sliderPreDragSnapshot.current) handleSliderCommit(); setBgColor(e.target.value) }}
+                className="h-9 w-12 p-0.5 cursor-pointer"
+              />
+              <span className="text-xs text-muted-foreground">{bgColor === 'transparent' ? 'Transparent' : bgColor}</span>
+            </div>
+          </div>
+
+          {/* Resize */}
+          {image && (
+            <div className="p-4 border-b space-y-3">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Resize</p>
+              <div className="p-2.5 bg-muted/50 rounded-lg text-xs font-mono text-center text-muted-foreground">{image.width} x {image.height} px</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs">Width</Label><Input type="number" value={resizeWidth} onChange={e => handleResizeWidthChange(parseInt(e.target.value) || 0)} className="h-9 mt-1 text-sm" /></div>
+                <div><Label className="text-xs">Height</Label><Input type="number" value={resizeHeight} onChange={e => handleResizeHeightChange(parseInt(e.target.value) || 0)} className="h-9 mt-1 text-sm" /></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="resize-aspect" checked={maintainResizeAspect} onChange={e => setMaintainResizeAspect(e.target.checked)} className="w-3.5 h-3.5 accent-primary" />
+                <Label htmlFor="resize-aspect" className="text-xs cursor-pointer">Lock aspect ratio</Label>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => handleResizeWidthChange(Math.round(image.width * 0.5))}>50%</Button>
+                <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => handleResizeWidthChange(Math.round(image.width * 2))}>200%</Button>
+              </div>
+              <Button className="w-full h-10" onClick={applyResize}><Maximize2 className="h-4 w-4 mr-2" />Apply Resize</Button>
+            </div>
+          )}
+
+          <div className="flex-1" />
+        </div>
       </div>
-    </>
+
+      {/* Print Dialog */}
+      <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Print Layout</DialogTitle>
+            <DialogDescription>Configure multiple copies on A4 paper (210 x 297 mm)</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Number of Copies</Label>
+              <Input type="number" min="1" max="50" value={printCopies} onChange={(e) => setPrintCopies(parseInt(e.target.value) || 1)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Spacing (px)</Label>
+              <Input type="number" min="0" max="100" value={printSpacing} onChange={(e) => setPrintSpacing(parseInt(e.target.value) || 0)} />
+            </div>
+            <div className="p-4 bg-muted rounded-lg text-sm">
+              Layout: {Math.ceil(Math.sqrt(printCopies))} cols x {Math.ceil(printCopies / Math.ceil(Math.sqrt(printCopies)))} rows
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPrintDialog(false)}>Cancel</Button>
+            <Button onClick={handlePrintDownload}><Download className="h-4 w-4 mr-2" />Download PDF</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
