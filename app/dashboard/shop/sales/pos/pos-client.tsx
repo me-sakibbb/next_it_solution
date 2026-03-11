@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +18,7 @@ import { generateInvoicePDF, type InvoiceSize } from '@/lib/pdf-export'
 import { useSales } from '@/hooks/use-sales'
 import { useProducts } from '@/hooks/use-products'
 import { useCustomers } from '@/hooks/use-customers'
+import { toast } from 'sonner'
 
 interface CartItem {
   product_id: string
@@ -37,7 +38,7 @@ interface POSClientProps {
 export function POSClient({ shopId, currency }: POSClientProps) {
   const router = useRouter()
   const { handleCreateSale, getSaleDetails } = useSales(shopId)
-  const { products, setSearch: setProductSearch, loading: productsLoading } = useProducts(shopId)
+  const { products, setSearch: setProductSearch, loading: productsLoading, findProductByCode } = useProducts(shopId)
   const { customers, handleCreateCustomer } = useCustomers(shopId)
 
   const [cart, setCart] = useState<CartItem[]>([])
@@ -52,6 +53,7 @@ export function POSClient({ shopId, currency }: POSClientProps) {
   const [error, setError] = useState('')
   const [generateInvoice, setGenerateInvoice] = useState(true)
   const [invoiceSize, setInvoiceSize] = useState<InvoiceSize>('POS')
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Sync products search
   const handleSearchChange = (val: string) => {
@@ -89,6 +91,26 @@ export function POSClient({ shopId, currency }: POSClientProps) {
       }])
     }
     setSearchQuery('')
+  }
+
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery) {
+      e.preventDefault()
+      try {
+        const product = await findProductByCode(searchQuery)
+        if (product) {
+          addToCart(product)
+          toast.success(`${product.name} কার্টে যোগ করা হয়েছে`)
+          handleSearchChange('')
+          searchInputRef.current?.focus()
+        } else {
+          toast.error('পণ্য খুঁজে পাওয়া যায়নি')
+        }
+      } catch (err) {
+        console.error('Barcode search error:', err)
+        toast.error('সার্ভারে সমস্যা হয়েছে')
+      }
+    }
   }
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -211,6 +233,8 @@ export function POSClient({ shopId, currency }: POSClientProps) {
             placeholder="নাম, SKU বা বারকোড দিয়ে খুঁজুন..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            ref={searchInputRef}
             className="pl-9"
           />
           {productsLoading && (

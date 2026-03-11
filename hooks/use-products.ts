@@ -262,6 +262,23 @@ export function useProducts(shopId: string, categoryId?: string) {
         }
     }
 
+    const findProductByCode = useCallback(async (code: string) => {
+        const { data, error } = await supabase
+            .from('products')
+            .select(`
+                *,
+                category:categories(id, name),
+                inventory(quantity)
+            `)
+            .eq('shop_id', shopId)
+            .eq('is_active', true)
+            .or(`barcode.eq.${code},sku.eq.${code}`)
+            .maybeSingle()
+
+        if (error) throw error
+        return data
+    }, [supabase, shopId])
+
     return {
         products: pagination.data,
         categories,
@@ -282,5 +299,6 @@ export function useProducts(shopId: string, categoryId?: string) {
         handleDeleteProduct,
         handleUpdateInventory,
         handleCreateCategory,
+        findProductByCode,
     }
 }

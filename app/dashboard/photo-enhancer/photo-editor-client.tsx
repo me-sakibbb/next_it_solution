@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Upload, Download, RotateCw, RotateCcw, Crop, Contrast, Sun, ImageIcon, Scissors, Printer, Maximize2, Sparkles, Palette, ZoomIn, ZoomOut, Eraser, Check } from 'lucide-react'
+import { Upload, Download, RotateCw, RotateCcw, Crop, Contrast, Sun, ImageIcon, Scissors, Printer, Maximize2, Sparkles, Palette, ZoomIn, ZoomOut, Eraser, Check, Undo2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import jsPDF from 'jspdf'
 
@@ -37,6 +37,18 @@ const CROP_PRESETS: CropPreset[] = [
 ]
 
 type ResizeHandle = 'tl' | 'tr' | 'bl' | 'br' | 'tm' | 'bm' | 'ml' | 'mr' | 'move' | null
+
+interface HistorySnapshot {
+  imageSrc: string
+  brightness: number
+  contrast: number
+  saturation: number
+  rotation: number
+  blur: number
+  bgRemoved: boolean
+  bgColor: string
+  eraseDataUrl: string | null
+}
 
 export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   const { toast } = useToast()
@@ -112,6 +124,109 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   const [printCopies, setPrintCopies] = useState(6)
   const [printSpacing, setPrintSpacing] = useState(10)
 
+  // Undo history stack
+  const [history, setHistory] = useState<HistorySnapshot[]>([])
+  const canUndo = history.length > 0
+
+  const eraseCanvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  const pushHistory = useCallback(() => {
+    setHistory(prev => {
+      if (!image) return prev
+      const snapshot: HistorySnapshot = {
+        imageSrc: image.src,
+        brightness,
+        contrast,
+        saturation,
+        rotation,
+        blur,
+        bgRemoved,
+        bgColor,
+        eraseDataUrl: eraseCanvasRef.current ? eraseCanvasRef.current.toDataURL() : null,
+      }
+      return [...prev, snapshot]
+    })
+  }, [image, brightness, contrast, saturation, rotation, blur, bgRemoved, bgColor])
+
+  const handleUndo = useCallback(() => {
+    setHistory(prev => {
+      if (prev.length === 0) return prev
+      const next = [...prev]
+      const snapshot = next.pop()!
+
+      const img = new Image()
+      img.onload = () => {
+        setImage(img)
+        setBrightness(snapshot.brightness)
+        setContrast(snapshot.contrast)
+        setSaturation(snapshot.saturation)
+        setRotation(snapshot.rotation)
+        setBlur(snapshot.blur)
+        setBgRemoved(snapshot.bgRemoved)
+        setBgColor(snapshot.bgColor)
+        setIsCropping(false)
+        setIsPhotoMode(false)
+        filterDirtyRef.current = true
+
+        if (snapshot.eraseDataUrl) {
+          const off = document.createElement('canvas')
+          const eImg = new Image()
+          eImg.onload = () => {
+            off.width = eImg.width
+            off.height = eImg.height
+            const octx = off.getContext('2d')
+            octx?.drawImage(eImg, 0, 0)
+            eraseCanvasRef.current = off
+          }
+          eImg.src = snapshot.eraseDataUrl
+        } else {
+          eraseCanvasRef.current = null
+        }
+
+        toast({ title: 'Undo', description: 'Step undone' })
+      }
+      img.src = snapshot.imageSrc
+
+      return next
+    })
+  }, [toast])
+  // Ref to capture state snapshot just before a slider drag begins
+  const sliderPreDragSnapshot = useRef<HistorySnapshot | null>(null)
+
+  const handleSliderPointerDown = useCallback(() => {
+    if (!image) return
+    sliderPreDragSnapshot.current = {
+      imageSrc: image.src,
+      brightness,
+      contrast,
+      saturation,
+      rotation,
+      blur,
+      bgRemoved,
+      bgColor,
+      eraseDataUrl: eraseCanvasRef.current ? eraseCanvasRef.current.toDataURL() : null,
+    }
+  }, [image, brightness, contrast, saturation, rotation, blur, bgRemoved, bgColor])
+
+  const handleSliderCommit = useCallback(() => {
+    if (!sliderPreDragSnapshot.current) return
+    const snapshot = sliderPreDragSnapshot.current
+    sliderPreDragSnapshot.current = null
+    setHistory(prev => [...prev, snapshot])
+  }, [])
+
+  const handleFitToScreen = useCallback(() => {
+    if (!image || !viewportRef.current) return
+    const vp = viewportRef.current
+    const padding = 40
+    const availableWidth = vp.clientWidth - padding
+    const availableHeight = vp.clientHeight - padding
+
+    // Current baseScale logic fits to maxWidth/maxHeight.
+    // If we set viewZoom to 1.0, it should already fit if baseScale is working correctly.
+    setViewZoom(1.0)
+  }, [image])
+
   // Initialize resize dimensions when image loads
   useEffect(() => {
     if (image) {
@@ -145,6 +260,12 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
           setCropWidth(preset.width)
           setCropHeight(preset.height)
           eraseCanvasRef.current = null
+          setHistory([])
+
+          // Fit image to screen after a short delay to allow viewport to measure correctly
+          setTimeout(() => {
+            handleFitToScreen()
+          }, 100)
         }
         img.src = event.target?.result as string
       }
@@ -227,8 +348,6 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     return null
   }
 
-  const eraseCanvasRef = useRef<HTMLCanvasElement | null>(null)
-
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!canvasRef.current || !image) return
     const canvas = canvasRef.current
@@ -240,8 +359,9 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
 
     if (isErasing) {
       setIsDragging(true)
-      // Initialize erasure canvas with current image
+      // Push history once at the start of an erase stroke
       if (!eraseCanvasRef.current) {
+        pushHistory()
         const off = document.createElement('canvas')
         off.width = image.width
         off.height = image.height
@@ -613,6 +733,8 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   const applyCrop = () => {
     if (!image || !canvasRef.current) return
 
+    pushHistory()
+
     const croppedCanvas = document.createElement('canvas')
     croppedCanvas.width = cropWidth
     croppedCanvas.height = cropHeight
@@ -677,9 +799,16 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     scheduleRender()
   }
 
-  // Keyboard shortcuts for cropping
+  // Keyboard shortcuts for cropping + Ctrl+Z global undo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Global Ctrl+Z / Cmd+Z undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        handleUndo()
+        return
+      }
+
       if (!isCropping) return
 
       if (e.key === 'Enter') {
@@ -691,17 +820,17 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
       }
     }
 
-    if (isCropping) {
-      window.addEventListener('keydown', handleKeyDown)
-    }
+    window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isCropping, applyCrop])
+  }, [isCropping, applyCrop, handleUndo])
 
   const applyResize = () => {
     if (!image) return
+
+    pushHistory()
 
     const resizedCanvas = document.createElement('canvas')
     resizedCanvas.width = resizeWidth
@@ -744,6 +873,7 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   const removeBackground = async () => {
     if (!image) return
 
+    pushHistory()
     setIsRemovingBg(true)
     setBgProgress(1)
     try {
@@ -903,11 +1033,16 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Scale canvas to fit container (max 1200x800) while maintaining aspect ratio
-    const maxWidth = 1200
-    const maxHeight = 800
-    let baseScale = 1
+    // Scale canvas to fit viewport while maintaining aspect ratio
+    let maxWidth = 1200
+    let maxHeight = 800
 
+    if (viewportRef.current) {
+      maxWidth = viewportRef.current.clientWidth - 40 // 20px padding
+      maxHeight = viewportRef.current.clientHeight - 40
+    }
+
+    let baseScale = 1
     if (image.width > maxWidth || image.height > maxHeight) {
       baseScale = Math.min(maxWidth / image.width, maxHeight / image.height)
     }
@@ -1217,6 +1352,7 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   }
 
   const applyPreset = (preset: string) => {
+    pushHistory()
     switch (preset) {
       case 'vivid':
         setBrightness(110)
@@ -1273,6 +1409,21 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
               </Button>
               {image && (
                 <>
+                  <Button
+                    onClick={handleUndo}
+                    variant="outline"
+                    disabled={!canUndo}
+                    title="Undo last step (Ctrl+Z)"
+                    className="relative group"
+                  >
+                    <Undo2 className="h-4 w-4 mr-2" />
+                    Undo
+                    {canUndo && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                        {history.length}
+                      </span>
+                    )}
+                  </Button>
                   <Button onClick={handleDownload} variant="outline">
                     <Download className="h-4 w-4 mr-2" />
                     Download
@@ -1411,7 +1562,13 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                   </div>
                   <Slider
                     value={[brightness]}
-                    onValueChange={([value]) => setBrightness(value)}
+                    onValueChange={(values) => {
+                      if (!sliderPreDragSnapshot.current && image) {
+                        handleSliderPointerDown()
+                      }
+                      setBrightness(values[0])
+                    }}
+                    onValueCommit={handleSliderCommit}
                     min={0}
                     max={200}
                     step={1}
@@ -1428,7 +1585,13 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                   </div>
                   <Slider
                     value={[contrast]}
-                    onValueChange={([value]) => setContrast(value)}
+                    onValueChange={(values) => {
+                      if (!sliderPreDragSnapshot.current && image) {
+                        handleSliderPointerDown()
+                      }
+                      setContrast(values[0])
+                    }}
+                    onValueCommit={handleSliderCommit}
                     min={0}
                     max={200}
                     step={1}
@@ -1445,7 +1608,13 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                   </div>
                   <Slider
                     value={[saturation]}
-                    onValueChange={([value]) => setSaturation(value)}
+                    onValueChange={(values) => {
+                      if (!sliderPreDragSnapshot.current && image) {
+                        handleSliderPointerDown()
+                      }
+                      setSaturation(values[0])
+                    }}
+                    onValueCommit={handleSliderCommit}
                     min={0}
                     max={200}
                     step={1}
@@ -1459,7 +1628,13 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                   </div>
                   <Slider
                     value={[blur]}
-                    onValueChange={([value]) => setBlur(value)}
+                    onValueChange={(values) => {
+                      if (!sliderPreDragSnapshot.current && image) {
+                        handleSliderPointerDown()
+                      }
+                      setBlur(values[0])
+                    }}
+                    onValueCommit={handleSliderCommit}
                     min={0}
                     max={20}
                     step={0.5}
@@ -1467,12 +1642,13 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                 </div>
 
                 <div className="pt-4 border-t space-y-2">
-                  <Button onClick={handleRotate} variant="outline" className="w-full">
+                  <Button onClick={() => { pushHistory(); handleRotate() }} variant="outline" className="w-full">
                     <RotateCw className="h-4 w-4 mr-2" />
                     Rotate 90°
                   </Button>
                   <Button
                     onClick={() => {
+                      pushHistory()
                       setBrightness(100)
                       setContrast(100)
                       setSaturation(100)
@@ -1533,6 +1709,7 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                         size="sm"
                         className="flex-1"
                         onClick={() => {
+                          pushHistory()
                           const img = new window.Image()
                           img.onload = () => {
                             setImage(img)
@@ -1640,36 +1817,36 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                       <Label className="text-xs font-medium">Background Color</Label>
                       <div className="flex gap-2 flex-wrap pb-1">
                         <button
-                          onClick={() => setBgColor('transparent')}
+                          onClick={() => { pushHistory(); setBgColor('transparent'); }}
                           className={`w-6 h-6 rounded-md border-2 ${bgColor === 'transparent' ? 'border-primary scale-110' : 'border-transparent'} bg-[url('/checkers.png')] bg-repeat bg-[length:10px_10px] bg-slate-200 transition-all`}
                           title="Transparent"
                         />
                         <button
-                          onClick={() => setBgColor('#ffffff')}
+                          onClick={() => { pushHistory(); setBgColor('#ffffff'); }}
                           className={`w-6 h-6 rounded-md border text-slate-200 shadow-sm transition-all ${bgColor === '#ffffff' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
                           style={{ backgroundColor: '#ffffff' }}
                           title="White"
                         />
                         <button
-                          onClick={() => setBgColor('#000000')}
+                          onClick={() => { pushHistory(); setBgColor('#000000'); }}
                           className={`w-6 h-6 rounded-md shadow-sm transition-all ${bgColor === '#000000' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
                           style={{ backgroundColor: '#000000' }}
                           title="Black"
                         />
                         <button
-                          onClick={() => setBgColor('#3b82f6')} // blue-500
+                          onClick={() => { pushHistory(); setBgColor('#3b82f6'); }}
                           className={`w-6 h-6 rounded-md shadow-sm transition-all ${bgColor === '#3b82f6' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
                           style={{ backgroundColor: '#3b82f6' }}
                           title="Blue"
                         />
                         <button
-                          onClick={() => setBgColor('#ef4444')} // red-500
+                          onClick={() => { pushHistory(); setBgColor('#ef4444'); }}
                           className={`w-6 h-6 rounded-md shadow-sm transition-all ${bgColor === '#ef4444' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
                           style={{ backgroundColor: '#ef4444' }}
                           title="Red"
                         />
                         <button
-                          onClick={() => setBgColor('#10b981')} // emerald-500
+                          onClick={() => { pushHistory(); setBgColor('#10b981'); }}
                           className={`w-6 h-6 rounded-md shadow-sm transition-all ${bgColor === '#10b981' ? 'ring-2 ring-primary ring-offset-1 scale-110' : ''}`}
                           style={{ backgroundColor: '#10b981' }}
                           title="Green"
@@ -1679,7 +1856,13 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                         <Input
                           type="color"
                           value={bgColor === 'transparent' ? '#ffffff' : bgColor}
-                          onChange={(e) => setBgColor(e.target.value)}
+                          onFocus={handleSliderPointerDown}
+                          onChange={(e) => {
+                            if (sliderPreDragSnapshot.current) {
+                              handleSliderCommit()
+                            }
+                            setBgColor(e.target.value)
+                          }}
                           className="h-8 w-12 p-1 cursor-pointer"
                         />
                         <span className="text-xs text-muted-foreground mr-auto">{bgColor === 'transparent' ? 'No color' : bgColor}</span>
@@ -1691,6 +1874,7 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                     <Button
                       onClick={() => {
                         if (originalImage) {
+                          pushHistory()
                           setImage(originalImage)
                           setBgRemoved(false)
                           setBgColor('transparent')
