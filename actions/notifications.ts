@@ -52,7 +52,11 @@ export async function notifySuperAdmins(
         return
     }
 
-    const emails = admins.map(a => a.email)
+    const emails = admins.map(a => a.email).filter(Boolean)
+
+    if (emails.length === 0) {
+        return
+    }
 
     // Find user ids of those super admins
     const { data: users, error: userError } = await supabase

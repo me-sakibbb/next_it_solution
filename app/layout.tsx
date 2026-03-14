@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Hind_Siliguri } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from "@/components/ui/toaster"
+import { BackgroundPreloader } from "@/components/background-preloader"
 import './globals.css'
 
 const _geist = Geist({
@@ -55,6 +56,7 @@ export default function RootLayout({
         {children}
         <Analytics />
         <Toaster />
+        <BackgroundPreloader />
       </body>
     </html>
   )

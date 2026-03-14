@@ -1,8 +1,12 @@
-import { createClient } from '@/lib/supabase/client'
+'use server'
+
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Service } from '@/lib/types'
+import { notifyUser } from './notifications'
 
 export async function getAdminStats() {
-    const supabase = createClient()
+    const supabase = await createClient()
     const [usersResult, ordersResult, revenueResult] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase
@@ -28,7 +32,7 @@ export async function getAdminStats() {
 }
 
 export async function getAllOrdersAdmin() {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data, error } = await supabase
         .from('service_orders')
         .select('*, service:services(*), user:users(id, email, full_name)')
@@ -37,25 +41,83 @@ export async function getAllOrdersAdmin() {
     return data ?? []
 }
 
-import { notifyUser } from './notifications'
-
 export async function updateOrderStatus(
     orderId: string,
     status: string,
     deliverables: string
 ) {
-    const supabase = createClient()
-    const { error, data: orderData } = await supabase
+    const supabase = await createClient()
+
+    // 1. Fetch current order state
+    const { data: order, error: fetchError } = await supabase
         .from('service_orders')
-        .update({ status, deliverables, updated_at: new Date().toISOString() })
+        .select('*, service:services(name)')
         .eq('id', orderId)
-        .select('user_id, service:services(name)')
         .single()
 
-    if (error) throw new Error(error.message)
+    if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`)
+    if (!order) throw new Error('Order not found')
 
-    if (orderData && orderData.user_id) {
-        const serviceName = (orderData.service as any)?.name || 'আপনার অর্ডার'
+    const previousStatus = order.status
+
+    // 2. Perform the update
+    const { error: updateError } = await supabase
+        .from('service_orders')
+        .update({
+            status,
+            deliverables,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+
+    if (updateError) throw new Error(`Update error: ${updateError.message}`)
+
+    // 3. Handle Refund if status changed to cancelled
+    if (status === 'cancelled' && previousStatus !== 'cancelled') {
+        try {
+            const adminSupabase = createAdminClient()
+
+            // Get user profile for current balance
+            const { data: profile, error: profileError } = await adminSupabase
+                .from('users')
+                .select('balance')
+                .eq('id', order.user_id)
+                .single()
+
+            if (profileError) throw new Error(`Profile fetch error: ${profileError.message}`)
+
+            if (profile) {
+                const refundAmount = Number(order.total_price)
+                const newBalance = Number(profile.balance) + refundAmount
+
+                // Update balance
+                const { error: balError } = await adminSupabase
+                    .from('users')
+                    .update({ balance: newBalance })
+                    .eq('id', order.user_id)
+
+                if (balError) throw new Error(`Balance update error: ${balError.message}`)
+
+                // Log refund transaction
+                await adminSupabase.from('balance_transactions').insert({
+                    user_id: order.user_id,
+                    amount: refundAmount,
+                    type: 'credit',
+                    description: `নিশ্চিত বাতিল: ${order.service?.name || ''} অর্ডারের মূল্য ফেরত`,
+                    reference_id: order.id,
+                    reference_type: 'service_order',
+                })
+            }
+        } catch (adminError: any) {
+            console.error('Refund failed:', adminError)
+            // We throw here so the user sees that even though status might have updated, the refund failed
+            throw new Error(`Status updated but refund failed: ${adminError.message}. Please check your SUPABASE_SERVICE_ROLE_KEY environment variable.`)
+        }
+    }
+
+    // 4. Send Notification
+    try {
+        const serviceName = (order.service as any)?.name || 'আপনার অর্ডার'
         const statusMap: Record<string, string> = {
             'pending': 'অপেক্ষমান',
             'in_progress': 'চলমান',
@@ -65,17 +127,19 @@ export async function updateOrderStatus(
         const readableStatus = statusMap[status] || status
 
         await notifyUser(
-            orderData.user_id,
+            order.user_id,
             'অর্ডারের স্ট্যাটাস আপডেট হয়েছে',
-            `${serviceName} এর বর্তমান স্ট্যাটাস: ${readableStatus}`,
+            `${serviceName} এর বর্তমান স্ট্যাটাস: ${readableStatus}${status === 'cancelled' ? '। অর্ডারের মূল্য আপনার ওয়ালেটে ফেরত দেওয়া হয়েছে।' : ''}`,
             '/dashboard/orders',
             'order_status'
         )
+    } catch (notifError) {
+        console.error('Notification failed:', notifError)
     }
 }
 
 export async function getServicesAdmin() {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data, error } = await supabase
         .from('services')
         .select('*')
@@ -86,7 +150,7 @@ export async function getServicesAdmin() {
 }
 
 export async function upsertService(service: Partial<Service>) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { error } = await supabase.from('services').upsert({
         ...service,
         updated_at: new Date().toISOString(),
@@ -95,7 +159,7 @@ export async function upsertService(service: Partial<Service>) {
 }
 
 export async function getAllUsers(search?: string) {
-    const supabase = createClient()
+    const supabase = await createClient()
     let query = supabase
         .from('users')
         .select('*')
@@ -111,7 +175,7 @@ export async function getAllUsers(search?: string) {
 }
 
 export async function getAllUsersWithSubscription(search?: string) {
-    const supabase = createClient()
+    const supabase = await createClient()
     let query = supabase
         .from('users')
         .select('*, subscription:subscriptions(id, plan_type, status, subscription_start_date, subscription_end_date, trial_end_date)')
@@ -132,7 +196,7 @@ export async function updateUserSubscription(
     status: string,
     subscriptionEndDate?: string
 ) {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // When superadmin changes the plan, always reset usage limits
     const { error } = await supabase
@@ -154,7 +218,7 @@ export async function updateUserSubscription(
 }
 
 export async function getAllTransactions(page = 1, pageSize = 20, search?: string) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 
@@ -191,7 +255,7 @@ export async function getAllTransactions(page = 1, pageSize = 20, search?: strin
 }
 
 export async function getAllBalanceTransactions(page = 1, pageSize = 20, search?: string) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 

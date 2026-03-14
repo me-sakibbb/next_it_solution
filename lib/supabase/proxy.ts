@@ -86,13 +86,23 @@ export async function updateSession(request: NextRequest) {
     }
 
     if (
-      // if the user is not logged in and the app path, in this case, /protected, is accessed, redirect to the login page
+      // if the user is not logged in and the app path, in this case, /dashboard, is accessed, redirect to the login page
       request.nextUrl.pathname.startsWith('/dashboard') &&
       !user
     ) {
       // no user, potentially respond by redirecting the user to the login page
       const url = request.nextUrl.clone()
       url.pathname = '/auth/login'
+      return NextResponse.redirect(url)
+    }
+
+    if (
+      // IF the user is logged in AND trying to access the landing page, redirect to the dashboard
+      request.nextUrl.pathname === '/' &&
+      user
+    ) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
       return NextResponse.redirect(url)
     }
 

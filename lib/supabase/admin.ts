@@ -4,8 +4,11 @@ export function createAdminClient() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Supabase URL or Service Role Key missing')
+    if (!supabaseUrl) {
+        throw new Error('Supabase URL missing (NEXT_PUBLIC_SUPABASE_URL)')
+    }
+    if (!supabaseServiceKey) {
+        throw new Error('Supabase Service Role Key missing (SUPABASE_SERVICE_ROLE_KEY)')
     }
 
     return createClient(supabaseUrl, supabaseServiceKey, {

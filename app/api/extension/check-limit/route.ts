@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     // Fetch the active subscription
     const { data: subscription, error: subError } = await adminSupabase
         .from('subscriptions')
-        .select('plan_type, status, autofill_usage, subscription_end_date')
+        .select('plan_type, status, autofill_usage, extraction_usage, subscription_end_date')
         .eq('user_id', user.id)
         .order('subscription_start_date', { ascending: false })
         .limit(1)
@@ -75,16 +75,33 @@ export async function GET(req: NextRequest) {
     }
 
     const limits = getLimitsForPlan(subscription.plan_type as SubscriptionPlanType)
-    const used = subscription.autofill_usage || 0
-    const limit = limits.autofill_applications
-    const remaining = Math.max(0, limit - used)
+
+    // Autofill usage
+    const autofillUsed = subscription.autofill_usage || 0
+    const autofillLimit = limits.autofill_applications
+    const autofillRemaining = Math.max(0, autofillLimit - autofillUsed)
+
+    // Extraction usage
+    const extractionUsed = subscription.extraction_usage || 0
+    const extractionLimit = limits.profile_extractions
+    const extractionRemaining = Math.max(0, extractionLimit - extractionUsed)
 
     return NextResponse.json(
         {
-            allowed: remaining > 0,
-            used,
-            limit,
-            remaining,
+            allowed: autofillRemaining > 0,
+            used: autofillUsed,
+            limit: autofillLimit,
+            remaining: autofillRemaining,
+            autofill: {
+                used: autofillUsed,
+                limit: autofillLimit,
+                remaining: autofillRemaining
+            },
+            extraction: {
+                used: extractionUsed,
+                limit: extractionLimit,
+                remaining: extractionRemaining
+            },
             plan: subscription.plan_type,
             email: user.email,
         },
