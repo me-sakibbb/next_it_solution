@@ -33,71 +33,81 @@ function orderQuad(pts: Pt[]): Quad {
 // ─── OpenCV document detection ───────────────────────────────────────────────
 function detectDocument(cv: any, canvas: HTMLCanvasElement): Quad {
     const W = canvas.width, H = canvas.height
-    const scale = Math.min(1, 1000 / Math.max(W, H))
+    // Decrease resolution for speed and more consistent edge detection
+    const maxDim = 600
+    const scale = Math.min(1, maxDim / Math.max(W, H))
     const rW = Math.round(W * scale), rH = Math.round(H * scale)
 
     const src = cv.imread(canvas)
     const small = new cv.Mat(); cv.resize(src, small, new cv.Size(rW, rH))
     const gray = new cv.Mat(); cv.cvtColor(small, gray, cv.COLOR_RGBA2GRAY)
 
-    // Use Bilateral Filter to reduce noise while preserving edges
-    const filtered = new cv.Mat(); cv.bilateralFilter(gray, filtered, 9, 75, 75)
-
-    // Multiple edge detection attempts
-    const edges = new cv.Mat(); cv.Canny(filtered, edges, 75, 200)
-    const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3))
-    const dilated = new cv.Mat(); cv.dilate(edges, dilated, kernel, new cv.Point(-1, -1), 1)
-
-    const contours = new cv.MatVector(); const hier = new cv.Mat()
-    cv.findContours(dilated, contours, hier, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    // Blur to remove detail noise (e.g., text) while preserving page boundaries
+    const blurred = new cv.Mat(); cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0)
 
     let bestQuad: Pt[] | null = null
-    let maxScore = -1
+    let maxArea = -1
     const totalArea = rW * rH
 
-    for (let i = 0; i < contours.size(); i++) {
-        const cnt = contours.get(i)
-        const area = cv.contourArea(cnt)
-        if (area < totalArea * 0.03) { cnt.delete(); continue }
+    // Iterate over multiple Canny thresholds to increase robustness for various lighting conditions
+    const thresholds = [
+        { t1: 20, t2: 80 },
+        { t1: 50, t2: 150 },
+        { t1: 80, t2: 250 },
+        { t1: 10, t2: 40 } // Very low contrast
+    ]
 
-        const peri = cv.arcLength(cnt, true)
-        const approx = new cv.Mat()
-        cv.approxPolyDP(cnt, approx, 0.02 * peri, true)
+    for (const { t1, t2 } of thresholds) {
+        const edges = new cv.Mat(); cv.Canny(blurred, edges, t1, t2)
 
-        // CamScanner looks for roughly rectangular shapes
-        // We accept 4 to 10 points and try to simplify
-        if (approx.rows >= 4 && approx.rows <= 10) {
-            const rect = cv.minAreaRect(cnt)
-            const rectArea = rect.size.width * rect.size.height
-            const solidity = area / rectArea
+        // Morphological close to bridge small gaps in edges
+        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5))
+        const closed = new cv.Mat(); cv.morphologyEx(edges, closed, cv.MORPH_CLOSE, kernel)
 
-            // Score based on area + solidity (how rectangular it is)
-            const score = area * solidity
+        const contours = new cv.MatVector(); const hier = new cv.Mat()
+        cv.findContours(closed, contours, hier, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
 
-            if (score > maxScore) {
-                maxScore = score
-                const pts: Pt[] = []
-                for (let j = 0; j < approx.rows; j++) {
-                    pts.push({
-                        x: approx.data32S[j * 2] / scale,
-                        y: approx.data32S[j * 2 + 1] / scale,
-                    })
+        for (let i = 0; i < contours.size(); i++) {
+            const cnt = contours.get(i)
+            const area = cv.contourArea(cnt)
+
+            // Document should occupy a decent chunk of the image (e.g., at least 5%)
+            if (area > totalArea * 0.05) {
+                const rect = cv.minAreaRect(cnt)
+                const rectArea = rect.size.width * rect.size.height
+                const solidity = area / (rectArea || 1)
+
+                if (solidity > 0.4 && area > maxArea) {
+                    const peri = cv.arcLength(cnt, true)
+                    const approx = new cv.Mat()
+                    cv.approxPolyDP(cnt, approx, 0.02 * peri, true)
+
+                    // We need at least an imperfect quad
+                    if (approx.rows >= 4) {
+                        maxArea = area
+                        const pts: Pt[] = []
+                        for (let j = 0; j < approx.rows; j++) {
+                            pts.push({
+                                x: approx.data32S[j * 2] / scale,
+                                y: approx.data32S[j * 2 + 1] / scale,
+                            })
+                        }
+                        bestQuad = findExtremePoints(pts)
+                    }
+                    approx.delete()
                 }
-
-                // Simplified logic: pick points furthest towards corners
-                bestQuad = findExtremePoints(pts)
             }
+            cnt.delete()
         }
-        approx.delete()
-        cnt.delete()
+        edges.delete(); kernel.delete(); closed.delete(); contours.delete(); hier.delete();
     }
 
-    ;[src, small, gray, filtered, edges, kernel, dilated, contours, hier].forEach(m => m.delete?.())
+    ;[src, small, gray, blurred].forEach(m => m.delete?.())
 
     if (bestQuad && bestQuad.length === 4) return orderQuad(bestQuad)
 
-    // Robust fallback: center rectangle
-    const insetW = W * 0.1, insetH = H * 0.1
+    // Robust fallback: center rectangle slightly inset
+    const insetW = W * 0.05, insetH = H * 0.05
     return [{ x: insetW, y: insetH }, { x: W - insetW, y: insetH }, { x: W - insetW, y: H - insetH }, { x: insetW, y: H - insetH }]
 }
 
@@ -229,7 +239,18 @@ const DocCropper = forwardRef<CropperHandle, { imageFile: File; cvLoaded: boolea
 
                 if (filter === 'bw') {
                     cv.cvtColor(warped, warped, cv.COLOR_RGBA2GRAY)
-                    cv.adaptiveThreshold(warped, warped, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 15, bwThreshold)
+                    const temp = new cv.Mat()
+
+                    // Slight Gaussian blur to soften the image, reduce high-frequency speckles
+                    cv.GaussianBlur(warped, temp, new cv.Size(5, 5), 0)
+
+                    // Dynamic block size based on image resolution (approx 4%) to prevent harsh background splotches
+                    let blockSize = Math.floor(Math.max(outW, outH) * 0.04)
+                    if (blockSize % 2 === 0) blockSize++
+                    if (blockSize < 21) blockSize = 21
+
+                    cv.adaptiveThreshold(temp, warped, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, blockSize, bwThreshold)
+                    temp.delete()
                 } else if (filter === 'color') {
                     // Magic Color effect: Sharpen + Contrast
                     const sharpened = new cv.Mat()
