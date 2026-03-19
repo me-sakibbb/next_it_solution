@@ -7,13 +7,13 @@ import {
   Package,
   ShoppingCart,
   Users,
-  DollarSign,
+  Wallet,
   TrendingUp,
   UserCircle,
   Home,
   ArrowLeft,
   ClipboardList,
-  Receipt,
+  CreditCard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { User } from '@supabase/supabase-js'
@@ -41,8 +41,8 @@ const entitiesMenuItems = [
 
 // Financials & Reporting
 const financeMenuItems = [
-  { name: 'বেতন', href: '/dashboard/shop/payroll', icon: DollarSign },
-  { name: 'খরচ', href: '/dashboard/shop/expenses', icon: Receipt },
+  { name: 'বেতন', href: '/dashboard/shop/payroll', icon: Wallet },
+  { name: 'খরচ', href: '/dashboard/shop/expenses', icon: CreditCard },
   { name: 'রিপোর্ট', href: '/dashboard/shop/reports', icon: TrendingUp },
 ]
 

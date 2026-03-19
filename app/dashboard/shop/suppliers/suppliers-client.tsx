@@ -4,10 +4,11 @@ import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Pencil, DollarSign, ExternalLink, Users, AlertCircle } from 'lucide-react'
+import { Plus, Search, Pencil, ExternalLink, Users, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from "@/components/ui/card"
 import { SupplierDialog } from './supplier-dialog'
 import { DuePaymentDialog } from './due-payment-dialog'
+import { BdtIcon } from '@/components/ui/bdt-icon'
 import { formatCurrency } from '@/lib/utils'
 import { useSuppliers } from '@/hooks/use-suppliers'
 
@@ -93,7 +94,7 @@ export function SuppliersClient({ shopId }: SuppliersClientProps) {
                             <p className="text-sm font-medium text-muted-foreground">মোট বকেয়া (Due)</p>
                             <p className="text-2xl font-bold text-destructive">{formatCurrency(stats.totalDue)}</p>
                         </div>
-                        <DollarSign className="h-8 w-8 text-destructive/30" />
+                        <BdtIcon className="h-8 w-8 text-destructive/30" />
                     </CardContent>
                 </Card>
                 <Card>
@@ -154,7 +155,7 @@ export function SuppliersClient({ shopId }: SuppliersClientProps) {
                                 setShowDueDialog(true)
                             }}
                         >
-                            <DollarSign className="h-3.5 w-3.5" />
+                            <BdtIcon className="h-3.5 w-3.5" />
                             পে / অ্যাডজাস্ট
                         </Button>
                         <Button

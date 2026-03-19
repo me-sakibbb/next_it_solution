@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import {
-    DollarSign,
     Package,
     Users,
     ShoppingCart,
@@ -25,6 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { formatCurrency } from '@/lib/utils'
+import { BdtIcon } from '@/components/ui/bdt-icon'
 
 interface ShopDashboardClientProps {
     totalRevenue: number
@@ -173,7 +173,7 @@ export function ShopDashboardClient({
                     <div className="absolute right-0 top-0 w-24 h-24 bg-primary/10 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
                         <CardTitle className="text-sm font-medium text-muted-foreground">আজকের লাভ</CardTitle>
-                        <DollarSign className="h-4 w-4 text-primary" />
+                        <BdtIcon className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent className="z-10">
                         <div className={`text-3xl font-bold ${todayProfit >= 0 ? "text-primary" : "text-destructive"}`}>

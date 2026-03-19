@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Hind_Siliguri } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from "@/components/ui/toaster"
 import { BackgroundPreloader } from "@/components/background-preloader"
+import { SupportWidget } from "@/components/ui/support-widget"
 import './globals.css'
 
 const _geist = Geist({
@@ -57,6 +58,7 @@ export default function RootLayout({
         <Analytics />
         <Toaster />
         <BackgroundPreloader />
+        <SupportWidget />
       </body>
     </html>
   )

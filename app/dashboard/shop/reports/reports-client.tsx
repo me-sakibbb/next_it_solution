@@ -14,7 +14,7 @@ import {
   Receipt,
   Download,
   CalendarDays,
-  DollarSign,
+  
   ArrowDownRight,
   ArrowUpRight,
   AlertTriangle,
@@ -31,6 +31,7 @@ import {
 } from 'recharts'
 import { format, subDays, startOfMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns'
 import { formatCurrency } from '@/lib/utils'
+import { BdtIcon } from '@/components/ui/bdt-icon'
 
 const COLORS = [
   '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
@@ -391,8 +392,8 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <StatCard title="মোট বিক্রয়" value={formatCurrency(totalRevenue)} icon={TrendingUp} color="text-green-600" subtitle={`${filteredSales.length} বিক্রয়`} />
             <StatCard title="মোট খরচ" value={formatCurrency(totalExpensesAmount)} icon={ArrowDownRight} color="text-red-500" subtitle={`${filteredExpenses.length} এন্ট্রি`} />
-            <StatCard title="গ্রস লাভ" value={formatCurrency(grossProfit)} icon={DollarSign} color="text-emerald-600" subtitle={`${totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(1) : 0}% মার্জিন`} />
-            <StatCard title="নীট লাভ" value={formatCurrency(netProfit)} icon={DollarSign} color={netProfit >= 0 ? "text-primary" : "text-red-600"} subtitle="খরচ বাদে" />
+            <StatCard title="গ্রস লাভ" value={formatCurrency(grossProfit)} icon={BdtIcon} color="text-emerald-600" subtitle={`${totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(1) : 0}% মার্জিন`} />
+            <StatCard title="নীট লাভ" value={formatCurrency(netProfit)} icon={BdtIcon} color={netProfit >= 0 ? "text-primary" : "text-red-600"} subtitle="খরচ বাদে" />
             <StatCard title="মোট বাকি" value={formatCurrency(totalDue)} icon={CreditCard} color="text-orange-500" subtitle="কাস্টমার পাওনা" />
             <StatCard title="লো স্টক" value={`${lowStockProducts.length} আইটেম`} icon={AlertTriangle} color="text-destructive" subtitle={`${products.length} মোট পণ্য`} />
           </div>
@@ -714,8 +715,8 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard title="মোট পণ্য" value={products.length} icon={Package} color="text-blue-500" subtitle={`${products.filter((p: any) => p.is_active).length} সক্রিয়`} />
             <StatCard title="লো স্টক পণ্য" value={lowStockProducts.length} icon={AlertTriangle} color="text-destructive" subtitle="রিস্টক করা প্রয়োজন" />
-            <StatCard title="মোট স্টক মূল্য" value={formatCurrency(totalStockValue)} icon={DollarSign} color="text-emerald-500" subtitle="ক্রয় মূল্যে" />
-            <StatCard title="গড় পণ্য মূল্য" value={formatCurrency(products.length > 0 ? totalStockValue / products.length : 0)} icon={DollarSign} color="text-purple-500" />
+            <StatCard title="মোট স্টক মূল্য" value={formatCurrency(totalStockValue)} icon={BdtIcon} color="text-emerald-500" subtitle="ক্রয় মূল্যে" />
+            <StatCard title="গড় পণ্য মূল্য" value={formatCurrency(products.length > 0 ? totalStockValue / products.length : 0)} icon={BdtIcon} color="text-purple-500" />
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
