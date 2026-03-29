@@ -49,42 +49,60 @@ export async function POST(req: NextRequest) {
         // Fetch the active subscription
         const { data: subscription, error: subError } = await adminSupabase
             .from('subscriptions')
-            .select('id, plan_type, status, autofill_usage, subscription_end_date')
+            .select('id, plan_type, status, autofill_usage, extraction_usage, subscription_end_date')
             .eq('user_id', user.id)
             .order('subscription_start_date', { ascending: false })
             .limit(1)
             .maybeSingle()
 
+        // Fetch the user's balance
+        const { data: userRecord } = await adminSupabase
+            .from('users')
+            .select('balance')
+            .eq('id', user.id)
+            .single()
+            
+        const balance = userRecord?.balance || 0;
+
         if (subError || !subscription) {
-            return NextResponse.json(
-                { error: 'No active subscription found' },
-                { status: 403, headers: CORS_HEADERS }
-            )
+            if (balance < 1) {
+                return NextResponse.json(
+                    { error: 'No active subscription found and insufficient balance' },
+                    { status: 403, headers: CORS_HEADERS }
+                )
+            }
         }
 
         // Check expiry and status
-        const isActive =
-            subscription.status === 'active' &&
-            (!subscription.subscription_end_date ||
-                new Date(subscription.subscription_end_date) > new Date())
-
-        if (!isActive) {
-            return NextResponse.json(
-                { error: 'Subscription expired or inactive' },
-                { status: 403, headers: CORS_HEADERS }
-            )
+        let isActive = false;
+        let limits = { profile_extractions: 0 };
+        let used = 0;
+        let limit = 0;
+        
+        if (subscription) {
+            isActive =
+                subscription.status === 'active' &&
+                (!subscription.subscription_end_date ||
+                    new Date(subscription.subscription_end_date) > new Date())
+                    
+            if (isActive) {
+                limits = getLimitsForPlan(subscription.plan_type as SubscriptionPlanType)
+                used = subscription.extraction_usage || 0
+                limit = limits.profile_extractions
+            }
         }
 
-        const limits = getLimitsForPlan(subscription.plan_type as SubscriptionPlanType)
-        const used = subscription.autofill_usage || 0
-        const limit = limits.autofill_applications
-
         // Check limit
-        if (used >= limit) {
-            return NextResponse.json(
-                { error: 'Autofill limit reached' },
-                { status: 403, headers: CORS_HEADERS }
-            )
+        let chargingType: 'subscription' | 'balance' = 'subscription';
+        
+        if (!isActive || used >= limit) {
+            if (balance < 1) {
+                return NextResponse.json(
+                    { error: 'Extraction limit reached. Please upgrade subscription or add balance.' },
+                    { status: 403, headers: CORS_HEADERS }
+                )
+            }
+            chargingType = 'balance';
         }
 
         // Parse request body for Gemini payload
@@ -99,7 +117,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Gemini API Key missing on server' }, { status: 500, headers: CORS_HEADERS })
         }
 
-        const MODEL = 'gemini-2.5-flash-lite';
+        const MODEL = 'gemini-3-flash-preview';
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
         const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
@@ -120,19 +138,41 @@ export async function POST(req: NextRequest) {
             throw new Error(data.error.message);
         }
 
-        // Only increment usage on successful AI call
-        const newUsed = used + 1
-        await adminSupabase
-            .from('subscriptions')
-            .update({ autofill_usage: newUsed })
-            .eq('id', subscription.id)
+        // Only increment usage or deduct balance on successful AI call
+        let remainingLimits = 0;
+        
+        if (chargingType === 'subscription' && subscription) {
+            const newUsed = used + 1
+            await adminSupabase
+                .from('subscriptions')
+                .update({ extraction_usage: newUsed })
+                .eq('id', subscription.id)
+            remainingLimits = limit - newUsed;
+        } else {
+            const newBalance = balance - 1;
+            await adminSupabase
+                .from('users')
+                .update({ balance: newBalance })
+                .eq('id', user.id)
+                
+            await adminSupabase
+                .from('balance_transactions')
+                .insert({
+                    user_id: user.id,
+                    amount: 1,
+                    type: 'debit',
+                    description: 'Extension extra document extraction fee'
+                });
+                
+            remainingLimits = 0; // Out of limits, just tell them 0 limits remain
+        }
 
         let text = data.candidates[0].content.parts[0].text;
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) text = jsonMatch[0];
 
         return NextResponse.json(
-            { parsed: JSON.parse(text), usage: data.usageMetadata, remainingLimits: limit - newUsed },
+            { parsed: JSON.parse(text), usage: data.usageMetadata, remainingLimits },
             { status: 200, headers: CORS_HEADERS }
         );
 
