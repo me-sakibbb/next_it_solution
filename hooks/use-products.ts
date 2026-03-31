@@ -84,6 +84,28 @@ export function useProducts(shopId: string, categoryId?: string) {
             const catId = formData.get('category_id')
             const supplierId = formData.get('supplier_id')
 
+
+
+            const imageFile = formData.get('imageFile') as File | null;
+            let image_url = formData.get('existing_image_url') as string | undefined;
+
+            if (imageFile && imageFile.size > 0) {
+                const fileExt = imageFile.name.split('.').pop() || 'jpg';
+                const fileName = `${shopId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('product-images')
+                    .upload(fileName, imageFile);
+                
+                if (uploadError) {
+                    console.error('Image upload failed', uploadError);
+                } else if (uploadData) {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('product-images')
+                        .getPublicUrl(uploadData.path);
+                    image_url = publicUrl;
+                }
+            }
+
             const productData = {
                 name: formData.get('name'),
                 description: formData.get('description') || undefined,
@@ -101,6 +123,7 @@ export function useProducts(shopId: string, categoryId?: string) {
                 min_stock_level: Number(formData.get('min_stock_level') || 0),
                 warranty_period: formData.get('warranty_period') ? Number(formData.get('warranty_period')) : undefined,
                 warranty_type: formData.get('warranty_type') || undefined,
+                image_url: image_url || undefined,
             }
 
             const validated = productSchema.parse(productData)
@@ -142,6 +165,26 @@ export function useProducts(shopId: string, categoryId?: string) {
             const catId = formData.get('category_id')
             const supplierId = formData.get('supplier_id')
 
+            const imageFile = formData.get('imageFile') as File | null;
+            let image_url = formData.get('existing_image_url') as string | undefined;
+
+            if (imageFile && imageFile.size > 0) {
+                const fileExt = imageFile.name.split('.').pop() || 'jpg';
+                const fileName = `${shopId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('product-images')
+                    .upload(fileName, imageFile);
+                
+                if (uploadError) {
+                    console.error('Image upload failed', uploadError);
+                } else if (uploadData) {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('product-images')
+                        .getPublicUrl(uploadData.path);
+                    image_url = publicUrl;
+                }
+            }
+
             const productData = {
                 name: formData.get('name'),
                 description: formData.get('description') || undefined,
@@ -159,6 +202,7 @@ export function useProducts(shopId: string, categoryId?: string) {
                 min_stock_level: Number(formData.get('min_stock_level') || 0),
                 warranty_period: formData.get('warranty_period') ? Number(formData.get('warranty_period')) : undefined,
                 warranty_type: formData.get('warranty_type') || undefined,
+                image_url: image_url || undefined,
             }
 
             const validated = productSchema.parse(productData)

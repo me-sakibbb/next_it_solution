@@ -12,6 +12,7 @@ import { StockAdjustmentDialog } from './stock-adjustment-dialog'
 import { useProducts } from '@/hooks/use-products'
 import { formatCurrency } from '@/lib/utils'
 import type { Category } from '@/lib/types'
+import Image from 'next/image'
 
 interface InventoryClientProps {
   shopId: string
@@ -54,9 +55,20 @@ export function InventoryClient({ shopId }: InventoryClientProps) {
       key: 'name',
       label: 'পণ্য',
       render: (product: any) => (
-        <div>
-          <div className="font-medium">{product.name}</div>
-          <div className="text-sm text-muted-foreground">{product.sku || 'SKU নেই'}</div>
+        <div className="flex items-center gap-3">
+          {product.image_url ? (
+            <div className="relative h-10 w-10 flex-shrink-0 rounded-md overflow-hidden bg-muted border">
+               <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+            </div>
+          ) : (
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md border bg-muted">
+               <span className="font-medium">{product.name.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
+          <div>
+            <div className="font-medium">{product.name}</div>
+            <div className="text-sm text-muted-foreground">{product.sku || 'SKU নেই'}</div>
+          </div>
         </div>
       ),
     },
@@ -209,12 +221,16 @@ export function InventoryClient({ shopId }: InventoryClientProps) {
                     setShowStockDialog(true)
                   }}
                 >
-                  <div className="h-24 w-full bg-muted flex items-center justify-center relative overflow-hidden">
-                    <div className="relative z-10 h-12 w-12 rounded-full bg-background border flex items-center justify-center shadow-sm">
-                      <span className="text-lg font-bold">
-                        {product.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+                  <div className="h-44 w-full bg-muted flex items-center justify-center relative overflow-hidden">
+                    {product.image_url ? (
+                      <Image src={product.image_url} alt={product.name} fill className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                    ) : (
+                      <div className="relative z-10 h-20 w-20 rounded-full bg-background border flex items-center justify-center shadow-lg">
+                        <span className="text-3xl font-bold text-primary/70">
+                          {product.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div className="absolute top-2 left-2 z-10">
                       <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm text-[10px] h-5">
                         {product.category?.name || 'আইটেম'}

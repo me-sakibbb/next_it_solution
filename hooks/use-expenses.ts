@@ -59,8 +59,8 @@ export function useExpenses(shopId: string) {
         }
 
         const { data, error, count } = await query
-            .order(params.sortBy || 'expense_date', { ascending: params.sortOrder === 'desc' })
-            .order('created_at', { ascending: params.sortOrder === 'desc' })
+            .order(params.sortBy || 'expense_date', { ascending: params.sortOrder === 'asc' })
+            .order('created_at', { ascending: params.sortOrder === 'asc' })
             .range(from, to)
 
         if (error) throw error

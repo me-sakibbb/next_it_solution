@@ -9,8 +9,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Loader2, ChevronDown, ChevronUp, ImagePlus, X } from 'lucide-react'
 import type { Category } from '@/lib/types'
+import imageCompression from 'browser-image-compression'
+import Image from 'next/image'
+
 
 interface ProductDialogProps {
   open: boolean
@@ -28,6 +31,35 @@ export function ProductDialog({ open, onOpenChange, product, categories, supplie
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showMoreOptions, setShowMoreOptions] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  React.useEffect(() => {
+    if (open) {
+      setImageFile(null)
+      setImagePreview(product?.image_url || null)
+      setShowMoreOptions(false)
+      setError('')
+    }
+  }, [open, product])
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      }
+      const compressedFile = await imageCompression(file, options)
+      setImageFile(compressedFile)
+      setImagePreview(URL.createObjectURL(compressedFile))
+    } catch (err) {
+      console.error('Error compressing image:', err)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -36,6 +68,13 @@ export function ProductDialog({ open, onOpenChange, product, categories, supplie
 
     try {
       const formData = new FormData(e.currentTarget)
+      
+      if (imageFile) {
+        formData.append('imageFile', imageFile)
+      }
+      if (product?.image_url && !imageFile && imagePreview) {
+        formData.append('existing_image_url', product.image_url)
+      }
 
       if (product) {
         const updated = onUpdateProduct
@@ -65,6 +104,49 @@ export function ProductDialog({ open, onOpenChange, product, categories, supplie
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Essential Fields */}
           <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2 flex flex-col items-center justify-center gap-2 mb-2">
+              <div 
+                className="relative h-24 w-24 rounded-xl border-2 border-dashed flex items-center justify-center bg-muted overflow-hidden group hover:border-primary/50 cursor-pointer"
+                onClick={() => document.getElementById('product-image-upload')?.click()}
+              >
+                {imagePreview ? (
+                  <>
+                    <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <ImagePlus className="h-6 w-6 text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                    <ImagePlus className="h-6 w-6" />
+                    <span className="text-[10px]">ছবি যোগ করুন</span>
+                  </div>
+                )}
+                <input
+                  id="product-image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </div>
+              {imagePreview && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-2 text-xs text-destructive"
+                  onClick={() => {
+                    setImageFile(null)
+                    setImagePreview(null)
+                  }}
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  ছবি মুছুন
+                </Button>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="name">পণ্যের নাম *</Label>
               <Input

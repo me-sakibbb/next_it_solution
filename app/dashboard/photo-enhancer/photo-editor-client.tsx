@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React from "react"
 
@@ -124,8 +124,8 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
 
   // Download/Print dialog state
   const [showPrintDialog, setShowPrintDialog] = useState(false)
-  const [printCopies, setPrintCopies] = useState(6)
-  const [printSpacing, setPrintSpacing] = useState(10)
+  const [printCopies, setPrintCopies] = useState<number | string>(8)
+  const [printSpacing, setPrintSpacing] = useState<number | string>(5) // mm
 
   // Undo history stack
   const [history, setHistory] = useState<HistorySnapshot[]>([])
@@ -1345,16 +1345,44 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   }
 
   const handlePrintDownload = () => {
-    if (!canvasRef.current || !image) return
+    if (!image) return
 
-    // A4 dimensions in mm and pixels at 300 DPI
+    // 1. Get the high-resolution filtered image (filters + rotation + erase)
+    const filtered = buildFilteredCanvas()
+    if (!filtered) return
+
+    // 2. Create an export canvas at exact resolution including background layer
+    const exportCanvas = document.createElement('canvas')
+    exportCanvas.width = image.width
+    exportCanvas.height = image.height
+    const ectx = exportCanvas.getContext('2d')
+    if (!ectx) return
+
+    ectx.imageSmoothingEnabled = true
+    ectx.imageSmoothingQuality = 'high'
+
+    // Draw background layer if needed
+    if (bgRemoved && bgColor !== 'transparent') {
+      ectx.fillStyle = bgColor
+      ectx.fillRect(0, 0, exportCanvas.width, exportCanvas.height)
+    }
+
+    // Draw the actual filtered high-res image
+    ectx.drawImage(filtered, 0, 0)
+
+    // A4 dimensions in mm
     const A4_WIDTH_MM = 210
     const A4_HEIGHT_MM = 297
-    const DPI = 300
-    const MM_TO_PX = DPI / 25.4
+    const DPI = 300 // Standard print resolution
+    const MM_TO_PX = DPI / 25.4 // Conversion factor
 
-    const pageWidthPx = A4_WIDTH_MM * MM_TO_PX
-    const pageHeightPx = A4_HEIGHT_MM * MM_TO_PX
+    // Calculate dimensions in mm
+    const numSpacing = parseFloat(String(printSpacing)) || 0
+    const numCopies = parseInt(String(printCopies)) || 1
+
+    const spacingMm = numSpacing
+    const imageWidthMm = image.width / MM_TO_PX
+    const imageHeightMm = image.height / MM_TO_PX
 
     // Create PDF
     const pdf = new jsPDF({
@@ -1363,55 +1391,50 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
       format: 'a4'
     })
 
-    // Calculate how many images fit on one page
-    const spacingMm = printSpacing / MM_TO_PX / 25.4 * 10
-    const imageWidthMm = image.width / MM_TO_PX / 25.4 * 10
-    const imageHeightMm = image.height / MM_TO_PX / 25.4 * 10
-
     const margin = 10 // mm
     const availableWidth = A4_WIDTH_MM - (2 * margin)
     const availableHeight = A4_HEIGHT_MM - (2 * margin)
 
+    // Calculate how many images fit on one page
+    // Using formula: (cols * width) + ((cols - 1) * spacing) <= availableWidth
     const cols = Math.floor((availableWidth + spacingMm) / (imageWidthMm + spacingMm))
     const rows = Math.floor((availableHeight + spacingMm) / (imageHeightMm + spacingMm))
     const imagesPerPage = cols * rows
 
-    if (imagesPerPage === 0) {
+    if (imagesPerPage <= 0) {
       toast({
         title: "Error",
-        description: "Image is too large for A4 paper. Please resize it first.",
+        description: "Image is too large for A4 paper. Please resize or crop it first.",
         variant: "destructive",
       })
       return
     }
 
-    const totalPages = Math.ceil(printCopies / imagesPerPage)
-
-    // Get image data
-    const imageData = canvasRef.current.toDataURL('image/png')
+    const totalPages = Math.ceil(numCopies / imagesPerPage)
 
     let copiesPlaced = 0
     for (let page = 0; page < totalPages; page++) {
       if (page > 0) pdf.addPage()
 
-      for (let row = 0; row < rows && copiesPlaced < printCopies; row++) {
-        for (let col = 0; col < cols && copiesPlaced < printCopies; col++) {
+      for (let row = 0; row < rows && copiesPlaced < numCopies; row++) {
+        for (let col = 0; col < cols && copiesPlaced < numCopies; col++) {
           const x = margin + col * (imageWidthMm + spacingMm)
           const y = margin + row * (imageHeightMm + spacingMm)
 
-          pdf.addImage(imageData, 'PNG', x, y, imageWidthMm, imageHeightMm)
+          // Add image directly from canvas for best quality
+          pdf.addImage(exportCanvas, 'PNG', x, y, imageWidthMm, imageHeightMm)
           copiesPlaced++
         }
       }
     }
 
     // Save PDF
-    pdf.save(`print-layout-${printCopies}-copies-${Date.now()}.pdf`)
+    pdf.save(`print-layout-${numCopies}-copies-${Date.now()}.pdf`)
 
     setShowPrintDialog(false)
     toast({
       title: "Success",
-      description: `PDF with ${printCopies} copies on ${totalPages} page(s) downloaded successfully`,
+      description: `PDF with ${numCopies} copies on ${totalPages} page(s) generated successfully at ${DPI} DPI`,
     })
   }
 
@@ -1511,10 +1534,16 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
             className="gap-1.5 font-semibold"
             style={{ backgroundColor: '#7c3aed' }}
             onClick={() => setShowPrintDialog(true)}
+            disabled={!image}
           >
             <Printer className="h-3.5 w-3.5" />Print Sheet
           </Button>
-          <Button size="sm" className="gap-1.5 font-semibold bg-green-600 hover:bg-green-700" onClick={handleDownload}>
+          <Button 
+            size="sm" 
+            className="gap-1.5 font-semibold bg-green-600 hover:bg-green-700" 
+            onClick={handleDownload}
+            disabled={!image}
+          >
             <Download className="h-3.5 w-3.5" />Download PNG
           </Button>
         </div>
@@ -1906,14 +1935,27 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Number of Copies</Label>
-              <Input type="number" min="1" max="50" value={printCopies} onChange={(e) => setPrintCopies(parseInt(e.target.value) || 1)} />
+              <Input 
+                type="number" 
+                min="1" 
+                max="100" 
+                value={printCopies} 
+                onChange={(e) => setPrintCopies(e.target.value.replace(/^0+(?=\d)/, ''))} 
+              />
             </div>
             <div className="space-y-2">
-              <Label>Spacing (px)</Label>
-              <Input type="number" min="0" max="100" value={printSpacing} onChange={(e) => setPrintSpacing(parseInt(e.target.value) || 0)} />
+              <Label>Spacing (mm)</Label>
+              <Input 
+                type="number" 
+                min="0" 
+                max="50" 
+                step="0.5" 
+                value={printSpacing} 
+                onChange={(e) => setPrintSpacing(e.target.value.replace(/^0+(?=\d)/, ''))} 
+              />
             </div>
             <div className="p-4 bg-muted rounded-lg text-sm">
-              Layout: {Math.ceil(Math.sqrt(printCopies))} cols x {Math.ceil(printCopies / Math.ceil(Math.sqrt(printCopies)))} rows
+              Layout: {Math.ceil(Math.sqrt(Number(printCopies) || 1))} cols x {Math.ceil((Number(printCopies) || 1) / Math.ceil(Math.sqrt(Number(printCopies) || 1)))} rows
             </div>
           </div>
           <DialogFooter>

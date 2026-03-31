@@ -21,6 +21,7 @@ export const productSchema = z.object({
   warranty_period: z.number().int().min(0).optional(),
   warranty_type: z.string().optional(),
   specifications: z.record(z.any()).optional(),
+  image_url: z.string().optional().nullable(),
 })
 
 // Category validation

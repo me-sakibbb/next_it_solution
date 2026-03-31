@@ -83,8 +83,8 @@ export function usePayroll(shopId: string) {
         }
 
         const { data, error, count } = await query
-            .order(params.sortBy || 'year', { ascending: params.sortOrder === 'desc' })
-            .order('month', { ascending: params.sortOrder === 'desc' })
+            .order(params.sortBy || 'year', { ascending: params.sortOrder === 'asc' })
+            .order('month', { ascending: params.sortOrder === 'asc' })
             .range(from, to)
 
         if (error) throw error

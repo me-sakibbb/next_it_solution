@@ -60,7 +60,7 @@ export function useShopTasks(shopId?: string, status: string = 'all') {
         }
 
         const { data, error, count } = await query
-            .order(params.sortBy || 'created_at', { ascending: params.sortOrder === 'desc' })
+            .order(params.sortBy || 'created_at', { ascending: params.sortOrder === 'asc' })
             .range(from, to)
 
         if (error) throw error

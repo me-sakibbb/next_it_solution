@@ -32,13 +32,17 @@ import {
 import { format, subDays, startOfMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns'
 import { formatCurrency } from '@/lib/utils'
 import { BdtIcon } from '@/components/ui/bdt-icon'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+
 
 const COLORS = [
   '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
   '#6366f1', '#14b8a6', '#f97316', '#ef4444', '#06b6d4',
 ]
 
-type DateRange = 'today' | '7days' | '30days' | 'this_month' | 'custom'
+type DateRange = 'today' | '7days' | '30days' | 'this_month' | 'custom' | 
+  'jan' | 'feb' | 'mar' | 'apr' | 'may' | 'jun' | 'jul' | 'aug' | 'sep' | 'oct' | 'nov' | 'dec'
 
 import { useReports } from '@/hooks/use-reports'
 
@@ -72,6 +76,18 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
           from: customFrom ? startOfDay(new Date(customFrom)) : startOfDay(subDays(now, 29)),
           to: customTo ? endOfDay(new Date(customTo)) : endOfDay(now),
         }
+      default: {
+        // Handle specific months (jan, feb, etc.)
+        const monthIndex = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(dateRange)
+        if (monthIndex !== -1) {
+          const monthDate = new Date(now.getFullYear(), monthIndex, 1)
+          return {
+            from: startOfMonth(monthDate),
+            to: endOfDay(new Date(now.getFullYear(), monthIndex + 1, 0))
+          }
+        }
+        return { from: startOfDay(subDays(now, 29)), to: endOfDay(now) }
+      }
     }
   }, [dateRange, customFrom, customTo])
 
@@ -266,6 +282,73 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
     downloadCSV(`inventory_report_${format(new Date(), 'yyyyMMdd')}.csv`, headers, rows)
   }
 
+  // --- PDF Download ---
+  const downloadPDF = (title: string, headers: string[], rows: any[][], fileName: string) => {
+    const doc = new jsPDF()
+    
+    // Add title
+    doc.setFontSize(18)
+    doc.text(title, 14, 22)
+    
+    // Add date range info
+    doc.setFontSize(11)
+    doc.setTextColor(100)
+    doc.text(`${format(bounds.from, 'dd MMM yyyy')} - ${format(bounds.to, 'dd MMM yyyy')}`, 14, 30)
+    
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      startY: 40,
+      theme: 'striped',
+      headStyles: { fillColor: [59, 130, 246] },
+      styles: { fontSize: 9 },
+    })
+    
+    doc.save(fileName)
+  }
+
+  const downloadSalesPDF = () => {
+    const headers = ['Date', 'Invoice', 'Customer', 'Total', 'Paid', 'Due', 'Status']
+    const rows = filteredSales.map(s => [
+      format(new Date(s.sale_date || s.created_at), 'yyyy-MM-dd'),
+      s.sale_number || '',
+      s.customer?.name || 'Cash',
+      (s.total_amount || 0).toFixed(2),
+      (s.paid_amount || 0).toFixed(2),
+      (s.balance_amount || 0).toFixed(2),
+      s.payment_status || '',
+    ])
+    downloadPDF('Sales Report', headers, rows, `sales_report_${format(new Date(), 'yyyyMMdd')}.pdf`)
+  }
+
+  const downloadExpensesPDF = () => {
+    const headers = ['Date', 'Title', 'Category', 'Type', 'Amount']
+    const rows = filteredExpenses.map(e => [
+      format(new Date(e.expense_date || e.created_at), 'yyyy-MM-dd'),
+      e.title || '',
+      e.expense_categories?.name || '',
+      e.reference_type || '',
+      (e.amount || 0).toFixed(2),
+    ])
+    downloadPDF('Expenses Report', headers, rows, `expenses_report_${format(new Date(), 'yyyyMMdd')}.pdf`)
+  }
+
+  const downloadInventoryPDF = () => {
+    const headers = ['Product', 'Category', 'Stock', 'Cost', 'Price', 'Value']
+    const rows = products.map((p: any) => {
+      const qty = p.inventory?.[0]?.quantity || 0
+      return [
+        p.name,
+        p.category?.name || '',
+        String(qty),
+        (p.cost_price || 0).toFixed(2),
+        (p.selling_price || 0).toFixed(2),
+        (qty * Number(p.cost_price || 0)).toFixed(2),
+      ]
+    })
+    downloadPDF('Inventory Report', headers, rows, `inventory_report_${format(new Date(), 'yyyyMMdd')}.pdf`)
+  }
+
   // --- Render Helpers ---
   const StatCard = ({ title, value, subtitle, icon: Icon, color = 'text-primary', trend }: any) => (
     <Card className="relative overflow-hidden group hover:shadow-md transition-shadow">
@@ -308,6 +391,18 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
       case '30days': return 'গত ৩০ দিন'
       case 'this_month': return 'এই মাস'
       case 'custom': return 'কাস্টম'
+      case 'jan': return 'জানুয়ারি'
+      case 'feb': return 'ফেব্রুয়ারি'
+      case 'mar': return 'মার্চ'
+      case 'apr': return 'এপ্রিল'
+      case 'may': return 'মে'
+      case 'jun': return 'জুন'
+      case 'jul': return 'জুলাই'
+      case 'aug': return 'আগস্ট'
+      case 'sep': return 'সেপ্টেম্বর'
+      case 'oct': return 'অক্টোবর'
+      case 'nov': return 'নভেম্বর'
+      case 'dec': return 'ডিসেম্বর'
     }
   }
 
@@ -336,33 +431,61 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
               <Filter className="w-4 h-4" />
               সময়কাল:
             </div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { key: 'today', label: 'আজ' },
-                { key: '7days', label: '৭ দিন' },
-                { key: '30days', label: '৩০ দিন' },
-                { key: 'this_month', label: 'এই মাস' },
-                { key: 'custom', label: 'কাস্টম' },
-              ].map(({ key, label }) => (
-                <Button
-                  key={key}
-                  variant={dateRange === key ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setDateRange(key as DateRange)}
-                  className="h-8 text-xs"
-                >
-                  {label}
-                </Button>
-              ))}
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: 'today', label: 'আজ' },
+                  { key: '7days', label: '৭ দিন' },
+                  { key: '30days', label: '৩০ দিন' },
+                  { key: 'this_month', label: 'এই মাস' },
+                  { key: 'custom', label: 'কাস্টম' },
+                ].map(({ key, label }) => (
+                  <Button
+                    key={key}
+                    variant={dateRange === key ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDateRange(key as DateRange)}
+                    className="h-8 text-xs"
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-1.5 border-t pt-2">
+                {[
+                  { key: 'jan', label: 'জানু' },
+                  { key: 'feb', label: 'ফেব্রু' },
+                  { key: 'mar', label: 'মার্চ' },
+                  { key: 'apr', label: 'এপ্রি' },
+                  { key: 'may', label: 'মে' },
+                  { key: 'jun', label: 'জুন' },
+                  { key: 'jul', label: 'জুলা' },
+                  { key: 'aug', label: 'আগ' },
+                  { key: 'sep', label: 'সেপ্টে' },
+                  { key: 'oct', label: 'অক্টো' },
+                  { key: 'nov', label: 'নভে' },
+                  { key: 'dec', label: 'ডিসে' },
+                ].map(({ key, label }) => (
+                  <Button
+                    key={key}
+                    variant={dateRange === key ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDateRange(key as DateRange)}
+                    className="h-7 px-2 text-[10px] min-w-[45px]"
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
             </div>
             {dateRange === 'custom' && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-2 md:mt-0">
                 <Input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="h-8 text-xs w-36" />
                 <span className="text-xs text-muted-foreground">—</span>
                 <Input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="h-8 text-xs w-36" />
               </div>
             )}
-            <Badge variant="secondary" className="ml-auto text-xs">
+            <Badge variant="secondary" className="mt-2 md:mt-0 md:ml-auto text-xs whitespace-nowrap">
               <CalendarDays className="w-3 h-3 mr-1" />
               {format(bounds.from, 'dd MMM')} - {format(bounds.to, 'dd MMM yyyy')}
             </Badge>
@@ -453,16 +576,87 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
               </CardContent>
             </Card>
           </div>
+
+          {/* Quick Download Section */}
+          <Card className="border-dashed bg-muted/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Download className="w-5 h-5 text-primary" />
+                রিপোর্ট ডাউনলোড করন
+              </CardTitle>
+              <CardDescription>আপনার প্রয়োজন অনুযায়ী নির্দিষ্ট ফরম্যাটে রিপোর্ট সেভ করুন</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-2 p-3 rounded-lg border bg-background group hover:border-primary/50 transition-colors">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="p-2 bg-green-100 rounded text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                      <ShoppingCart className="w-4 h-4" />
+                    </div>
+                    <span className="font-semibold text-sm">বিক্রয় রিপোর্ট</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={downloadSalesCSV} className="flex-1 h-8 text-[11px] gap-1.5">
+                      <FileSpreadsheet className="w-3 h-3" /> CSV
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={downloadSalesPDF} className="flex-1 h-8 text-[11px] gap-1.5">
+                      <Download className="w-3 h-3" /> PDF
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 p-3 rounded-lg border bg-background group hover:border-primary/50 transition-colors">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="p-2 bg-red-100 rounded text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
+                      <Receipt className="w-4 h-4" />
+                    </div>
+                    <span className="font-semibold text-sm">খরচ রিপোর্ট</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={downloadExpensesCSV} className="flex-1 h-8 text-[11px] gap-1.5">
+                      <FileSpreadsheet className="w-3 h-3" /> CSV
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={downloadExpensesPDF} className="flex-1 h-8 text-[11px] gap-1.5">
+                      <Download className="w-3 h-3" /> PDF
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 p-3 rounded-lg border bg-background group hover:border-primary/50 transition-colors">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="p-2 bg-blue-100 rounded text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <Package className="w-4 h-4" />
+                    </div>
+                    <span className="font-semibold text-sm">ইনভেন্টরি স্ট্যাটাস</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={downloadInventoryCSV} className="flex-1 h-8 text-[11px] gap-1.5">
+                      <FileSpreadsheet className="w-3 h-3" /> CSV
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={downloadInventoryPDF} className="flex-1 h-8 text-[11px] gap-1.5">
+                      <Download className="w-3 h-3" /> PDF
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ===== SALES TAB ===== */}
         <TabsContent value="sales" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">বিক্রয় বিশ্লেষণ ({dateRangeLabel()})</h2>
-            <Button variant="outline" size="sm" onClick={downloadSalesCSV} className="gap-2">
-              <Download className="w-4 h-4" />
-              CSV ডাউনলোড
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={downloadSalesCSV} className="gap-2">
+                <Download className="w-4 h-4" />
+                CSV ডাউনলোড
+              </Button>
+              <Button variant="outline" size="sm" onClick={downloadSalesPDF} className="gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                PDF ডাউনলোড
+              </Button>
+            </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard title="মোট বিক্রয়" value={formatCurrency(totalRevenue)} icon={TrendingUp} color="text-green-600" />
@@ -592,10 +786,16 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
         <TabsContent value="expenses" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">খরচ বিশ্লেষণ ({dateRangeLabel()})</h2>
-            <Button variant="outline" size="sm" onClick={downloadExpensesCSV} className="gap-2">
-              <Download className="w-4 h-4" />
-              CSV ডাউনলোড
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={downloadExpensesCSV} className="gap-2">
+                <Download className="w-4 h-4" />
+                CSV ডাউনলোড
+              </Button>
+              <Button variant="outline" size="sm" onClick={downloadExpensesPDF} className="gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                PDF ডাউনলোড
+              </Button>
+            </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard title="মোট খরচ" value={formatCurrency(totalExpensesAmount)} icon={Receipt} color="text-red-500" />
@@ -707,10 +907,16 @@ export function ReportsClient({ shopId, currency }: ReportsClientProps) {
         <TabsContent value="inventory" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">ইনভেন্টরি বিশ্লেষণ</h2>
-            <Button variant="outline" size="sm" onClick={downloadInventoryCSV} className="gap-2">
-              <Download className="w-4 h-4" />
-              CSV ডাউনলোড
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={downloadInventoryCSV} className="gap-2">
+                <Download className="w-4 h-4" />
+                CSV ডাউনলোড
+              </Button>
+              <Button variant="outline" size="sm" onClick={downloadInventoryPDF} className="gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                PDF ডাউনলোড
+              </Button>
+            </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard title="মোট পণ্য" value={products.length} icon={Package} color="text-blue-500" subtitle={`${products.filter((p: any) => p.is_active).length} সক্রিয়`} />
