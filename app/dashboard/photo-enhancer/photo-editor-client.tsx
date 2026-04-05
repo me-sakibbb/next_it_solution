@@ -126,6 +126,7 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
   const [showPrintDialog, setShowPrintDialog] = useState(false)
   const [printCopies, setPrintCopies] = useState<number | string>(8)
   const [printSpacing, setPrintSpacing] = useState<number | string>(5) // mm
+  const [printOrientation, setPrintOrientation] = useState<'landscape' | 'portrait'>('landscape')
 
   // Undo history stack
   const [history, setHistory] = useState<HistorySnapshot[]>([])
@@ -1371,8 +1372,9 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
     ectx.drawImage(filtered, 0, 0)
 
     // A4 dimensions in mm
-    const A4_WIDTH_MM = 210
-    const A4_HEIGHT_MM = 297
+    const IS_LANDSCAPE = printOrientation === 'landscape'
+    const A4_WIDTH_MM = IS_LANDSCAPE ? 297 : 210
+    const A4_HEIGHT_MM = IS_LANDSCAPE ? 210 : 297
     const DPI = 300 // Standard print resolution
     const MM_TO_PX = DPI / 25.4 // Conversion factor
 
@@ -1386,7 +1388,7 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
 
     // Create PDF
     const pdf = new jsPDF({
-      orientation: 'portrait',
+      orientation: printOrientation,
       unit: 'mm',
       format: 'a4'
     })
@@ -1953,6 +1955,25 @@ export function PhotoEditorClient({ shopId }: PhotoEditorClientProps) {
                 value={printSpacing} 
                 onChange={(e) => setPrintSpacing(e.target.value.replace(/^0+(?=\d)/, ''))} 
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Page Orientation</Label>
+              <div className="flex gap-2">
+                <Button 
+                  variant={printOrientation === 'landscape' ? 'default' : 'outline'} 
+                  className="flex-1"
+                  onClick={() => setPrintOrientation('landscape')}
+                >
+                  Landscape
+                </Button>
+                <Button 
+                  variant={printOrientation === 'portrait' ? 'default' : 'outline'} 
+                  className="flex-1"
+                  onClick={() => setPrintOrientation('portrait')}
+                >
+                  Portrait
+                </Button>
+              </div>
             </div>
             <div className="p-4 bg-muted rounded-lg text-sm">
               Layout: {Math.ceil(Math.sqrt(Number(printCopies) || 1))} cols x {Math.ceil((Number(printCopies) || 1) / Math.ceil(Math.sqrt(Number(printCopies) || 1)))} rows

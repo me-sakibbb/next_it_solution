@@ -16,8 +16,8 @@ export function SupportWidget() {
     <div className="fixed bottom-6 right-6 z-50">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon" className="h-14 w-14 rounded-full shadow-xl bg-primary hover:bg-primary/90 transition-all hover:scale-105">
-            <HelpCircle className="h-7 w-7" />
+          <Button size="icon" className="h-16 w-16 rounded-full shadow-xl bg-primary hover:bg-primary/90 transition-all hover:scale-110 animate-ring-glow group">
+            <HelpCircle className="size-8 animate-wiggle" />
             <span className="sr-only">Support</span>
           </Button>
         </DropdownMenuTrigger>

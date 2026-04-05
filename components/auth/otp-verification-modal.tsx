@@ -41,7 +41,7 @@ export function OTPVerificationModal({
     const supabase = createClient()
 
     const handleVerify = async () => {
-        if (otp.length !== 8) return
+        if (otp.length !== 6) return
 
         setIsVerifying(true)
         try {
@@ -142,13 +142,13 @@ export function OTPVerificationModal({
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold text-center">ইমেইল ভেরিফিকেশন</DialogTitle>
                     <DialogDescription className="text-center">
-                        আমরা <span className="font-semibold text-foreground">{email}</span> ঠিকানায় একটি ভেরিফিকেশন ইমেইল পাঠিয়েছি। আপনি ইমেইলের <span className="font-semibold text-foreground">লিঙ্কে ক্লিক করে</span> অথবা নিচের <span className="font-semibold text-foreground">৮-সংখ্যার কোডটি</span> দিয়ে ভেরিফাই করতে পারেন।
+                        আমরা <span className="font-semibold text-foreground">{email}</span> ঠিকানায় একটি ভেরিফিকেশন ইমেইল পাঠিয়েছি। আপনি ইমেইলের <span className="font-semibold text-foreground">লিঙ্কে ক্লিক করে</span> অথবা নিচের <span className="font-semibold text-foreground">৬-সংখ্যার কোডটি</span> দিয়ে ভেরিফাই করতে পারেন।
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="flex flex-col items-center justify-center space-y-6 py-4">
                     <InputOTP
-                        maxLength={8}
+                        maxLength={6}
                         value={otp}
                         onChange={setOtp}
                         disabled={isVerifying}
@@ -157,20 +157,18 @@ export function OTPVerificationModal({
                             <InputOTPSlot index={0} />
                             <InputOTPSlot index={1} />
                             <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
                         </InputOTPGroup>
                         <div className="w-2" />
                         <InputOTPGroup>
+                            <InputOTPSlot index={3} />
                             <InputOTPSlot index={4} />
                             <InputOTPSlot index={5} />
-                            <InputOTPSlot index={6} />
-                            <InputOTPSlot index={7} />
                         </InputOTPGroup>
                     </InputOTP>
 
                     <Button
                         className="w-full h-11 text-lg font-bold"
-                        disabled={otp.length !== 8 || isVerifying}
+                        disabled={otp.length !== 6 || isVerifying}
                         onClick={handleVerify}
                     >
                         {isVerifying ? (
