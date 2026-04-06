@@ -33,8 +33,17 @@ export function AccountOverview({ subscription, balance }: AccountOverviewProps)
         }
     }
 
-    // Calculate progress (assuming 30 days for paid plans)
-    const totalDays = 30
+    // Calculate progress (dynamic total days based on the subscription period)
+    let totalDays = 30
+    if (subscription) {
+      const start = subscription.subscription_start_date || subscription.trial_start_date || subscription.created_at
+      const end = subscription.subscription_end_date || subscription.trial_end_date
+      if (start && end) {
+        const startDt = new Date(start)
+        const endDt = new Date(end)
+        totalDays = Math.max(1, Math.ceil((endDt.getTime() - startDt.getTime()) / (1000 * 60 * 60 * 24)))
+      }
+    }
     const progress = Math.min(100, Math.max(0, (daysRemaining / totalDays) * 100))
 
     const planMap: Record<string, string> = {

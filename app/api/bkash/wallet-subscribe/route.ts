@@ -60,17 +60,21 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Deduct balance
-        const newBalance = currentBalance - planPrice
-        const { error: balanceErr } = await adminSupabase
+        // Deduct balance atomically
+        const { error: balanceErr, data: updatedUser } = await adminSupabase
             .from('users')
-            .update({ balance: newBalance })
+            .update({ balance: currentBalance - planPrice })
             .eq('id', user.id)
+            .gte('balance', planPrice) // Ensure balance is still sufficient at the moment of update
+            .select('balance')
+            .single()
 
-        if (balanceErr) {
-            console.error('Failed to deduct balance:', balanceErr)
-            return NextResponse.json({ error: 'ব্যালেন্স কাটাতে ব্যর্থ হয়েছে' }, { status: 500 })
+        if (balanceErr || !updatedUser) {
+            console.error('Failed to deduct balance (possible race condition or insufficient funds):', balanceErr)
+            return NextResponse.json({ error: 'ব্যালেন্স কাটাতে ব্যর্থ হয়েছে বা ইনসাফিসিয়েন্ট ব্যালেন্স' }, { status: 500 })
         }
+
+        const newBalance = updatedUser.balance
 
         // Log balance transaction (debit for subscription purchase)
         await adminSupabase.from('balance_transactions').insert({
@@ -131,6 +135,12 @@ export async function POST(request: NextRequest) {
                 console.error('Failed to update subscription:', updateError)
                 return NextResponse.json({ error: 'সাবস্ক্রিপশন আপডেট করতে ব্যর্থ হয়েছে' }, { status: 500 })
             }
+
+            // Clear reminder logs for this subscription since it's renewed
+            await adminSupabase
+                .from('subscription_reminder_log')
+                .delete()
+                .eq('subscription_id', existing.id)
         } else {
             const { error: insertError } = await adminSupabase
                 .from('subscriptions')

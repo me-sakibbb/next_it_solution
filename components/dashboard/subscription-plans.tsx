@@ -220,33 +220,33 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
                                     {/* bKash Direct */}
                                     <Button
                                         className="w-full gap-2 bg-[#d12053] hover:bg-[#b01845] text-white border-none shadow-sm"
-                                        disabled={isProcessing || isCurrent}
+                                        disabled={isProcessing}
                                         onClick={() => openConfirm(plan, 'bkash')}
                                     >
                                         {isProcessing && processingPlan === plan.id ? (
                                             <Loader2 className="w-4 h-4 animate-spin" />
                                         ) : null}
-                                        {isCurrent ? 'সক্রিয় আছে' : 'bKash দিয়ে কিনুন'}
+                                        {isCurrent ? 'রিনিউ / মেয়াদ বাড়ান' : (currentPlan ? 'প্ল্যান পরিবর্তন করুন' : 'bKash দিয়ে কিনুন')}
                                     </Button>
 
                                     {/* Wallet */}
                                     <Button
                                         variant="outline"
                                         className="w-full gap-2"
-                                        disabled={isProcessing || isCurrent || !canAffordWithWallet}
+                                        disabled={isProcessing || !canAffordWithWallet}
                                         onClick={() => openConfirm(plan, 'wallet')}
                                         title={!canAffordWithWallet ? `পর্যাপ্ত ব্যালেন্স নেই (৳${plan.price} প্রয়োজন)` : undefined}
                                     >
                                         <Wallet className="w-4 h-4" />
-                                        ব্যালেন্স দিয়ে কিনুন
+                                        {isCurrent ? 'ব্যালেন্স দিয়ে রিনিউ' : 'ব্যালেন্স দিয়ে কিনুন'}
                                         {!canAffordWithWallet && (
                                             <AlertCircle className="w-3 h-3 text-muted-foreground" />
                                         )}
                                     </Button>
 
-                                    {!canAffordWithWallet && !isCurrent && (
+                                    {!canAffordWithWallet && (
                                         <p className="text-[10px] text-muted-foreground text-center">
-                                            আরও ৳{(plan.price - userBalance).toFixed(0)} প্রয়োজন
+                                            {userBalance < plan.price ? `আরও ৳${(plan.price - userBalance).toFixed(0)} প্রয়োজন` : ''}
                                         </p>
                                     )}
                                 </div>

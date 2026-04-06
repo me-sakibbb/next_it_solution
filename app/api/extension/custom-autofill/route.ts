@@ -52,56 +52,69 @@ export async function POST(req: NextRequest) {
             
         const balance = userRecord?.balance || 0;
 
-        if (balance < 1) {
+        const body = await req.json();
+        const { document, profileData, targetFields, context } = body;
+        
+        let cost = 1;
+        if (document && !profileData) {
+            cost = 2; // Instant Extraction + Fill
+        } else if (profileData) {
+            cost = 1; // Fill only
+        }
+
+        if (balance < cost) {
             return NextResponse.json(
-                { error: 'Insufficient balance. You need at least 1 taka to fill a form.' },
+                { error: `Insufficient balance. You need at least ${cost} taka to continue.` },
                 { status: 403, headers: CORS_HEADERS }
             )
         }
 
-        const body = await req.json();
-        const { document, targetFields } = body;
-
-        if (!document) {
-            return NextResponse.json({ error: 'Missing document payload' }, { status: 400, headers: CORS_HEADERS });
+        if (!document && !profileData) {
+            return NextResponse.json({ error: 'Missing document or profile payload' }, { status: 400, headers: CORS_HEADERS });
         }
 
         // Build the core instruction
-        let prompt = `You are an expert data extraction assistant. Your job is to extract personal information from a document and map it to a specific web form.\n\n`;
+        let prompt = `You are an expert form filling assistant. Your job is to take user data and map it to a specific web form with maximum accuracy.\n\n`;
+        
+        if (context) {
+            prompt += `PAGE CONTEXT:\n`;
+            if (context.url) prompt += `- URL: ${context.url}\n`;
+            if (context.title) prompt += `- Title: ${context.title}\n\n`;
+        }
+
+        if (profileData) {
+            prompt += `USER PROFILE DATA (Source of truth):\n`;
+            prompt += JSON.stringify(profileData, null, 2) + '\n\n';
+        }
 
         if (targetFields && Object.keys(targetFields).length > 0) {
             prompt += `TARGET FORM FIELDS:\n`;
             prompt += `Below is an array of form fields extracted from the page. Each field has an 'id', 'name', 'type', 'label', etc.\n`;
-            prompt += `You must exact data from the document and return a valid JSON object where the keys are the field 'id' (or 'name' if 'id' is empty), and the values are the extracted values.\n`;
             prompt += JSON.stringify(targetFields, null, 2) + '\n\n';
 
-            prompt += `EXTRACTION RULES:\n`;
-            prompt += `1. Return ONLY a valid JSON object mapping the field ID/NAME to the extracted value.\n`;
-            prompt += `2. Perform DEEP SEMANTIC MATCHING - use the provided labels/placeholders to understand what each field means.\n`;
-            prompt += `   - "নাম" or "Name" or "Full Name" → match to keys related to name.\n`;
-            prompt += `   - "জন্ম তারিখ" or "DOB" or "Date of Birth" → find the DOB.\n`;
-            prompt += `   - "জাতীয় পরিচয়পত্র নং" or "NID" or "National ID" → NID.\n`;
-            prompt += `3. If a field has both Bangla and English variants:\n`;
-            prompt += `   - Transliterate to English or translate to Bangla if required by the label context.\n`;
-            prompt += `4. Format dates appropriately. If you see "15-07-1990", convert to "1990-07-15" standard format for date inputs.\n`;
-            prompt += `5. If an input type is "radio" or "checkbox", or a "select" field has options provided, use the EXACT value of the option that matches semantically.\n`;
-            prompt += `6. For fields NOT found in the document, ignore them or set them to null. Do NOT guess or hallucinate details.\n`;
-            prompt += `7. Be aggressive about filling form fields. Use derivations (e.g. calculate age from DOB if an age field exists).\n`;
+            prompt += `MAPPING RULES & INTELLIGENCE:\n`;
+            prompt += `1. Return ONLY a valid JSON object mapping the exact field ID/NAME to the value.\n`;
+            prompt += `2. CROSS-LANGUAGE TRANSLATION: If the source data is in English but the form requires Bengali (Bangla), TRANSLATE the value accurately (e.g., source="Dhaka" -> form="ঢাকা"). Vice versa applies.\n`;
+            prompt += `3. DEEP REASONING & INFERENCE: Do not be rigid. If a form asks for something not explicitly labeled but clearly available inside another field (e.g., extracting "Village/গ্রাম" from a full address string), extract it intelligently.\n`;
+            prompt += `4. DATA MANIPULATION: Feel free to format, split, or merge data to satisfy the form. (e.g., Splitting "Full Name" into "First Name" & "Last Name").\n`;
+            prompt += `5. For 'select', 'radio', or 'checkbox' fields, analyze all options and match with the exact value that logically represents the source data.\n`;
+            prompt += `6. Format dates strictly as YYYY-MM-DD.\n`;
+            prompt += `7. BE AGGRESSIVE BUT ACCURATE: Connect all the logical dots to fill as many fields as humanly possible based on the source context. Only output null if the data is completely impossible to infer.\n`;
         } else {
-            prompt += `Extract ALL personal data from the document as a flat JSON object with descriptive English snake_case keys.\n`;
+            prompt += `Map the source data to a flat JSON object with descriptive keys.\n`;
         }
 
         prompt += `\nReturn ONLY the JSON object, no explanation, no markdown.`;
 
         const parts: any[] = [];
+        parts.push({ text: prompt });
 
-        if (document.type === 'text') {
-            parts.push({ text: prompt + `\n\nDOCUMENT CONTENT:\n${document.data}` });
-        } else if (document.type === 'image' || document.type === 'pdf') {
-            parts.push({ text: prompt });
-            parts.push({ inline_data: { mime_type: document.mimeType, data: document.data } });
-        } else {
-            return NextResponse.json({ error: 'Unsupported document format' }, { status: 400, headers: CORS_HEADERS });
+        if (document) {
+            if (document.type === 'text') {
+                parts.push({ text: `DOCUMENT CONTENT:\n${document.data}` });
+            } else if (document.type === 'image' || document.type === 'pdf') {
+                parts.push({ inline_data: { mime_type: document.mimeType, data: document.data } });
+            }
         }
 
         const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
@@ -134,8 +147,8 @@ export async function POST(req: NextRequest) {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) text = jsonMatch[0];
 
-        // Deduct balance and register transaction only upon successful AI execution
-        const newBalance = balance - 1;
+        // Deduct balance
+        const newBalance = balance - cost;
         await adminSupabase
             .from('users')
             .update({ balance: newBalance })
@@ -145,9 +158,9 @@ export async function POST(req: NextRequest) {
             .from('balance_transactions')
             .insert({
                 user_id: user.id,
-                amount: 1,
+                amount: cost,
                 type: 'debit',
-                description: 'Custom Form Autofill Fee'
+                description: cost === 2 ? 'Instant Form Extraction & Autofill' : 'Profile-Based Form Autofill'
             });
 
         return NextResponse.json(
@@ -160,3 +173,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500, headers: CORS_HEADERS })
     }
 }
+

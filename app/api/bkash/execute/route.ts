@@ -165,6 +165,12 @@ export async function GET(request: NextRequest) {
                 if (updateError) {
                     console.error('Failed to update subscription:', updateError)
                 }
+
+                // Clear reminder logs for this subscription since it's renewed
+                await adminSupabase
+                    .from('subscription_reminder_log')
+                    .delete()
+                    .eq('subscription_id', existing.id)
             } else {
                 const { error: insertError } = await adminSupabase
                     .from('subscriptions')

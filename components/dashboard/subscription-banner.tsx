@@ -11,12 +11,13 @@ export function SubscriptionBanner({ userId }: { userId: string }) {
   const { status } = useSubscriptionStatus(userId)
   const [dismissed, setDismissed] = useState(false)
 
-  if (!status || dismissed || status.isActive) return null
+  if (!status || dismissed) return null
 
   const daysRemaining = status.daysRemaining || 0
   const isExpiringSoon = daysRemaining > 0 && daysRemaining <= 7
+  const isExpired = !status.isActive || daysRemaining <= 0
 
-  if (!isExpiringSoon && daysRemaining > 0) return null
+  if (!isExpiringSoon && !isExpired) return null
 
   return (
     <Alert variant="destructive" className="mb-4">
