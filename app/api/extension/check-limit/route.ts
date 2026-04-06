@@ -54,63 +54,41 @@ export async function GET(req: NextRequest) {
         .limit(1)
         .maybeSingle()
 
-    const { data: userRecord } = await adminSupabase
-        .from('users')
-        .select('balance')
-        .eq('id', user.id)
-        .single()
-
-    const balance = userRecord?.balance || 0
-
     if (subError || !subscription) {
-        if (balance < 1) {
-            return NextResponse.json(
-                { error: 'No subscription found and insufficient balance', allowed: false, used: 0, limit: 0, remaining: 0, plan: null, balance },
-                { status: 200, headers: CORS_HEADERS }
-            )
-        }
-    }
-
-    // Check subscription validity
-    const isActive =
-        subscription &&
-        subscription.status === 'active' &&
-        (!subscription.subscription_end_date ||
-            new Date(subscription.subscription_end_date) > new Date())
-
-    // If neither active subscription nor enough balance, they are fully restricted
-    if (!isActive && balance < 1) {
         return NextResponse.json(
-            { error: 'Subscription expired or inactive', allowed: false, used: 0, limit: 0, remaining: 0, plan: subscription?.plan_type || 'None', balance },
+            { error: 'No subscription found', allowed: false, used: 0, limit: 0, remaining: 0, plan: null },
             { status: 200, headers: CORS_HEADERS }
         )
     }
 
-    const limits = isActive ? getLimitsForPlan(subscription.plan_type as SubscriptionPlanType) : { autofill_applications: 0, profile_extractions: 0 }
+    // Check subscription validity
+    const isActive =
+        subscription.status === 'active' &&
+        (!subscription.subscription_end_date ||
+            new Date(subscription.subscription_end_date) > new Date())
+
+    if (!isActive) {
+        return NextResponse.json(
+            { error: 'Subscription expired or inactive', allowed: false, used: 0, limit: 0, remaining: 0, plan: subscription.plan_type },
+            { status: 200, headers: CORS_HEADERS }
+        )
+    }
+
+    const limits = getLimitsForPlan(subscription.plan_type as SubscriptionPlanType)
 
     // Autofill usage
-    const autofillUsed = subscription?.autofill_usage || 0
+    const autofillUsed = subscription.autofill_usage || 0
     const autofillLimit = limits.autofill_applications
     const autofillRemaining = Math.max(0, autofillLimit - autofillUsed)
 
     // Extraction usage
-    const extractionUsed = subscription?.extraction_usage || 0
+    const extractionUsed = subscription.extraction_usage || 0
     const extractionLimit = limits.profile_extractions
     const extractionRemaining = Math.max(0, extractionLimit - extractionUsed)
 
-    const { data: shop } = await adminSupabase
-        .from('shops')
-        .select('name')
-        .eq('owner_id', user.id)
-        .eq('is_active', true)
-        .single()
-
-    const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
-    const shopName = shop?.name || 'Loading Shop...'
-
     return NextResponse.json(
         {
-            allowed: extractionRemaining > 0 || balance >= 1,
+            allowed: autofillRemaining > 0,
             used: autofillUsed,
             limit: autofillLimit,
             remaining: autofillRemaining,
@@ -124,11 +102,8 @@ export async function GET(req: NextRequest) {
                 limit: extractionLimit,
                 remaining: extractionRemaining
             },
-            plan: subscription?.plan_type || 'None',
+            plan: subscription.plan_type,
             email: user.email,
-            userName,
-            shopName,
-            balance
         },
         { status: 200, headers: CORS_HEADERS }
     )
