@@ -76,6 +76,24 @@ export async function GET(req: NextRequest) {
 
     const limits = getLimitsForPlan(subscription.plan_type as SubscriptionPlanType)
 
+    // Fetch user details (balance, name)
+    const { data: userDetails } = await adminSupabase
+        .from('users')
+        .select('full_name, balance')
+        .eq('id', user.id)
+        .maybeSingle()
+
+    // Fetch shop name (either as owner or member)
+    const { data: shopMembership } = await adminSupabase
+        .from('shop_members')
+        .select('shop_id, shops(name)')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+
+    const shopName = (shopMembership?.shops as any)?.name || 'My Shop'
+
     // Autofill usage
     const autofillUsed = subscription.autofill_usage || 0
     const autofillLimit = limits.autofill_applications
@@ -88,7 +106,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
         {
-            allowed: autofillRemaining > 0,
+            allowed: autofillRemaining > 0 || (userDetails?.balance || 0) >= 1,
             used: autofillUsed,
             limit: autofillLimit,
             remaining: autofillRemaining,
@@ -104,6 +122,9 @@ export async function GET(req: NextRequest) {
             },
             plan: subscription.plan_type,
             email: user.email,
+            userName: userDetails?.full_name || user.email?.split('@')[0],
+            shopName: shopName,
+            balance: userDetails?.balance || 0
         },
         { status: 200, headers: CORS_HEADERS }
     )

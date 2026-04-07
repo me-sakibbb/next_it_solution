@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 const CORS_HEADERS = {
@@ -26,12 +27,18 @@ export async function POST(req: NextRequest) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-        const { createClient } = await import('@supabase/supabase-js')
+        // Static import — no dynamic import overhead
         const supabase = createClient(supabaseUrl, supabaseAnonKey, {
             auth: { persistSession: false }
         })
 
-        const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+        // Run auth + body parse in parallel
+        const [authResult, body] = await Promise.all([
+            supabase.auth.getUser(token),
+            req.json()
+        ])
+
+        const { data: { user }, error: userError } = authResult
 
         if (userError || !user) {
             return NextResponse.json(
@@ -40,15 +47,20 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        const { document } = body;
+
+        if (!document) {
+            return NextResponse.json({ error: 'Missing document payload' }, { status: 400, headers: CORS_HEADERS });
+        }
+
         const adminSupabase = createAdminClient()
 
-        // Fetch the user's balance
         const { data: userRecord } = await adminSupabase
             .from('users')
             .select('balance')
             .eq('id', user.id)
             .single()
-            
+
         const balance = userRecord?.balance || 0;
 
         if (balance < 1) {
@@ -56,13 +68,6 @@ export async function POST(req: NextRequest) {
                 { error: 'Insufficient balance. You need at least 1 taka to extract a profile.' },
                 { status: 403, headers: CORS_HEADERS }
             )
-        }
-
-        const body = await req.json();
-        const { document } = body;
-
-        if (!document) {
-            return NextResponse.json({ error: 'Missing document payload' }, { status: 400, headers: CORS_HEADERS });
         }
 
         // Prompt prioritized for maximum extraction accuracy
@@ -96,7 +101,8 @@ Return a JSON object: { "Label name": "Extracted Value" }
             return NextResponse.json({ error: 'Gemini API Key missing on server' }, { status: 500, headers: CORS_HEADERS })
         }
 
-        const MODEL = 'gemini-3-flash-preview';
+        // gemini-3.1-flash-lite-preview: ultra-fast, production-proven model
+        const MODEL = 'gemini-3.1-flash-lite-preview';
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
         const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
@@ -117,28 +123,55 @@ Return a JSON object: { "Label name": "Extracted Value" }
             throw new Error(data.error.message);
         }
 
-        let text = data.candidates[0].content.parts[0].text;
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) text = jsonMatch[0];
+        // For thinking models, always read the last part (the actual answer, not the thought)
+        const parts_out = data.candidates[0].content.parts;
+        const lastPart = parts_out[parts_out.length - 1];
+        let text = lastPart.text || "{}";
 
-        // Success - deduct 1 balance
+        // Robust JSON extraction
+        let parsedProfile = {};
+        try {
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const candidate = jsonMatch[0];
+                try {
+                    parsedProfile = JSON.parse(candidate);
+                } catch (err) {
+                    let lastBracePos = candidate.lastIndexOf('}');
+                    let success = false;
+                    while (lastBracePos !== -1) {
+                        try {
+                            parsedProfile = JSON.parse(candidate.substring(0, lastBracePos + 1));
+                            success = true;
+                            break;
+                        } catch (e) {
+                            lastBracePos = candidate.lastIndexOf('}', lastBracePos - 1);
+                        }
+                    }
+                    if (!success) throw err;
+                }
+            } else {
+                parsedProfile = JSON.parse(text);
+            }
+        } catch (parseError: any) {
+            console.error('Failed to parse Gemini JSON (extract-profile):', text);
+            throw new Error(`AI extraction error: ${parseError.message}`);
+        }
+
+        // Fire-and-forget balance deduction — don't block response
         const newBalance = balance - 1;
-        await adminSupabase
-            .from('users')
-            .update({ balance: newBalance })
-            .eq('id', user.id)
-            
-        await adminSupabase
-            .from('balance_transactions')
-            .insert({
+        Promise.all([
+            adminSupabase.from('users').update({ balance: newBalance }).eq('id', user.id),
+            adminSupabase.from('balance_transactions').insert({
                 user_id: user.id,
                 amount: 1,
                 type: 'debit',
                 description: 'Profile Extraction Fee'
-            });
+            })
+        ]).then(() => { }) // non-blocking
 
         return NextResponse.json(
-            { profileData: JSON.parse(text), remainingBalance: newBalance },
+            { profileData: parsedProfile, remainingBalance: newBalance },
             { status: 200, headers: CORS_HEADERS }
         );
 

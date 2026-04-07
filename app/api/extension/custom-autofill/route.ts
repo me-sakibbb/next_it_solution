@@ -49,12 +49,12 @@ export async function POST(req: NextRequest) {
             .select('balance')
             .eq('id', user.id)
             .single()
-            
+
         const balance = userRecord?.balance || 0;
 
         const body = await req.json();
         const { document, profileData, targetFields, context } = body;
-        
+
         let cost = 1;
         if (document && !profileData) {
             cost = 2; // Instant Extraction + Fill
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 
         // Build the core instruction
         let prompt = `You are an expert form filling assistant. Your job is to take user data and map it to a specific web form with maximum accuracy.\n\n`;
-        
+
         if (context) {
             prompt += `PAGE CONTEXT:\n`;
             if (context.url) prompt += `- URL: ${context.url}\n`;
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Gemini API Key missing on server' }, { status: 500, headers: CORS_HEADERS })
         }
 
-        const MODEL = 'gemini-3-flash-preview';
+        const MODEL = 'gemini-3.1-flash-lite-preview';
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
         const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
@@ -143,9 +143,42 @@ export async function POST(req: NextRequest) {
             throw new Error(data.error.message);
         }
 
-        let text = data.candidates[0].content.parts[0].text;
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) text = jsonMatch[0];
+        // For thinking models, always read the last part (the actual answer, not the thought)
+        const parts_out = data.candidates[0].content.parts;
+        const lastPart = parts_out[parts_out.length - 1];
+        let text = lastPart.text || "{}";
+
+        // Robust JSON extraction
+        let parsedFields = {};
+        try {
+            // First try to find a valid JSON block using a greedy match
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const candidate = jsonMatch[0];
+                try {
+                    parsedFields = JSON.parse(candidate);
+                } catch (err) {
+                    // Backtrack from the end to find the first valid closing brace
+                    let lastBracePos = candidate.lastIndexOf('}');
+                    let success = false;
+                    while (lastBracePos !== -1) {
+                        try {
+                            parsedFields = JSON.parse(candidate.substring(0, lastBracePos + 1));
+                            success = true;
+                            break;
+                        } catch (e) {
+                            lastBracePos = candidate.lastIndexOf('}', lastBracePos - 1);
+                        }
+                    }
+                    if (!success) throw err;
+                }
+            } else {
+                parsedFields = JSON.parse(text);
+            }
+        } catch (parseError: any) {
+            console.error('Failed to parse Gemini JSON (custom-autofill):', text);
+            throw new Error(`AI mapping error: ${parseError.message}`);
+        }
 
         // Deduct balance
         const newBalance = balance - cost;
@@ -153,7 +186,7 @@ export async function POST(req: NextRequest) {
             .from('users')
             .update({ balance: newBalance })
             .eq('id', user.id)
-            
+
         await adminSupabase
             .from('balance_transactions')
             .insert({
@@ -164,7 +197,7 @@ export async function POST(req: NextRequest) {
             });
 
         return NextResponse.json(
-            { fields: JSON.parse(text), usage: data.usageMetadata, remainingBalance: newBalance },
+            { fields: parsedFields, usage: data.usageMetadata, remainingBalance: newBalance },
             { status: 200, headers: CORS_HEADERS }
         );
 
