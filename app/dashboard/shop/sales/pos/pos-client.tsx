@@ -19,6 +19,7 @@ import { useSales } from '@/hooks/use-sales'
 import { useProducts } from '@/hooks/use-products'
 import { useCustomers } from '@/hooks/use-customers'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 interface CartItem {
   product_id: string
@@ -277,17 +278,28 @@ export function POSClient({ shopId, currency }: POSClientProps) {
                 onClick={() => !isOutOfStock && addToCart(product)}
               >
                 {/* Top Visual Area */}
-                <div className={`h-24 w-full ${theme.bg} flex items-center justify-center relative overflow-hidden`}>
-                  {/* Decorative Elements */}
-                  <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${theme.iconBg} opacity-50 blur-2xl transition-transform duration-500 group-hover:scale-150`} />
-                  <div className={`absolute -left-6 -bottom-6 h-20 w-20 rounded-full ${theme.iconBg} opacity-50 blur-xl transition-transform duration-500 group-hover:scale-150`} />
+                <div className={`h-32 w-full ${!product.image_url ? theme.bg : 'bg-muted'} flex items-center justify-center relative overflow-hidden`}>
+                  {product.image_url ? (
+                    <Image 
+                      src={product.image_url} 
+                      alt={product.name} 
+                      fill 
+                      className="object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
+                    />
+                  ) : (
+                    <>
+                      {/* Decorative Elements */}
+                      <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${theme.iconBg} opacity-50 blur-2xl transition-transform duration-500 group-hover:scale-150` } />
+                      <div className={`absolute -left-6 -bottom-6 h-20 w-20 rounded-full ${theme.iconBg} opacity-50 blur-xl transition-transform duration-500 group-hover:scale-150` } />
 
-                  {/* Center Initial/Icon */}
-                  <div className={`relative z-10 h-12 w-12 rounded-full ${theme.bg} border-2 ${theme.border} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-                    <span className={`text-lg font-bold ${theme.text}`}>
-                      {product.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                      {/* Center Initial/Icon */}
+                      <div className={`relative z-10 h-12 w-12 rounded-full ${theme.bg} border-2 ${theme.border} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                        <span className={`text-lg font-bold ${theme.text}`}>
+                          {product.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    </>
+                  )}
 
                   {/* Category Badge - Top Left */}
                   <div className="absolute top-2 left-2 z-10">

@@ -45,14 +45,32 @@ export async function GET(req: NextRequest) {
 
     const adminSupabase = createAdminClient()
 
-    // Fetch the active subscription
-    const { data: subscription, error: subError } = await adminSupabase
-        .from('subscriptions')
-        .select('plan_type, status, autofill_usage, extraction_usage, subscription_end_date')
-        .eq('user_id', user.id)
-        .order('subscription_start_date', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+    // Parallelize data fetching
+    const [
+        { data: subscription, error: subError },
+        { data: userDetails },
+        { data: shopMembership }
+    ] = await Promise.all([
+        adminSupabase
+            .from('subscriptions')
+            .select('plan_type, status, autofill_usage, extraction_usage, subscription_end_date')
+            .eq('user_id', user.id)
+            .order('subscription_start_date', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        adminSupabase
+            .from('users')
+            .select('full_name, balance')
+            .eq('id', user.id)
+            .maybeSingle(),
+        adminSupabase
+            .from('shop_members')
+            .select('shop_id, shops(name)')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle()
+    ]);
 
     if (subError || !subscription) {
         return NextResponse.json(
@@ -75,22 +93,6 @@ export async function GET(req: NextRequest) {
     }
 
     const limits = getLimitsForPlan(subscription.plan_type as SubscriptionPlanType)
-
-    // Fetch user details (balance, name)
-    const { data: userDetails } = await adminSupabase
-        .from('users')
-        .select('full_name, balance')
-        .eq('id', user.id)
-        .maybeSingle()
-
-    // Fetch shop name (either as owner or member)
-    const { data: shopMembership } = await adminSupabase
-        .from('shop_members')
-        .select('shop_id, shops(name)')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle()
 
     const shopName = (shopMembership?.shops as any)?.name || 'My Shop'
 
