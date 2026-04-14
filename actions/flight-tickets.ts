@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { notifyUser, notifySuperAdmins } from './notifications'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { FlightTicketOrder, FlightTicketOrderStatus } from '@/lib/types'
 import { revalidatePath } from 'next/cache'
 
@@ -34,6 +35,7 @@ export async function getAllFlightTicketOrders() {
 
 export async function payFlightTicketOrder(orderId: string) {
     const supabase = await createClient()
+    const adminSupabase = createAdminClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
@@ -60,7 +62,10 @@ export async function payFlightTicketOrder(orderId: string) {
     }
 
     // Process payment (Deduct balance and update order status)
-    // In a real app, this should be a transaction
+    // We use adminSupabase for status update to bypass RLS, but user client for balance if possible
+    // Actually, balance deduction should also be handled carefully.
+    // Since users HAVE update permission on their own profile, supabase (user client) works for balance.
+    
     const { error: balanceError } = await supabase
         .from('users')
         .update({ balance: profile.balance - order.price })
@@ -68,7 +73,8 @@ export async function payFlightTicketOrder(orderId: string) {
 
     if (balanceError) throw new Error(balanceError.message)
 
-    const { error: updateError } = await supabase
+    // Now update order status using admin client
+    const { error: updateError } = await adminSupabase
         .from('flight_ticket_orders')
         .update({
             status: 'paid',
@@ -76,10 +82,17 @@ export async function payFlightTicketOrder(orderId: string) {
         })
         .eq('id', orderId)
 
-    if (updateError) throw new Error(updateError.message)
+    if (updateError) {
+        // Rollback balance if possible? (Manual rollback)
+        await adminSupabase
+            .from('users')
+            .update({ balance: profile.balance })
+            .eq('id', user.id)
+        throw new Error(updateError.message)
+    }
 
-    // Log transaction
-    await supabase.from('balance_transactions').insert({
+    // Log transaction using admin client to ensure it works
+    await adminSupabase.from('balance_transactions').insert({
         user_id: user.id,
         amount: order.price,
         type: 'debit',

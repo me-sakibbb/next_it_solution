@@ -102,22 +102,35 @@ Return a JSON object: { "Label name": "Extracted Value" }
         }
 
         // gemini-3.1-flash-lite-preview: ultra-fast, production-proven model
-        const MODEL = 'gemini-3.1-flash-lite-preview';
-        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+        const PRIMARY_MODEL = 'gemini-3.1-flash-lite-preview';
+        const FALLBACK_MODEL = 'gemini-3-flash-preview';
 
-        const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts }],
-                generationConfig: {
-                    response_mime_type: 'application/json',
-                    temperature: 0,
-                },
-            }),
-        });
+        const callGemini = async (modelName: string) => {
+            const api_url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            const response = await fetch(api_url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts }],
+                    generationConfig: {
+                        response_mime_type: 'application/json',
+                        temperature: 0,
+                    },
+                }),
+            });
+            const result = await response.json();
+            return { status: response.status, data: result };
+        };
 
-        const data = await res.json();
+        let { status, data } = await callGemini(PRIMARY_MODEL);
+
+        // Fallback if model is overloaded (503) or rate limited (429)
+        if (status === 503 || status === 429 || (data.error && (data.error.code === 503 || data.error.code === 429))) {
+            console.warn(`Gemini Lite overloaded (${status}), falling back to Flash Preview...`);
+            const fallbackRes = await callGemini(FALLBACK_MODEL);
+            status = fallbackRes.status;
+            data = fallbackRes.data;
+        }
 
         if (data.error) {
             throw new Error(data.error.message);
