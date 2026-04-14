@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const { sales, isLoading: salesLoading } = useSales(shop?.id || "");
   const { products, loading: productsLoading } = useProducts(shop?.id || "");
   const { staff, loading: staffLoading } = useStaff(shop?.id || "");
-  const { services: premiumServices, orders, balance, refresh, loading: servicesLoading } = useServices();
+  const { services: premiumServices, orders, flightTickets, balance, refresh, loading: servicesLoading } = useServices();
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [resourceLinks, setResourceLinks] = useState({ graphics_files_drive_url: '', certificate_formats_drive_url: '' });
@@ -102,6 +102,7 @@ export default function DashboardPage() {
       profile={profile}
       premiumServices={premiumServices}
       orders={orders}
+      flightTickets={flightTickets}
       userBalance={balance}
       subscription={subscription}
       onRefresh={refresh}

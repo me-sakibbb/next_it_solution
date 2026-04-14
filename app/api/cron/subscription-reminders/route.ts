@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
             });
 
             await resend.emails.send({
-              from: 'Next IT Solution <notifications@resend.dev>', // Should be a verified domain in prod
+              from: 'Nex IT Solution <notifications@resend.dev>', // Should be a verified domain in prod
               to: [userEmail],
               subject,
               html,

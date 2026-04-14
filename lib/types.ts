@@ -423,3 +423,25 @@ export interface PushSubscriptionData {
   auth_key: string
   created_at: string
 }
+export type FlightTicketOrderStatus = 'pending' | 'priced' | 'paid' | 'completed' | 'cancelled'
+
+export interface FlightTicketOrder {
+  id: string
+  user_id: string
+  departure_city: string
+  destination_city: string
+  departure_date: string
+  return_date?: string
+  full_name: string
+  contact_number: string
+  email_address: string
+  cabin_class: string
+  passengers: string
+  additional_notes?: string
+  status: FlightTicketOrderStatus
+  price?: number
+  admin_notes?: string
+  created_at: string
+  updated_at: string
+  user?: User // for admin expansion
+}

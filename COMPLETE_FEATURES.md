@@ -1,4 +1,4 @@
-# Next IT Solution - Complete Implementation
+# Nex IT Solution - Complete Implementation
 
 ## All Features Fully Implemented
 

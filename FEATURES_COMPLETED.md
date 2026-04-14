@@ -1,4 +1,4 @@
-# Next IT Solution - Complete Features List
+# Nex IT Solution - Complete Features List
 
 ## System Overview
 A comprehensive IT retail management platform with full-stack implementation, production-ready database architecture, and modern UI.
@@ -360,7 +360,7 @@ The codebase is structured for easy maintenance:
 
 ## Summary
 
-**Next IT Solution** is a complete, production-ready IT retail management platform with:
+**Nex IT Solution** is a complete, production-ready IT retail management platform with:
 - Full authentication and authorization
 - Multi-shop support
 - Complete inventory management

@@ -6,10 +6,11 @@ import {
     LayoutDashboard,
     Users,
     ShoppingCart,
-    LogOut,
     Briefcase,
     CreditCard,
     Wallet,
+    Plane,
+    LogOut,
 } from 'lucide-react'
 
 export default async function SuperAdminLayout({
@@ -61,6 +62,10 @@ export default async function SuperAdminLayout({
                     <Link href="/superadmin/orders" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-all rounded-lg group">
                         <ShoppingCart className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />
                         Orders
+                    </Link>
+                    <Link href="/superadmin/flight-tickets" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-all rounded-lg group">
+                        <Plane className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />
+                        Flight Tickets
                     </Link>
                     <Link href="/superadmin/transactions/bkash" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary transition-all rounded-lg group">
                         <CreditCard className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />

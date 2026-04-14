@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace, FolderOpen, FileText, ScanText } from "lucide-react";
+import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace, FolderOpen, FileText, ScanText, Plane } from "lucide-react";
 import { ServiceCard } from "@/components/dashboard/service-card";
 import { RecentOrdersWidget } from "@/components/dashboard/recent-orders-widget";
-import { ServiceOrder, Service } from "@/lib/types";
+import { ServiceOrder, Service, FlightTicketOrder } from "@/lib/types";
 import { ServiceOrderDialog } from "@/components/services/service-order-dialog";
+import { FlightTicketDialog } from "@/components/services/flight-ticket-dialog";
 import { useUsageLimits } from "@/hooks/use-usage-limits";
 
 interface DashboardClientProps {
@@ -20,6 +21,7 @@ interface DashboardClientProps {
   user: any;
   profile: any;
   orders?: ServiceOrder[];
+  flightTickets?: FlightTicketOrder[];
   premiumServices?: Service[];
   userBalance?: number;
   subscription?: any;
@@ -40,6 +42,7 @@ export function DashboardClient({
   user,
   profile,
   orders = [],
+  flightTickets = [],
   premiumServices = [],
   userBalance = 0,
   subscription = null,
@@ -49,6 +52,7 @@ export function DashboardClient({
 }: DashboardClientProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
+  const [isFlightDialogOpen, setIsFlightDialogOpen] = useState(false);
 
   const { usage, limits } = useUsageLimits();
 
@@ -144,6 +148,15 @@ export function DashboardClient({
             usageLimit={autofillLimit}
           />
           <ServiceCard
+            title="ফ্লাইট টিকেট বুকিং"
+            description="বেস্ট প্রাইসে এয়ার টিকেট সংগ্রহ করুন।"
+            icon={Plane}
+            href="#"
+            onClick={() => setIsFlightDialogOpen(true)}
+            colorClass="bg-blue-600/10 text-blue-700 font-bold"
+            iconColorClass="text-blue-700"
+          />
+          <ServiceCard
             title="টেলিটক জব ফর্ম অটোমেশন এআই"
             description="জব অ্যাপ্লিকেশনের ফর্ম অটোমেটিক পূরণ।"
             icon={BrainCircuit}
@@ -227,7 +240,7 @@ export function DashboardClient({
               আপনার সার্ভিসের অনুরোধগুলো ট্র্যাক করুন।
             </p>
           </div>
-          <RecentOrdersWidget orders={orders || []} />
+          <RecentOrdersWidget orders={orders || []} flightTickets={flightTickets || []} />
         </div>
       </div>
 
@@ -237,6 +250,11 @@ export function DashboardClient({
         onOpenChange={setIsOrderDialogOpen}
         userBalance={userBalance}
         onOrderSuccess={onRefresh}
+      />
+
+      <FlightTicketDialog 
+        isOpen={isFlightDialogOpen}
+        onOpenChange={setIsFlightDialogOpen}
       />
     </div>
   );

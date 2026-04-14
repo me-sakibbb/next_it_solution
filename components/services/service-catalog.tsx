@@ -12,8 +12,9 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { ShoppingBag, FolderOpen, FileText, ExternalLink } from 'lucide-react'
+import { ShoppingBag, FolderOpen, FileText, ExternalLink, Plane } from 'lucide-react'
 import { ServiceOrderDialog } from './service-order-dialog'
+import { FlightTicketDialog } from './flight-ticket-dialog'
 
 interface ServiceCatalogProps {
     initialServices: Service[]
@@ -73,6 +74,7 @@ function ResourceCard({ title, description, icon, url, colorClass }: ResourceCar
 export function ServiceCatalog({ initialServices, userBalance, onOrderSuccess, graphicsFilesUrl, certificateFormatsUrl }: ServiceCatalogProps) {
     const [selectedService, setSelectedService] = useState<Service | null>(null)
     const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false)
+    const [isFlightDialogOpen, setIsFlightDialogOpen] = useState(false)
 
     const handleOrderClick = (service: Service) => {
         setSelectedService(service)
@@ -92,29 +94,62 @@ export function ServiceCatalog({ initialServices, userBalance, onOrderSuccess, g
     return (
         <div className="space-y-8">
             {/* Resource Links Section */}
-            {hasResourceLinks && (
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 border-b pb-2 border-gray-200 dark:border-gray-700">
-                        রিসোর্স ফাইলসমূহ
+                        বিশেষ সেবা সমুহ
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <ResourceCard
-                            title="প্রয়োজনীয় গ্রাফিক্স ফাইল"
-                            description="ব্যবসায়িক কাজে প্রয়োজনীয় গ্রাফিক্স টেমপ্লেট ও ফাইলসমূহ ডাউনলোড করুন"
-                            icon={<FolderOpen className="w-10 h-10 text-purple-500 opacity-70" />}
-                            url={graphicsFilesUrl ?? ''}
-                            colorClass="bg-purple-50 dark:bg-purple-950/30"
-                        />
-                        <ResourceCard
-                            title="গুরুত্বপূর্ণ সনদ ফরমেট"
-                            description="বিভিন্ন ধরনের সনদপত্র ও সার্টিফিকেটের রেডিমেড ফরমেট ডাউনলোড করুন"
-                            icon={<FileText className="w-10 h-10 text-green-500 opacity-70" />}
-                            url={certificateFormatsUrl ?? ''}
-                            colorClass="bg-green-50 dark:bg-green-950/30"
-                        />
+                        <Card className="flex flex-col h-full hover:shadow-xl transition-all border-blue-200 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-gray-900 overflow-hidden group">
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg group-hover:scale-110 transition-transform">
+                                        <Plane className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <Badge variant="default" className="bg-blue-600 text-white">কাস্টম কোটেশন</Badge>
+                                </div>
+                                <CardTitle className="text-xl mt-4">ফ্লাইট টিকেট বুকিং</CardTitle>
+                                <CardDescription className="text-blue-600/70 dark:text-blue-400/70 font-medium">বেস্ট প্রাইসে এয়ার টিকেট সংগ্রহ করুন</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                    আপনার প্রয়োজনীয় গন্তব্যের তথ্য প্রদান করুন। আমাদের প্রতিনিধি দ্রুততম সময়ে ডিসকাউন্ট প্রাইস সহ আপনাকে জানাবে।
+                                </p>
+                            </CardContent>
+                            <CardFooter>
+                                <Button 
+                                    className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base font-bold shadow-lg shadow-blue-500/20 transition-all rounded-lg"
+                                    onClick={() => setIsFlightDialogOpen(true)}
+                                >
+                                    বুকিং রিকোয়েস্ট করুন
+                                </Button>
+                            </CardFooter>
+                        </Card>
                     </div>
                 </div>
-            )}
+
+                {hasResourceLinks && (
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 border-b pb-2 border-gray-200 dark:border-gray-700">
+                            রিসোর্স ফাইলসমূহ
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <ResourceCard
+                                title="প্রয়োজনীয় গ্রাফিক্স ফাইল"
+                                description="ব্যবসায়িক কাজে প্রয়োজনীয় গ্রাফিক্স টেমপ্লেট ও ফাইলসমূহ ডাউনলোড করুন"
+                                icon={<FolderOpen className="w-10 h-10 text-purple-500 opacity-70" />}
+                                url={graphicsFilesUrl ?? ''}
+                                colorClass="bg-purple-50 dark:bg-purple-950/30"
+                            />
+                            <ResourceCard
+                                title="গুরুত্বপূর্ণ সনদ ফরমেট"
+                                description="বিভিন্ন ধরনের সনদপত্র ও সার্টিফিকেটের রেডিমেড ফরমেট ডাউনলোড করুন"
+                                icon={<FileText className="w-10 h-10 text-green-500 opacity-70" />}
+                                url={certificateFormatsUrl ?? ''}
+                                colorClass="bg-green-50 dark:bg-green-950/30"
+                            />
+                        </div>
+                    </div>
+                )}
 
             {Object.entries(groupedServices).map(([category, services]) => (
                 <div key={category} className="space-y-4">
@@ -156,6 +191,11 @@ export function ServiceCatalog({ initialServices, userBalance, onOrderSuccess, g
                 onOpenChange={setIsOrderDialogOpen}
                 userBalance={userBalance}
                 onOrderSuccess={onOrderSuccess}
+            />
+
+            <FlightTicketDialog 
+                isOpen={isFlightDialogOpen}
+                onOpenChange={setIsFlightDialogOpen}
             />
         </div>
     )

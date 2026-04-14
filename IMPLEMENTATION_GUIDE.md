@@ -1,6 +1,6 @@
-# Implementation Guide - Next IT Solution
+# Implementation Guide - Nex IT Solution
 
-This guide provides step-by-step instructions for implementing the remaining features of the Next IT Solution platform.
+This guide provides step-by-step instructions for implementing the remaining features of the Nex IT Solution platform.
 
 ## 🏗️ Architecture Overview
 

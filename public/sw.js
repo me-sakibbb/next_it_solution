@@ -3,7 +3,7 @@ self.addEventListener('push', function (event) {
     if (event.data) {
         try {
             const data = event.data.json()
-            const title = data.title || 'Next AI Solution'
+            const title = data.title || 'Nex IT Solution'
             const options = {
                 body: data.body,
                 icon: data.icon || '/VP_logo.svg',
@@ -20,7 +20,7 @@ self.addEventListener('push', function (event) {
         } catch (e) {
             console.error('Error parsing push data:', e)
             // Fallback if data is not JSON
-            event.waitUntil(self.registration.showNotification('Next AI Solution', {
+            event.waitUntil(self.registration.showNotification('Nex IT Solution', {
                 body: event.data.text(),
                 icon: '/VP_logo.svg'
             }))

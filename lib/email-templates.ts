@@ -11,7 +11,7 @@ export function getSubscriptionReminderTemplate({
   daysRemaining: number;
   billingUrl: string;
 }) {
-  const brandColor = '#00A651'; // Next IT Solution Green
+  const brandColor = '#00A651'; // Nex IT Solution Green
   
   let subject = '';
   let title = '';
@@ -65,7 +65,7 @@ export function getSubscriptionReminderTemplate({
       <body>
           <div class="container">
               <div class="header">
-                  <h1 style="margin: 0; font-size: 24px;">Next IT Solution</h1>
+                  <h1 style="margin: 0; font-size: 24px;">Nex IT Solution</h1>
               </div>
               <div class="content">
                   <p>আসসালামু আলাইকুম ${userName || 'গ্রাহক'},</p>
@@ -81,10 +81,10 @@ export function getSubscriptionReminderTemplate({
                   
                   <a href="${billingUrl}" class="btn">রিনিউ করুন</a>
 
-                  <p style="margin-top: 30px;">ধন্যবাদ,<br><strong>Next IT Solution টিম</strong></p>
+                  <p style="margin-top: 30px;">ধন্যবাদ,<br><strong>Nex IT Solution টিম</strong></p>
               </div>
               <div class="footer">
-                  © ${new Date().getFullYear()} Next IT Solution. সকল অধিকার সংরক্ষিত।
+                  © ${new Date().getFullYear()} Nex IT Solution. সকল অধিকার সংরক্ষিত।
               </div>
           </div>
       </body>

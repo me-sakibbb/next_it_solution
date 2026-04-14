@@ -1,4 +1,4 @@
-# Next IT Solution
+# Nex IT Solution
 
 A comprehensive IT retail management platform built with Next.js 16, Supabase, and TypeScript. This enterprise-grade SaaS application provides complete business management capabilities for IT retail stores.
 
@@ -358,7 +358,7 @@ const { data: products } = await supabase
 
 ## 📄 License
 
-This project is built for Next IT Solution. All rights reserved.
+This project is built for Nex IT Solution. All rights reserved.
 
 ## 🆘 Support
 
