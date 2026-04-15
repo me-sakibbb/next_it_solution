@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Parse body immediately so we can overlap with DB queries
-        const { parts } = await req.json()
+        const { parts, aiModel } = await req.json()
 
         if (!parts || !Array.isArray(parts)) {
             return NextResponse.json({ error: 'Invalid payload parts' }, { status: 400, headers: CORS_HEADERS })
@@ -118,9 +118,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Gemini API Key missing on server' }, { status: 500, headers: CORS_HEADERS })
         }
 
-        // gemini-3.1-flash-lite-preview: ultra-fast, production-proven model
-        const PRIMARY_MODEL = 'gemini-3.1-flash-lite-preview';
-        const FALLBACK_MODEL = 'gemini-3-flash-preview';
+        // Model selection: user picks 'fastest', 'fast', or 'quality'
+        const MODELS: Record<string, string> = {
+            fastest: 'gemini-3.1-flash-lite-preview',
+            fast: 'gemini-2.5-flash-lite',
+            quality: 'gemini-3-flash-preview',
+        };
+        const selectedModel = MODELS[aiModel] || MODELS.fastest;
 
         const callGemini = async (modelName: string) => {
             const api_url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -139,15 +143,7 @@ export async function POST(req: NextRequest) {
             return { status: response.status, data: result };
         };
 
-        let { status, data } = await callGemini(PRIMARY_MODEL);
-
-        // Fallback if model is overloaded (503) or rate limited (429)
-        if (status === 503 || status === 429 || (data.error && (data.error.code === 503 || data.error.code === 429))) {
-            console.warn(`Gemini Lite overloaded (${status}), falling back to Flash Preview...`);
-            const fallbackRes = await callGemini(FALLBACK_MODEL);
-            status = fallbackRes.status;
-            data = fallbackRes.data;
-        }
+        let { status, data } = await callGemini(selectedModel);
 
         if (data.error) {
             throw new Error(data.error.message);

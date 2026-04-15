@@ -72,15 +72,16 @@ export async function POST(req: NextRequest) {
 
         // Prompt prioritized for maximum extraction accuracy
         let prompt = `You are an expert at extracting structured data from documents.
-Your task is to extract ALL personal and identification information from the provided document.
+Your task is to extract ALL personal, application, and identification information from the provided document.
 
 EXTRACTION RULES:
-1. Extract every labeled piece of information (e.g., "নাম/Name", "পিতার নাম/Father's Name", "NID No", "Date of Birth").
+1. Extract every labeled piece of information (e.g., "নাম/Name", "NID No", "Visa Type", "Application ID", "Address").
 2. Use the exact labels from the document as JSON keys. If a label is in both Bangla and English, prefer a descriptive English key.
 3. If the value is a date, ensure it is in YYYY-MM-DD format.
 4. If a value is from a list or checkbox in the document, extract the selected value.
-5. Return a flat JSON object mapping labels to extracted values.
-6. Do NOT include any explanations or markdown. Return ONLY valid JSON.
+5. You MUST return a strictly FLAT JSON object (depth 1). Nested objects or arrays are strictly prohibited. Use compound keys if necessary (e.g., "Present Address - City").
+6. Extract EVERY field found in the document, do not skip anything.
+7. Do NOT include any explanations or markdown. Return ONLY valid JSON.
 
 Return a JSON object: { "Label name": "Extracted Value" }
 `;

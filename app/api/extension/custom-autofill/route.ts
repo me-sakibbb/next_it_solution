@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
             prompt += `6. Format dates strictly as YYYY-MM-DD.\n`;
             prompt += `7. BE AGGRESSIVE BUT ACCURATE: Connect all the logical dots to fill as many fields as humanly possible based on the source context. Only output null if the data is completely impossible to infer.\n`;
         } else {
-            prompt += `Map the source data to a flat JSON object with descriptive keys.\n`;
+            prompt += `Map the source data to a strictly FLAT JSON object (depth 1) with descriptive keys. No nested objects allowed.\n`;
         }
 
         prompt += `\nReturn ONLY the JSON object, no explanation, no markdown.`;
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         }
 
         const PRIMARY_MODEL = 'gemini-3.1-flash-lite-preview';
-        const FALLBACK_MODEL = 'gemini-3-flash-preview';
+        const FALLBACK_MODEL = 'gemini-1.5-flash-latest';
 
         const callGemini = async (modelName: string) => {
             const api_url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -156,8 +156,16 @@ export async function POST(req: NextRequest) {
             throw new Error(data.error.message);
         }
 
-        // For thinking models, always read the last part (the actual answer, not the thought)
+        if (!data.candidates || data.candidates.length === 0 || !data.candidates[0].content) {
+            console.error('Gemini API returned no candidates:', JSON.stringify(data));
+            throw new Error('AI could not generate a response. Please try again.');
+        }
+
         const parts_out = data.candidates[0].content.parts;
+        if (!parts_out || parts_out.length === 0) {
+            throw new Error('AI returned an empty response.');
+        }
+
         const lastPart = parts_out[parts_out.length - 1];
         let text = lastPart.text || "{}";
 
