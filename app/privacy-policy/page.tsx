@@ -18,132 +18,81 @@ export default function PrivacyPolicyPage() {
                         <p className="text-muted-foreground mb-10">Last Updated: {lastUpdated}</p>
 
                         <div className="space-y-10 text-muted-foreground leading-relaxed">
+                            <section className="p-6 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-2xl">
+                                <h2 className="text-2xl font-semibold text-foreground mb-4">Google User Data and Limited Use Disclosure</h2>
+                                <p className="mb-4">
+                                    Our use and transfer to any other app of information received from Google APIs will adhere to the <strong>Chrome Web Store User Data Policy</strong>, including the Limited Use requirements.
+                                </p>
+                                <ul className="list-disc pl-6 space-y-2 text-sm">
+                                    <li>We only use the data to provide or improve user-facing features that are prominent in the extension's interface.</li>
+                                    <li>We do not allow humans to read user data unless we have first obtained the user's affirmative agreement for specific messages, or it is necessary for security purposes.</li>
+                                    <li>We do not use or transfer the data for serving advertisements, including retargeting, personalized, or interest-based advertising.</li>
+                                    <li>We do not transfer data to third parties unless necessary to provide or improve the extension's features, or for legal/security reasons.</li>
+                                </ul>
+                            </section>
+
                             <section>
                                 <h2 className="text-2xl font-semibold text-foreground mb-4">1. Introduction</h2>
                                 <p>
-                                    This Privacy Policy describes how <strong>Autofill Genius AI</strong> (referred to as "the Extension", "we", "us", or "our") collects, uses, stores, and protects user data. 
-                                    Our Chrome extension is designed to help users autofill online application forms by extracting relevant information from documents voluntarily uploaded by the user.
-                                </p>
-                                <p className="mt-4">
-                                    We are committed to protecting user privacy and complying with the <strong>Chrome Web Store User Data Policy</strong>, including the Limited Use requirements.
+                                    This Privacy Policy explains how <strong>Nex IT Solution</strong> ("we", "us", or "our") manages the information processed by our Chrome extensions, including <strong>Autofill Genius AI</strong> and <strong>Instant Autofill Engine</strong>.
+                                    We are committed to maintaining the highest standards of data privacy and transparency.
                                 </p>
                             </section>
 
                             <section>
-                                <h2 className="text-2xl font-semibold text-foreground mb-4">2. Information We Collect</h2>
-                                <p className="mb-4">Our extension may process the following types of data:</p>
+                                <h2 className="text-2xl font-semibold text-foreground mb-4">2. Data Collection and Usage</h2>
+                                <p className="mb-4">Our extensions handle data as follows:</p>
                                 
-                                <div className="grid gap-6 md:grid-cols-2">
+                                <div className="space-y-6">
                                     <div className="bg-muted/50 p-6 rounded-xl border">
-                                        <h3 className="text-lg font-medium text-foreground mb-2">a) User-Provided Data</h3>
-                                        <ul className="list-disc pl-5 space-y-2 text-sm">
-                                            <li>Documents uploaded by the user (such as CVs, application forms, or other files)</li>
-                                            <li>Information extracted from those documents (such as name, email, phone number, address, education, etc.)</li>
-                                        </ul>
+                                        <h3 className="text-lg font-medium text-foreground mb-2">User-Provided Files</h3>
+                                        <p className="text-sm">
+                                            When you upload a document (CV, form, etc.), we process it solely to extract relevant fields for autofilling. 
+                                            This processing is initiated exclusively by the user.
+                                        </p>
                                     </div>
                                     <div className="bg-muted/50 p-6 rounded-xl border">
-                                        <h3 className="text-lg font-medium text-foreground mb-2">b) Automatically Processed Data</h3>
-                                        <ul className="list-disc pl-5 space-y-2 text-sm">
-                                            <li>Form field data on websites where the user chooses to autofill</li>
-                                            <li>Basic technical data necessary for extension functionality (e.g., extension settings)</li>
-                                        </ul>
+                                        <h3 className="text-lg font-medium text-foreground mb-2">Form Interaction</h3>
+                                        <p className="text-sm">
+                                            The extension identifies input fields on web pages to facilitate data entry. 
+                                            We do not monitor your browsing history or collect data from pages where the extension is not active.
+                                        </p>
                                     </div>
                                 </div>
                             </section>
 
                             <section>
-                                <h2 className="text-2xl font-semibold text-foreground mb-4">3. How We Use the Information</h2>
-                                <p className="mb-4">We use the collected information <strong>only</strong> to:</p>
-                                <ul className="list-disc pl-6 space-y-2">
-                                    <li>Extract relevant data from user-uploaded documents using AI processing.</li>
-                                    <li>Autofill online forms at the user’s explicit request.</li>
-                                    <li>Improve the accuracy of form field detection and data mapping.</li>
-                                </ul>
-
-                                <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                                        We do <strong>NOT</strong> use user data for:
-                                    </p>
-                                    <ul className="list-disc pl-6 mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                                        <li>Advertising or marketing purposes.</li>
-                                        <li>Selling to third parties, data brokers, or ad networks.</li>
-                                        <li>Profiling users or tracking behavior across websites.</li>
-                                    </ul>
-                                </div>
-                            </section>
-
-                            <section>
-                                <h2 className="text-2xl font-semibold text-foreground mb-4">4. Data Processing and Storage</h2>
+                                <h2 className="text-2xl font-semibold text-foreground mb-4">3. Data Storage and Transfer</h2>
                                 <p>
-                                    <strong>Local Processing:</strong> Whenever possible, data is processed locally within the user's browser. 
-                                    We prioritize privacy by minimizing data transmission.
+                                    <strong>Local Storage:</strong> Your extracted profile data is stored locally in your browser's secure storage. 
+                                    It is never automatically synced to our servers without your authentication.
                                 </p>
                                 <p className="mt-4">
-                                    <strong>No External Storage:</strong> We do not collect, transmit, or store your personal information on our external servers for any purpose other than providing the core functionality of the extension. 
-                                    We do not maintain a database of your uploaded documents or extracted personal profiles.
+                                    <strong>No Data Selling:</strong> We never sell, trade, or rent user personal data to third parties. 
+                                    Data is never used for advertising or user profiling.
                                 </p>
                             </section>
 
                             <section>
-                                <h2 className="text-2xl font-semibold text-foreground mb-4">5. Data Sharing</h2>
+                                <h2 className="text-2xl font-semibold text-foreground mb-4">4. AI Processing</h2>
                                 <p>
-                                    We do not sell, rent, or share user personal data with third parties. Data is only handled as necessary to perform the autofill function initiated by the user. 
-                                    We do not share data with third-party AI models in a way that allows them to train on your personal information.
+                                    Our extensions use AI models to improve field extraction accuracy. 
+                                    Data sent to these models is used only for the immediate extraction task and is not used to train global AI models or shared for secondary purposes.
                                 </p>
                             </section>
 
                             <section>
-                                <h2 className="text-2xl font-semibold text-foreground mb-4">6. Data Security</h2>
+                                <h2 className="text-2xl font-semibold text-foreground mb-4">5. Security</h2>
                                 <p>
-                                    We implement appropriate technical and organizational security measures to protect user data against unauthorized access, alteration, disclosure, or destruction. 
-                                    All data transmissions (if any) are encrypted using industry-standard SSL/TLS protocols.
+                                    We implement industry-standard encryption and security protocols to protect your data during transit and at rest.
                                 </p>
                             </section>
 
                             <section>
-                                <h2 className="text-2xl font-semibold text-foreground mb-4">7. User Control</h2>
-                                <p className="mb-4">Users have full control over their data:</p>
-                                <ul className="list-disc pl-6 space-y-2">
-                                    <li><strong>Choice:</strong> Users choose which documents to upload and when to trigger the autofill action.</li>
-                                    <li><strong>Uninstallation:</strong> Users can uninstall the extension at any time.</li>
-                                    <li><strong>Data Clearance:</strong> Any locally stored data (settings, cached fragments) can be cleared by removing the extension or clearing browser data.</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h2 className="text-2xl font-semibold text-foreground mb-4">8. Children's Privacy</h2>
+                                <h2 className="text-2xl font-semibold text-foreground mb-4">6. Contact</h2>
                                 <p>
-                                    This extension is not intended for children under the age of 13. We do not knowingly collect personal information from children. 
-                                    If you are a parent or guardian and believe your child has provided us with personal information, please contact us.
+                                    For any privacy-related inquiries, please contact: <strong>nexai6720@gmail.com</strong>
                                 </p>
-                            </section>
-
-                            <section>
-                                <h2 className="text-2xl font-semibold text-foreground mb-4">9. Changes to This Privacy Policy</h2>
-                                <p>
-                                    We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated revision date. 
-                                    We encourage users to frequently check this page for any changes.
-                                </p>
-                            </section>
-
-                            <section className="pt-10 border-t">
-                                <h2 className="text-2xl font-semibold text-foreground mb-6">10. Contact Information</h2>
-                                <p className="mb-6">If you have any questions about this Privacy Policy, you may contact us at:</p>
-                                
-                                <div className="bg-muted/50 p-6 rounded-2xl border space-y-4">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold mb-1">Company</p>
-                                        <p className="text-foreground text-lg font-medium">Nex IT Solution</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold mb-1">Email</p>
-                                        <a href="mailto:nexai6720@gmail.com" className="text-primary hover:underline text-lg font-medium">nexai6720@gmail.com</a>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold mb-1">Website</p>
-                                        <a href="https://next-it-solution.vercel.app" className="text-primary hover:underline text-lg font-medium">next-it-solution.vercel.app</a>
-                                    </div>
-                                </div>
                             </section>
                         </div>
                     </div>
