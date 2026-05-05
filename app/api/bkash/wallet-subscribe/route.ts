@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
                     payment_method: 'wallet',
                     cv_usage: 0,
                     autofill_usage: 0,
+                    extraction_usage: 0,
                     updated_at: new Date().toISOString(),
                 })
                 .eq('id', existing.id)
@@ -154,6 +155,7 @@ export async function POST(request: NextRequest) {
                     auto_renew: false,
                     cv_usage: 0,
                     autofill_usage: 0,
+                    extraction_usage: 0,
                 })
             if (insertError) {
                 console.error('Failed to insert subscription:', insertError)

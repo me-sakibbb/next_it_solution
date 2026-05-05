@@ -210,6 +210,7 @@ export async function updateUserSubscription(
                 subscription_end_date: subscriptionEndDate || null,
                 cv_usage: 0,
                 autofill_usage: 0,
+                extraction_usage: 0,
                 updated_at: new Date().toISOString(),
             },
             { onConflict: 'user_id' }
