@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\ASUS\\\\Documents\\\\My Programming\\\\Projects\\\\Next AI Solution\\\\app\" -Recurse -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\ASUS\\\\Documents\\\\My Programming\\\\Projects\\\\Next AI Solution\\\\\", \"\"\\) })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\ASUS\\\\Documents\\\\My Programming\\\\Projects\\\\Next AI Solution\\\\components\" -Recurse -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\ASUS\\\\Documents\\\\My Programming\\\\Projects\\\\Next AI Solution\\\\\", \"\"\\) })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\ASUS\\\\Documents\\\\My Programming\\\\Projects\\\\Next AI Solution\\\\app\\\\api\" -File -Recurse | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\ASUS\\\\Documents\\\\My Programming\\\\Projects\\\\Next AI Solution\\\\app\\\\\", \"\"\\) })",
+      "Bash(python *)"
+    ]
+  }
+}
