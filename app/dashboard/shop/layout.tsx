@@ -27,7 +27,7 @@ export default async function ShopLayout({
     .single()
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <>
       <ShopSidebar user={user} profile={profile} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto p-6">
@@ -36,6 +36,6 @@ export default async function ShopLayout({
           </SubscriptionWall>
         </main>
       </div>
-    </div>
+    </>
   )
 }

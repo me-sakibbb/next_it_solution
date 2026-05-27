@@ -52,10 +52,53 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [editingExpense, setEditingExpense] = useState<any | null>(null)
     const [selectedCategory, setSelectedCategory] = useState<string>('all')
+    const [dateRange, setDateRange] = useState<'today' | '7days' | '30days' | 'this_month' | 'custom' | 'jan' | 'feb' | 'mar' | 'apr' | 'may' | 'jun' | 'jul' | 'aug' | 'sep' | 'oct' | 'nov' | 'dec'>('this_month')
+    const [customFrom, setCustomFrom] = useState('')
+    const [customTo, setCustomTo] = useState('')
+
+    const getDateBounds = () => {
+        const { startOfDay, endOfDay, subDays, startOfMonth } = require('date-fns')
+        const now = new Date()
+        switch (dateRange) {
+            case 'today':
+                return { from: startOfDay(now), to: endOfDay(now) }
+            case '7days':
+                return { from: startOfDay(subDays(now, 6)), to: endOfDay(now) }
+            case '30days':
+                return { from: startOfDay(subDays(now, 29)), to: endOfDay(now) }
+            case 'this_month':
+                return { from: startOfMonth(now), to: endOfDay(now) }
+            case 'custom':
+                return {
+                    from: customFrom ? startOfDay(new Date(customFrom)) : startOfDay(subDays(now, 29)),
+                    to: customTo ? endOfDay(new Date(customTo)) : endOfDay(now),
+                }
+            default: {
+                const monthIndex = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(dateRange)
+                if (monthIndex !== -1) {
+                    const monthDate = new Date(now.getFullYear(), monthIndex, 1)
+                    return {
+                        from: startOfMonth(monthDate),
+                        to: endOfDay(new Date(now.getFullYear(), monthIndex + 1, 0))
+                    }
+                }
+                return { from: startOfDay(subDays(now, 29)), to: endOfDay(now) }
+            }
+        }
+    }
+
+    const bounds = getDateBounds()
+
+    const filteredExpenses = expenses?.filter((e: any) => {
+        const { isWithinInterval } = require('date-fns')
+        const d = new Date(e.expense_date || e.created_at)
+        return isWithinInterval(d, { start: bounds.from, end: bounds.to })
+    }) || []
+
+    const displayExpenses = filteredExpenses.filter((e: any) => selectedCategory === 'all' || e.category_id === selectedCategory)
 
     const handleCategoryChange = (value: string) => {
         setSelectedCategory(value)
-        setFilters({ category_id: value })
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -153,24 +196,100 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
     return (
         <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                        <SelectTrigger className="w-full sm:w-[200px]">
-                            <SelectValue placeholder="সব ক্যাটাগরি" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">সব ক্যাটাগরি</SelectItem>
-                            {categories.map(cat => (
-                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Link href="/dashboard/shop/expenses/categories">
-                        <Button variant="outline">
-                            <FolderEdit className="mr-2 h-4 w-4" />
-                            ক্যাটাগরি ম্যানেজমেন্ট
-                        </Button>
-                    </Link>
+                <div className="flex flex-col items-center gap-4 w-full">
+                    <div className="flex items-center gap-4 w-full">
+                        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                            <SelectTrigger className="w-full sm:w-[200px]">
+                                <SelectValue placeholder="সব ক্যাটাগরি" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">সব ক্যাটাগরি</SelectItem>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Link href="/dashboard/shop/expenses/categories">
+                            <Button variant="outline">
+                                <FolderEdit className="mr-2 h-4 w-4" />
+                                ক্যাটাগরি ম্যানেজমেন্ট
+                            </Button>
+                        </Link>
+                    </div>
+
+                    <Card className="border-primary/20 bg-linear-to-r from-primary/5 to-transparent w-full">
+                        <CardContent className="py-2 px-4 shadow-none border-none">
+                            <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+                                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground whitespace-nowrap">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                    সময়কাল:
+                                </div>
+                                <div className="flex flex-col gap-2 w-full">
+                                    <div className="flex flex-wrap gap-2">
+                                        {[
+                                            { key: 'today', label: 'আজ' },
+                                            { key: '7days', label: '৭ দিন' },
+                                            { key: '30days', label: '৩০ দিন' },
+                                            { key: 'this_month', label: 'এই মাস' },
+                                            { key: 'custom', label: 'কাস্টম' },
+                                        ].map(({ key, label }) => (
+                                            <Button
+                                                key={key}
+                                                variant={dateRange === key ? 'default' : 'outline'}
+                                                size="sm"
+                                                onClick={() => setDateRange(key as any)}
+                                                className={`h-8 text-xs ${dateRange === key ? 'bg-green-700 hover:bg-green-800' : ''}`}
+                                            >
+                                                {label}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 items-center">
+                                        <div className="flex flex-wrap gap-1 flex-1">
+                                            {[
+                                                { key: 'jan', label: 'জানু' }, { key: 'feb', label: 'ফেব্রু' }, { key: 'mar', label: 'মার্চ' },
+                                                { key: 'apr', label: 'এপ্রি' }, { key: 'may', label: 'মে' }, { key: 'jun', label: 'জুন' },
+                                                { key: 'jul', label: 'জুলা' }, { key: 'aug', label: 'আগ' }, { key: 'sep', label: 'সেপ্টে' },
+                                                { key: 'oct', label: 'অক্টো' }, { key: 'nov', label: 'নভে' }, { key: 'dec', label: 'ডিসে' }
+                                            ].map(({ key, label }) => (
+                                                <Button
+                                                    key={key}
+                                                    variant={dateRange === key ? 'default' : 'outline'}
+                                                    size="sm"
+                                                    onClick={() => setDateRange(key as any)}
+                                                    className={`h-7 px-2 text-[10px] sm:h-8 sm:px-3 sm:text-xs ${dateRange === key ? 'bg-green-700 hover:bg-green-800' : ''}`}
+                                                >
+                                                    {label}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground bg-white/50 px-2 py-1 rounded-md border border-gray-100 whitespace-nowrap">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>
+                                            {format(bounds.from, 'dd MMM yyyy')} - {format(bounds.to, 'dd MMM yyyy')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {dateRange === 'custom' && (
+                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-primary/10">
+                                    <span className="text-xs text-muted-foreground">কাস্টম রেঞ্জ:</span>
+                                    <Input
+                                        type="date"
+                                        value={customFrom}
+                                        onChange={(e) => setCustomFrom(e.target.value)}
+                                        className="h-8 max-w-[140px] text-xs"
+                                    />
+                                    <span className="text-xs">থেকে</span>
+                                    <Input
+                                        type="date"
+                                        value={customTo}
+                                        onChange={(e) => setCustomTo(e.target.value)}
+                                        className="h-8 max-w-[140px] text-xs"
+                                    />
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
                 <Dialog open={isOpen} onOpenChange={(open) => {
                     if (!open) closeDialog()

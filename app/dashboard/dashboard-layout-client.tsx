@@ -21,18 +21,20 @@ export function DashboardLayoutClient({
     // Check if we are in the shop management section
     const isShop = pathname.startsWith('/dashboard/shop')
 
-    if (isShop) {
-        return <>{children}</>
-    }
-
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-background">
             <UniversalHeader user={user} profile={profile} />
-            <main className="flex-1 overflow-y-auto">
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+            {isShop ? (
+                <div className="flex-1 flex overflow-hidden">
                     {children}
                 </div>
-            </main>
+            ) : (
+                <main className="flex-1 overflow-y-auto">
+                    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+                        {children}
+                    </div>
+                </main>
+            )}
         </div>
     )
 }
