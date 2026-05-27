@@ -78,7 +78,7 @@ export function FlightTicketsManagement({ initialOrders }: FlightTicketsManageme
                 selectedOrder.user_id,
                 'টিকিটের মূল্য নির্ধারণ করা হয়েছে',
                 `আপনার ফ্লাইট টিকিটের জন্য ৳${numericPrice} মূল্য নির্ধারণ করা হয়েছে। অনুগ্রহ করে পেমেন্ট সম্পন্ন করুন।`,
-                '/dashboard/orders',
+                '/dashboard/flight-tickets',
                 'order_status'
             )
 
@@ -115,7 +115,7 @@ export function FlightTicketsManagement({ initialOrders }: FlightTicketsManageme
                 selectedOrder.user_id,
                 'টিকিট ডেলিভারি সম্পন্ন',
                 `আপনার ${selectedOrder.departure_city} থেকে ${selectedOrder.destination_city} এর টিকিট ডেলিভারি করা হয়েছে।`,
-                '/dashboard/orders',
+                '/dashboard/flight-tickets',
                 'order_status'
             )
 
@@ -197,14 +197,14 @@ export function FlightTicketsManagement({ initialOrders }: FlightTicketsManageme
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl w-[95vw] md:w-full max-h-[90vh] overflow-y-auto overflow-x-hidden">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                             <Plane className="h-5 w-5 text-blue-600" /> ফ্লাইট রিকোয়েস্ট ম্যানেজ করুন
                         </DialogTitle>
                     </DialogHeader>
 
-                    <div className="grid gap-6 py-4">
+                    <div className="grid gap-6 py-4 overflow-hidden">
                         {/* Summary Section */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
                             <div>
@@ -233,7 +233,7 @@ export function FlightTicketsManagement({ initialOrders }: FlightTicketsManageme
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-gray-500 flex items-center gap-1"><Mail className="h-3 w-3" /> ইমেইল</Label>
-                                <p className="font-medium underline decoration-blue-200">{selectedOrder?.email_address}</p>
+                                <p className="font-medium underline decoration-blue-200 break-all">{selectedOrder?.email_address}</p>
                             </div>
                             {selectedOrder?.additional_notes && (
                                 <div className="space-y-1 md:col-span-2">
@@ -274,7 +274,7 @@ export function FlightTicketsManagement({ initialOrders }: FlightTicketsManageme
                                     <Label className="font-bold text-purple-800 dark:text-purple-300">ফেজ ২: টিকিট / ড্রাইভ লিংক ডেলিভারি দিন</Label>
                                     <Textarea 
                                         placeholder="ডেলিভারি মেসেজ এবং টিকিটের গুগল ড্রাইভ লিংক এখানে দিন..." 
-                                        className="bg-white min-h-[100px]"
+                                        className="bg-white min-h-[100px] break-all"
                                         value={adminNotes}
                                         onChange={(e) => setAdminNotes(e.target.value)}
                                     />
@@ -297,7 +297,7 @@ export function FlightTicketsManagement({ initialOrders }: FlightTicketsManageme
                                     {selectedOrder.admin_notes && (
                                         <div className="mt-4">
                                             <Label className="text-[10px] font-bold uppercase text-gray-400">এডমিন নোট</Label>
-                                            <p className="text-xs bg-white dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700 mt-1">{selectedOrder.admin_notes}</p>
+                                            <p className="text-xs bg-white dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700 mt-1 break-all whitespace-pre-wrap">{selectedOrder.admin_notes}</p>
                                         </div>
                                     )}
                                 </div>

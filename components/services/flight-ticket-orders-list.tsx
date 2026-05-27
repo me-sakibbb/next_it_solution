@@ -29,7 +29,7 @@ import {
 
 interface FlightTicketOrdersListProps {
     initialOrders: FlightTicketOrder[]
-    onRefresh: () => void
+    onRefresh?: () => void
 }
 
 const statusConfig: Record<string, { color: string; label: string; icon: any }> = {
@@ -46,11 +46,14 @@ export function FlightTicketOrdersList({ initialOrders, onRefresh }: FlightTicke
 
     const handlePay = async (orderId: string) => {
         setLoadingMap(prev => ({ ...prev, [orderId]: true }))
+        console.log("Starting payment for order:", orderId)
         try {
-            await payFlightTicketOrder(orderId)
+            const result = await payFlightTicketOrder(orderId)
+            console.log("Payment result:", result)
             toast.success('পেমেন্ট সফল ভাবে সম্পন্ন হয়েছে')
-            onRefresh()
+            if (onRefresh) onRefresh()
         } catch (error: any) {
+            console.error("Payment error in component:", error)
             toast.error(error.message || 'পেমেন্ট করতে সমস্যা হয়েছে')
         } finally {
             setLoadingMap(prev => ({ ...prev, [orderId]: false }))
@@ -187,13 +190,14 @@ export function FlightTicketOrdersList({ initialOrders, onRefresh }: FlightTicke
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
-                        <AlertDialogAction 
-                            className="bg-green-600 hover:bg-green-700"
+                        <AlertDialogCancel disabled={!!(confirmOrder && loadingMap[confirmOrder.id])}>বাতিল</AlertDialogCancel>
+                        <Button 
+                            className="bg-green-600 hover:bg-green-700 h-10 px-4 py-2 text-white rounded-md text-sm font-medium"
                             onClick={() => confirmOrder && handlePay(confirmOrder.id)}
+                            disabled={!!(confirmOrder && loadingMap[confirmOrder.id])}
                         >
-                            পেমেন্ট করুন
-                        </AlertDialogAction>
+                            {confirmOrder && loadingMap[confirmOrder.id] ? 'প্রসেস করা হচ্ছে...' : 'পেমেন্ট নিশ্চিত করুন'}
+                        </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

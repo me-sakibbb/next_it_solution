@@ -174,7 +174,7 @@ export function RecentOrdersWidget({ orders, flightTickets }: RecentOrdersWidget
                                     key={flight.id} 
                                     className="group flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-800 relative"
                                 >
-                                    <Link href="/dashboard/orders?tab=flights" className="flex-1 cursor-pointer">
+                                    <Link href="/dashboard/flight-tickets" className="flex-1 cursor-pointer">
                                         <div className="space-y-1">
                                             <p className="text-sm font-bold leading-none truncate max-w-[140px] group-hover:text-primary transition-colors text-gray-900 dark:text-gray-100">
                                                 {flight.departure_city} → {flight.destination_city}

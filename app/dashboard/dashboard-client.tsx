@@ -6,7 +6,6 @@ import { ServiceCard } from "@/components/dashboard/service-card";
 import { RecentOrdersWidget } from "@/components/dashboard/recent-orders-widget";
 import { ServiceOrder, Service, FlightTicketOrder } from "@/lib/types";
 import { ServiceOrderDialog } from "@/components/services/service-order-dialog";
-import { FlightTicketDialog } from "@/components/services/flight-ticket-dialog";
 import { useUsageLimits } from "@/hooks/use-usage-limits";
 
 interface DashboardClientProps {
@@ -52,7 +51,6 @@ export function DashboardClient({
 }: DashboardClientProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
-  const [isFlightDialogOpen, setIsFlightDialogOpen] = useState(false);
 
   const { usage, limits } = useUsageLimits();
 
@@ -92,8 +90,6 @@ export function DashboardClient({
           </p>
         </div>
       </section>
-
-
 
       {/* Basic Services - Full Width */}
       <section className="space-y-6">
@@ -151,8 +147,7 @@ export function DashboardClient({
             title="ফ্লাইট টিকেট বুকিং"
             description="বেস্ট প্রাইসে এয়ার টিকেট সংগ্রহ করুন।"
             icon={Plane}
-            href="#"
-            onClick={() => setIsFlightDialogOpen(true)}
+            href="/dashboard/flight-tickets"
             colorClass="bg-blue-600/10 text-blue-700 font-bold"
             iconColorClass="text-blue-700"
           />
@@ -199,62 +194,26 @@ export function DashboardClient({
         </div>
       </section>
 
-      {/* Lower Section: Premium Services & Orders side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Premium Services (Left 2/3) */}
-        <div className="lg:col-span-2">
-          {premiumServices && premiumServices.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-1 bg-primary rounded-full" />
-                <h2 className="text-2xl font-bold tracking-tight">
-                  প্রিমিয়াম সার্ভিসসমূহ
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {premiumServices.slice(0, 4).map((service) => (
-                  <ServiceCard
-                    key={service.id}
-                    title={service.name}
-                    description={service.description || ""}
-                    icon={ShoppingBag}
-                    href="#"
-                    onClick={() => handleDirectServiceClick(service)}
-                    colorClass="bg-primary/5 hover:bg-primary/10"
-                    iconColorClass="text-primary"
-                    price={service.price}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {/* Recent Activity */}
+      <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <RecentOrdersWidget 
+          orders={orders} 
+          flightTickets={flightTickets} 
+          shopName={shopName}
+        />
+      </section>
 
-        {/* Your Orders (Right 1/3) */}
-        <div className="lg:sticky lg:top-24">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold tracking-tight">
-              আপনার অর্ডারসমূহ
-            </h2>
-            <p className="text-muted-foreground">
-              আপনার সার্ভিসের অনুরোধগুলো ট্র্যাক করুন।
-            </p>
-          </div>
-          <RecentOrdersWidget orders={orders || []} flightTickets={flightTickets || []} />
-        </div>
-      </div>
-
+      {/* Service Order Dialog */}
       <ServiceOrderDialog
-        service={selectedService}
-        isOpen={isOrderDialogOpen}
-        onOpenChange={setIsOrderDialogOpen}
-        userBalance={userBalance}
-        onOrderSuccess={onRefresh}
-      />
-
-      <FlightTicketDialog 
-        isOpen={isFlightDialogOpen}
-        onOpenChange={setIsFlightDialogOpen}
+                isOpen={isOrderDialogOpen}
+                onOpenChange={setIsOrderDialogOpen}
+                service={selectedService!}
+                userBalance={userBalance}
+                onSuccess={() => {
+                  setIsOrderDialogOpen(false);
+                  if (onRefresh) onRefresh();
+                }}
+                shopName={shopName}
       />
     </div>
   );

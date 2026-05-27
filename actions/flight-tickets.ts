@@ -109,7 +109,7 @@ export async function payFlightTicketOrder(orderId: string) {
         'payment'
     )
 
-    revalidatePath('/dashboard/orders')
+    revalidatePath('/dashboard/flight-tickets')
     revalidatePath('/superadmin/flight-tickets')
 }
 

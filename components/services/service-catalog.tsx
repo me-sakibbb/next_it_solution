@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/card"
 import { ShoppingBag, FolderOpen, FileText, ExternalLink, Plane } from 'lucide-react'
 import { ServiceOrderDialog } from './service-order-dialog'
-import { FlightTicketDialog } from './flight-ticket-dialog'
 
 interface ServiceCatalogProps {
     initialServices: Service[]
@@ -74,7 +73,6 @@ function ResourceCard({ title, description, icon, url, colorClass }: ResourceCar
 export function ServiceCatalog({ initialServices, userBalance, onOrderSuccess, graphicsFilesUrl, certificateFormatsUrl }: ServiceCatalogProps) {
     const [selectedService, setSelectedService] = useState<Service | null>(null)
     const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false)
-    const [isFlightDialogOpen, setIsFlightDialogOpen] = useState(false)
 
     const handleOrderClick = (service: Service) => {
         setSelectedService(service)
@@ -118,7 +116,7 @@ export function ServiceCatalog({ initialServices, userBalance, onOrderSuccess, g
                             <CardFooter>
                                 <Button 
                                     className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base font-bold shadow-lg shadow-blue-500/20 transition-all rounded-lg"
-                                    onClick={() => setIsFlightDialogOpen(true)}
+                                    onClick={() => window.location.href = '/dashboard/flight-tickets'}
                                 >
                                     বুকিং রিকোয়েস্ট করুন
                                 </Button>
@@ -186,16 +184,14 @@ export function ServiceCatalog({ initialServices, userBalance, onOrderSuccess, g
             ))}
 
             <ServiceOrderDialog
-                service={selectedService}
                 isOpen={isOrderDialogOpen}
                 onOpenChange={setIsOrderDialogOpen}
+                service={selectedService!}
                 userBalance={userBalance}
-                onOrderSuccess={onOrderSuccess}
-            />
-
-            <FlightTicketDialog 
-                isOpen={isFlightDialogOpen}
-                onOpenChange={setIsFlightDialogOpen}
+                onSuccess={() => {
+                    setIsOrderDialogOpen(false)
+                    if (onOrderSuccess) onOrderSuccess()
+                }}
             />
         </div>
     )
