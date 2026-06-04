@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { User, Subscription, SubscriptionPlanType, SubscriptionStatus } from '@/lib/types'
 
 type UserWithSubscription = User & {
@@ -90,6 +91,18 @@ const PLAN_LABELS: Record<SubscriptionPlanType, string> = {
     premium_power: 'Prem. Power',
 }
 
+const AVAILABLE_FEATURES = [
+    { id: 'shop', label: 'শপ ম্যানেজমেন্ট' },
+    { id: 'photo-enhancer', label: 'এআই ফটো এডিটর' },
+    { id: 'cv-builder', label: 'এআই সিভি বিল্ডার' },
+    { id: 'print-ready', label: 'প্রিন্ট রেডি' },
+    { id: 'autofill-genius', label: 'Autofill Genius AI' },
+    { id: 'instant-autofill', label: 'Instant Autofill Engine' },
+    { id: 'flight-tickets', label: 'ফ্লাইট টিকেট বুকিং' },
+    { id: 'graphics-files', label: 'প্রয়োজনীয় গ্রাফিক্স ফাইল' },
+    { id: 'certificate-formats', label: 'গুরুত্বপূর্ণ সনদ ফরমেট' }
+]
+
 interface EditState {
     full_name: string
     phone: string
@@ -99,6 +112,7 @@ interface EditState {
     subPlan: SubscriptionPlanType
     subStatus: SubscriptionStatus
     subEndDate: string
+    disabled_features: string[]
 }
 
 export function UsersTable({
@@ -156,6 +170,7 @@ export function UsersTable({
             subEndDate: user.subscription?.subscription_end_date
                 ? user.subscription.subscription_end_date.slice(0, 10)
                 : '',
+            disabled_features: user.disabled_features || [],
         })
     }
 
@@ -169,6 +184,7 @@ export function UsersTable({
                 shop_address: editState.shop_address,
                 balance: parseFloat(editState.balance),
                 is_active: editState.is_active,
+                disabled_features: editState.disabled_features,
             })
             await updateUserSubscription(
                 editUser.id,
@@ -188,6 +204,7 @@ export function UsersTable({
                             shop_address: editState.shop_address,
                             balance: parseFloat(editState.balance),
                             is_active: editState.is_active,
+                            disabled_features: editState.disabled_features,
                             subscription: {
                                 ...(u.subscription ?? {
                                     id: '',
@@ -558,6 +575,39 @@ export function UsersTable({
                                             setEditState((s) => s && { ...s, subEndDate: e.target.value })
                                         }
                                     />
+                                </div>
+                            </div>
+                            <Separator />
+
+                            <div className="space-y-3">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Feature Access
+                                </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {AVAILABLE_FEATURES.map(feature => {
+                                        const isEnabled = !editState.disabled_features.includes(feature.id)
+                                        return (
+                                            <div key={feature.id} className="flex items-start space-x-2">
+                                                <Checkbox 
+                                                    id={`feature-${feature.id}`}
+                                                    checked={isEnabled}
+                                                    onCheckedChange={(checked) => {
+                                                        setEditState(s => {
+                                                            if (!s) return s
+                                                            if (checked) {
+                                                                return { ...s, disabled_features: s.disabled_features.filter(id => id !== feature.id) }
+                                                            } else {
+                                                                return { ...s, disabled_features: [...s.disabled_features, feature.id] }
+                                                            }
+                                                        })
+                                                    }}
+                                                />
+                                                <Label htmlFor={`feature-${feature.id}`} className="text-sm font-medium leading-none cursor-pointer">
+                                                    {feature.label}
+                                                </Label>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         </div>

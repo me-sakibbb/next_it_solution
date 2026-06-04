@@ -15,7 +15,7 @@ export async function updateUserBalance(userId: string, balance: number) {
 
 export async function updateUserInfo(
     userId: string,
-    fields: { full_name?: string; balance?: number; is_active?: boolean; phone?: string; shop_address?: string }
+    fields: { full_name?: string; balance?: number; is_active?: boolean; phone?: string; shop_address?: string; disabled_features?: string[] }
 ) {
     const supabase = createAdminClient()
     const { error } = await supabase

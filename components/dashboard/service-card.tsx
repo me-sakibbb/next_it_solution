@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { LucideIcon, ArrowUpRight } from 'lucide-react'
+import { LucideIcon, ArrowUpRight, XCircle } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +24,7 @@ interface ServiceCardProps {
     usageLimit?: UsageLimit
     onClick?: () => void
     externalHref?: string
+    adminRestricted?: boolean
 }
 
 export function ServiceCard({
@@ -37,7 +39,9 @@ export function ServiceCard({
     usageLimit,
     onClick,
     externalHref,
+    adminRestricted = false,
 }: ServiceCardProps) {
+    const { toast } = useToast()
     const formatPrice = (p: number | string) => {
         if (typeof p === 'string') return p
         return `৳${p.toLocaleString()}`
@@ -45,7 +49,7 @@ export function ServiceCard({
     const Content = (
         <Card className={cn(
             "h-full transition-all duration-300 border-border/50 hover:shadow-md hover:border-primary/20 group relative overflow-hidden",
-            disabled && "opacity-60 cursor-not-allowed"
+            (disabled || adminRestricted) && "opacity-60"
         )}>
             <CardContent className="p-6 flex flex-col h-full">
                 <div className="flex justify-between items-start mb-4">
@@ -71,7 +75,15 @@ export function ServiceCard({
                     </div>
                 )}
 
-                {disabled && (
+                {adminRestricted && (
+                    <div className="mt-4 pt-3 border-t border-border/50">
+                        <span className="text-xs font-bold text-destructive uppercase tracking-wider flex items-center gap-1.5">
+                            <XCircle className="w-4 h-4" /> অ্যাক্সেস বন্ধ
+                        </span>
+                    </div>
+                )}
+
+                {disabled && !adminRestricted && (
                     <div className="mt-4 pt-3 border-t border-border/50">
                         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">শীঘ্রই আসছে</span>
                     </div>
@@ -117,8 +129,25 @@ export function ServiceCard({
         </Card>
     )
 
+    if (adminRestricted) {
+        return (
+            <button
+                onClick={() => {
+                    toast({
+                        title: "অ্যাক্সেস বন্ধ",
+                        description: "এই ফিচারটি আপনার জন্য বন্ধ করা আছে। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।",
+                        variant: "destructive",
+                    })
+                }}
+                className="block w-full text-left h-full focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-xl cursor-not-allowed"
+            >
+                {Content}
+            </button>
+        )
+    }
+
     if (disabled) {
-        return <div className="block h-full">{Content}</div>
+        return <div className="block h-full cursor-not-allowed">{Content}</div>
     }
 
     if (onClick) {

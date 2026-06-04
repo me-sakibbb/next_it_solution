@@ -40,6 +40,7 @@ export interface User {
   role: UserRole
   balance: number
   is_active: boolean
+  disabled_features?: string[]
   created_at: string
   updated_at: string
 }
