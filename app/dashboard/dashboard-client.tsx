@@ -134,13 +134,23 @@ export function DashboardClient({
             iconColorClass="text-pink-600"
           />
           <ServiceCard
-            title="জন্ম নিবন্ধনের ফর্ম অটোমেশন এআই"
-            description="অটোমেটিক জন্ম নিবন্ধন ফর্ম পূরণ।"
+            title="Autofill Genius AI"
+            description="BDRIS, Teletalk, Indian Visa সহ বিভিন্ন সাইটে অটোমেটিক ফর্ম পূরণ।"
             icon={BotMessageSquare}
             href="#"
-            onClick={() => handleServiceClick("জন্ম নিবন্ধনের ফর্ম অটোমেশন এআই")}
+            externalHref="https://chromewebstore.google.com/detail/ehnlobnglcpkfhmcabgmdinehoamnijh?utm_source=item-share-cb"
             colorClass="bg-orange-500/10 text-orange-600"
             iconColorClass="text-orange-600"
+            usageLimit={autofillLimit}
+          />
+          <ServiceCard
+            title="Instant Autofill Engine"
+            description="একটি এক্সটেনশন দিয়েই যেকোনো সাইটে দ্রুত অটোমেটিক ফর্ম পূরণ।"
+            icon={BrainCircuit}
+            href="#"
+            externalHref="https://chromewebstore.google.com/detail/oglepcaekdpgdhgbemfjmkmmihbjokdg?utm_source=item-share-cb"
+            colorClass="bg-sky-500/10 text-sky-600"
+            iconColorClass="text-sky-600"
             usageLimit={autofillLimit}
           />
           <ServiceCard
@@ -150,26 +160,6 @@ export function DashboardClient({
             href="/dashboard/flight-tickets"
             colorClass="bg-blue-600/10 text-blue-700 font-bold"
             iconColorClass="text-blue-700"
-          />
-          <ServiceCard
-            title="টেলিটক জব ফর্ম অটোমেশন এআই"
-            description="জব অ্যাপ্লিকেশনের ফর্ম অটোমেটিক পূরণ।"
-            icon={BrainCircuit}
-            href="#"
-            onClick={() => handleServiceClick("টেলিটক জব ফর্ম অটোমেশন এআই")}
-            colorClass="bg-sky-500/10 text-sky-600"
-            iconColorClass="text-sky-600"
-            usageLimit={autofillLimit}
-          />
-          <ServiceCard
-            title="ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই"
-            description="ভিসার ফর্ম দ্রুত ও নির্ভুলভাবে পূরণ।"
-            icon={ScanFace}
-            href="#"
-            onClick={() => handleServiceClick("ইন্ডিয়ান ভিসা ফর্ম অটোমেশন এআই")}
-            colorClass="bg-indigo-500/10 text-indigo-600"
-            iconColorClass="text-indigo-600"
-            usageLimit={autofillLimit}
           />
           <ServiceCard
             title="প্রয়োজনীয় গ্রাফিক্স ফাইল"
@@ -196,24 +186,24 @@ export function DashboardClient({
 
       {/* Recent Activity */}
       <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-        <RecentOrdersWidget 
-          orders={orders} 
-          flightTickets={flightTickets} 
+        <RecentOrdersWidget
+          orders={orders}
+          flightTickets={flightTickets}
           shopName={shopName}
         />
       </section>
 
       {/* Service Order Dialog */}
       <ServiceOrderDialog
-                isOpen={isOrderDialogOpen}
-                onOpenChange={setIsOrderDialogOpen}
-                service={selectedService!}
-                userBalance={userBalance}
-                onSuccess={() => {
-                  setIsOrderDialogOpen(false);
-                  if (onRefresh) onRefresh();
-                }}
-                shopName={shopName}
+        isOpen={isOrderDialogOpen}
+        onOpenChange={setIsOrderDialogOpen}
+        service={selectedService!}
+        userBalance={userBalance}
+        onSuccess={() => {
+          setIsOrderDialogOpen(false);
+          if (onRefresh) onRefresh();
+        }}
+        shopName={shopName}
       />
     </div>
   );
