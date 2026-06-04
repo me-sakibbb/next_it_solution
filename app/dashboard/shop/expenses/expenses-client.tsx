@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Pencil, Trash2, FolderEdit } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, startOfDay, endOfDay, subDays, startOfMonth } from 'date-fns'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -56,8 +56,7 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
     const [customFrom, setCustomFrom] = useState('')
     const [customTo, setCustomTo] = useState('')
 
-    const getDateBounds = () => {
-        const { startOfDay, endOfDay, subDays, startOfMonth } = require('date-fns')
+    const getDateBounds = useCallback(() => {
         const now = new Date()
         switch (dateRange) {
             case 'today':
@@ -85,20 +84,21 @@ export function ExpensesClient({ shopId, currency }: ExpensesClientProps) {
                 return { from: startOfDay(subDays(now, 29)), to: endOfDay(now) }
             }
         }
-    }
+    }, [dateRange, customFrom, customTo])
 
     const bounds = getDateBounds()
 
-    const filteredExpenses = expenses?.filter((e: any) => {
-        const { isWithinInterval } = require('date-fns')
-        const d = new Date(e.expense_date || e.created_at)
-        return isWithinInterval(d, { start: bounds.from, end: bounds.to })
-    }) || []
-
-    const displayExpenses = filteredExpenses.filter((e: any) => selectedCategory === 'all' || e.category_id === selectedCategory)
+    useEffect(() => {
+        const { from, to } = getDateBounds()
+        setFilters({
+            date_from: format(from, 'yyyy-MM-dd'),
+            date_to: format(to, 'yyyy-MM-dd'),
+        })
+    }, [getDateBounds])
 
     const handleCategoryChange = (value: string) => {
         setSelectedCategory(value)
+        setFilters({ category_id: value })
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

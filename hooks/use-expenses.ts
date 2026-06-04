@@ -14,34 +14,6 @@ export function useExpenses(shopId: string) {
         systemExpenses: 0
     })
 
-    const fetchStats = useCallback(async () => {
-        if (!shopId) return
-
-        const { data, error } = await supabase
-            .from('expenses')
-            .select('amount, reference_type')
-            .eq('shop_id', shopId)
-
-        if (error) {
-            console.error('Error fetching expense stats:', error)
-            return
-        }
-
-        const total = data.reduce((acc, curr) => acc + Number(curr.amount), 0)
-        const manual = data.filter(e => e.reference_type === 'manual').reduce((acc, curr) => acc + Number(curr.amount), 0)
-        const system = total - manual
-
-        setStats({
-            totalExpenses: total,
-            manualExpenses: manual,
-            systemExpenses: system
-        })
-    }, [supabase, shopId])
-
-    useEffect(() => {
-        fetchStats()
-    }, [fetchStats])
-
     const fetchExpenses = useCallback(async (params: PaginationParams) => {
         const { from, to } = getPaginationRange(params.page, params.limit)
 
@@ -56,6 +28,14 @@ export function useExpenses(shopId: string) {
 
         if (params.filters?.category_id && params.filters.category_id !== 'all') {
             query = query.eq('category_id', params.filters.category_id)
+        }
+
+        if (params.filters?.date_from) {
+            query = query.gte('expense_date', params.filters.date_from)
+        }
+
+        if (params.filters?.date_to) {
+            query = query.lte('expense_date', params.filters.date_to)
         }
 
         const { data, error, count } = await query
@@ -76,6 +56,43 @@ export function useExpenses(shopId: string) {
         shopId,
         initialLimit: 10,
     })
+
+    const fetchStats = useCallback(async () => {
+        if (!shopId) return
+
+        let query = supabase
+            .from('expenses')
+            .select('amount, reference_type')
+            .eq('shop_id', shopId)
+
+        if (pagination.filters?.date_from) {
+            query = query.gte('expense_date', pagination.filters.date_from as string)
+        }
+        if (pagination.filters?.date_to) {
+            query = query.lte('expense_date', pagination.filters.date_to as string)
+        }
+
+        const { data, error } = await query
+
+        if (error) {
+            console.error('Error fetching expense stats:', error)
+            return
+        }
+
+        const total = data.reduce((acc, curr) => acc + Number(curr.amount), 0)
+        const manual = data.filter(e => e.reference_type === 'manual').reduce((acc, curr) => acc + Number(curr.amount), 0)
+        const system = total - manual
+
+        setStats({
+            totalExpenses: total,
+            manualExpenses: manual,
+            systemExpenses: system
+        })
+    }, [supabase, shopId, pagination.filters])
+
+    useEffect(() => {
+        fetchStats()
+    }, [fetchStats])
 
     const handleCreateExpense = async (formData: FormData) => {
         try {

@@ -113,4 +113,53 @@ export async function payFlightTicketOrder(orderId: string) {
     revalidatePath('/superadmin/flight-tickets')
 }
 
+export async function createFlightTicketOrder(formData: {
+    departure_city: string
+    destination_city: string
+    departure_date: string
+    return_date?: string
+    full_name: string
+    contact_number: string
+    email_address: string
+    cabin_class: string
+    passengers: string
+    additional_notes?: string
+}) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const insertData: any = {
+        ...formData,
+        user_id: user.id,
+        status: 'pending'
+    }
+
+    if (!insertData.return_date) {
+        delete insertData.return_date
+    }
+
+    const { data, error } = await supabase
+        .from('flight_ticket_orders')
+        .insert(insertData)
+        .select()
+        .single()
+
+    if (error) {
+        console.error("Supabase insert error:", error)
+        throw new Error(error.message)
+    }
+
+    // Notify super admins
+    await notifySuperAdmins(
+        'নতুন ফ্লাইট টিকিট রিকোয়েস্ট',
+        `${formData.full_name} একটি নতুন ফ্লাইট টিকিট কোটেশন রিকোয়েস্ট করেছেন।`,
+        '/superadmin/flight-tickets',
+        'order_status'
+    ).catch(err => console.error("Failed to notify admins:", err))
+
+    revalidatePath('/dashboard/flight-tickets')
+    return data as FlightTicketOrder
+}
+
 
