@@ -52,7 +52,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
   return (
     <div className="flex w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" prefetch={true} className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Store className="h-5 w-5" />
           </div>
@@ -62,7 +62,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
 
       {/* Back to Dashboard Button */}
       <div className="p-4 border-b">
-        <Link href="/dashboard">
+        <Link href="/dashboard" prefetch={true}>
           <Button variant="outline" className="w-full justify-start subscription-bypass" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             ড্যাশবোর্ডে ফিরে যান
@@ -81,6 +81,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                   isActive
@@ -105,6 +106,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive
@@ -129,6 +131,7 @@ export function ShopSidebar({ user, profile }: ShopSidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive

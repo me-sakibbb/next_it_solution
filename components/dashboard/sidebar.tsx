@@ -48,7 +48,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
   return (
     <div className="flex w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" prefetch={true} className="flex items-center gap-2">
           <img src="/logo.png" alt="Nex IT Solution" className="h-8 w-auto" />
           <span className="font-semibold text-foreground">Nex IT Solution</span>
         </Link>
@@ -58,6 +58,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
         {/* Dashboard Home */}
         <Link
           href="/dashboard"
+          prefetch={true}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             isDashboardHome
@@ -72,6 +73,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
         {/* Photo Enhancer */}
         <Link
           href="/dashboard/photo-enhancer"
+          prefetch={true}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             isPhotoEnhancer
@@ -86,6 +88,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
         {/* AI CV Builder */}
         <Link
           href="/dashboard/cv-builder"
+          prefetch={true}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             isCVBuilder
@@ -100,6 +103,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
         {/* Print Ready */}
         <Link
           href="/dashboard/print-ready"
+          prefetch={true}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             isPrintReady
@@ -121,6 +125,7 @@ export function DashboardSidebar({ user, profile }: SidebarProps) {
         {/* Billing */}
         <Link
           href="/dashboard/billing"
+          prefetch={true}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             isBilling
