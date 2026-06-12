@@ -98,194 +98,196 @@ export function FlightTicketForm({ onSuccess }: FlightTicketFormProps) {
     return (
         <Card className="max-w-4xl mx-auto border-none shadow-xl bg-white dark:bg-gray-950 overflow-hidden rounded-2xl">
             {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="flex items-center gap-5">
-                    <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-md shadow-inner">
-                        <Plane className="w-8 h-8 text-white rotate-45" />
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-5 sm:p-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="bg-white/20 p-3 rounded-xl backdrop-blur-md shadow-inner">
+                        <Plane className="w-6 h-6 text-white rotate-45" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight">নতুন ফ্লাইট টিকিট রিকোয়েস্ট</h2>
-                        <p className="text-blue-100 text-sm mt-1.5 font-medium">সেরা মূল্যে ফ্লাইট টিকিট পেতে আপনার ভ্রমণ ও যোগাযোগের বিবরণ প্রদান করুন</p>
+                        <h2 className="text-xl font-bold tracking-tight">নতুন ফ্লাইট টিকিট রিকোয়েস্ট</h2>
+                        <p className="text-blue-100 text-xs mt-1 font-medium">সেরা মূল্যে ফ্লাইট টিকিট পেতে আপনার ভ্রমণ ও যোগাযোগের বিবরণ প্রদান করুন</p>
                     </div>
                 </div>
-                <div className="hidden md:flex items-center gap-2 bg-black/20 px-4 py-2 rounded-xl text-sm font-semibold backdrop-blur-md text-white/90">
-                    <Info className="w-4 h-4" /> এডমিন কোটেশন
+                <div className="hidden sm:flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur-md text-white/90">
+                    <Info className="w-3.5 h-3.5" /> এডমিন কোটেশন
                 </div>
             </div>
 
             <form onSubmit={handleSubmit}>
-                <CardContent className="p-6 sm:p-10 space-y-10">
-                    {/* Section 1: Trip Details */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3 text-xl font-bold text-gray-900 dark:text-gray-100">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                                <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <CardContent className="p-5 sm:p-6 md:p-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 lg:divide-x lg:divide-gray-100 lg:dark:divide-gray-800">
+                        {/* Left Column: Trip Details & Preferences */}
+                        <div className="space-y-6">
+                            {/* Section 1: Trip Details */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+                                    <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                    ভ্রমণের বিবরণ
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="from" className="text-sm font-semibold text-gray-700 dark:text-gray-300">কোথা থেকে (প্রস্থান শহর) <span className="text-red-500">*</span></Label>
+                                        <Input 
+                                            id="from" 
+                                            placeholder="যেমন: ঢাকা (DAC)" 
+                                            required
+                                            value={formData.departure_city}
+                                            onChange={(e) => setFormData({...formData, departure_city: e.target.value})}
+                                            className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="to" className="text-sm font-semibold text-gray-700 dark:text-gray-300">কোথায় (গন্তব্য শহর) <span className="text-red-500">*</span></Label>
+                                        <Input 
+                                            id="to" 
+                                            placeholder="যেমন: লন্ডন (LHR)" 
+                                            required
+                                            value={formData.destination_city}
+                                            onChange={(e) => setFormData({...formData, destination_city: e.target.value})}
+                                            className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="dep_date" className="text-sm font-semibold text-gray-700 dark:text-gray-300">যাত্রার তারিখ <span className="text-red-500">*</span></Label>
+                                        <Input 
+                                            id="dep_date" 
+                                            type="date" 
+                                            required
+                                            value={formData.departure_date}
+                                            onChange={(e) => setFormData({...formData, departure_date: e.target.value})}
+                                            className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="ret_date" className="text-sm font-semibold text-gray-700 dark:text-gray-300">ফেরার তারিখ (ঐচ্ছিক)</Label>
+                                        <Input 
+                                            id="ret_date" 
+                                            type="date"
+                                            value={formData.return_date}
+                                            onChange={(e) => setFormData({...formData, return_date: e.target.value})}
+                                            className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors text-sm"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            ভ্রমণের বিবরণ
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-3">
-                                <Label htmlFor="from" className="font-semibold text-gray-700 dark:text-gray-300">কোথা থেকে (প্রস্থান শহর) <span className="text-red-500">*</span></Label>
-                                <Input 
-                                    id="from" 
-                                    placeholder="যেমন: ঢাকা (DAC)" 
-                                    required
-                                    value={formData.departure_city}
-                                    onChange={(e) => setFormData({...formData, departure_city: e.target.value})}
-                                    className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <Label htmlFor="to" className="font-semibold text-gray-700 dark:text-gray-300">কোথায় (গন্তব্য শহর) <span className="text-red-500">*</span></Label>
-                                <Input 
-                                    id="to" 
-                                    placeholder="যেমন: লন্ডন (LHR)" 
-                                    required
-                                    value={formData.destination_city}
-                                    onChange={(e) => setFormData({...formData, destination_city: e.target.value})}
-                                    className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <Label htmlFor="dep_date" className="font-semibold text-gray-700 dark:text-gray-300">যাত্রার তারিখ <span className="text-red-500">*</span></Label>
-                                <Input 
-                                    id="dep_date" 
-                                    type="date" 
-                                    required
-                                    value={formData.departure_date}
-                                    onChange={(e) => setFormData({...formData, departure_date: e.target.value})}
-                                    className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <Label htmlFor="ret_date" className="font-semibold text-gray-700 dark:text-gray-300">ফেরার তারিখ (ঐচ্ছিক)</Label>
-                                <Input 
-                                    id="ret_date" 
-                                    type="date"
-                                    value={formData.return_date}
-                                    onChange={(e) => setFormData({...formData, return_date: e.target.value})}
-                                    className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors"
-                                />
-                            </div>
-                        </div>
-                    </div>
 
-                    <Separator className="bg-gray-100 dark:bg-gray-800" />
+                            <Separator className="bg-gray-100 dark:bg-gray-800" />
 
-                    {/* Section 2: Preferences */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3 text-xl font-bold text-gray-900 dark:text-gray-100">
-                            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
-                                <Briefcase className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            {/* Section 2: Preferences */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+                                    <Briefcase className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                    ভ্রমণ পছন্দসমূহ
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">কেবিন ক্লাস</Label>
+                                        <Select value={formData.cabin_class} onValueChange={(v) => setFormData({...formData, cabin_class: v})}>
+                                            <SelectTrigger className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 text-sm">
+                                                <SelectValue placeholder="কেবিন ক্লাস নির্বাচন করুন" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Economy">ইকোনমি</SelectItem>
+                                                <SelectItem value="Premium Economy">প্রিমিয়াম ইকোনমি</SelectItem>
+                                                <SelectItem value="Business">বিজনেস</SelectItem>
+                                                <SelectItem value="First Class">ফার্স্ট ক্লাস</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">যাত্রী সংখ্যা</Label>
+                                        <Select value={formData.passengers} onValueChange={(v) => setFormData({...formData, passengers: v})}>
+                                            <SelectTrigger className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 text-sm">
+                                                <SelectValue placeholder="যাত্রী সংখ্যা নির্বাচন করুন" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                                                    <SelectItem key={n} value={n.toString()}>{n} জন যাত্রী</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
                             </div>
-                            ভ্রমণ পছন্দসমূহ
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-3">
-                                <Label className="font-semibold text-gray-700 dark:text-gray-300">কেবিন ক্লাস</Label>
-                                <Select value={formData.cabin_class} onValueChange={(v) => setFormData({...formData, cabin_class: v})}>
-                                    <SelectTrigger className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800">
-                                        <SelectValue placeholder="কেবিন ক্লাস নির্বাচন করুন" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Economy">ইকোনমি</SelectItem>
-                                        <SelectItem value="Premium Economy">প্রিমিয়াম ইকোনমি</SelectItem>
-                                        <SelectItem value="Business">বিজনেস</SelectItem>
-                                        <SelectItem value="First Class">ফার্স্ট ক্লাস</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-3">
-                                <Label className="font-semibold text-gray-700 dark:text-gray-300">যাত্রী সংখ্যা</Label>
-                                <Select value={formData.passengers} onValueChange={(v) => setFormData({...formData, passengers: v})}>
-                                    <SelectTrigger className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800">
-                                        <SelectValue placeholder="যাত্রী সংখ্যা নির্বাচন করুন" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                                            <SelectItem key={n} value={n.toString()}>{n} জন যাত্রী</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
 
-                    <Separator className="bg-gray-100 dark:bg-gray-800" />
-
-                    {/* Section 3: Contact & Notes */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3 text-xl font-bold text-gray-900 dark:text-gray-100">
-                            <div className="p-2 bg-teal-100 dark:bg-teal-900/50 rounded-lg">
-                                <User className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                            </div>
-                            যোগাযোগের তথ্য ও অন্যান্য
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-3">
-                                <Label htmlFor="name" className="font-semibold text-gray-700 dark:text-gray-300">পূর্ণ নাম <span className="text-red-500">*</span></Label>
-                                <Input 
-                                    id="name" 
-                                    placeholder="আপনার নাম লিখুন" 
-                                    required
-                                    value={formData.full_name}
-                                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                                    className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <Label htmlFor="phone" className="font-semibold text-gray-700 dark:text-gray-300">মোবাইল নম্বর <span className="text-red-500">*</span></Label>
-                                <Input 
-                                    id="phone" 
-                                    placeholder="মোবাইল নম্বর" 
-                                    required
-                                    value={formData.contact_number}
-                                    onChange={(e) => setFormData({...formData, contact_number: e.target.value})}
-                                    className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <Label htmlFor="email" className="font-semibold text-gray-700 dark:text-gray-300">ইমেইল ঠিকানা <span className="text-red-500">*</span></Label>
-                                <Input 
-                                    id="email" 
-                                    type="email" 
-                                    placeholder="ইমেইল ঠিকানা" 
-                                    required
-                                    value={formData.email_address}
-                                    onChange={(e) => setFormData({...formData, email_address: e.target.value})}
-                                    className="h-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors"
-                                />
-                            </div>
-                            <div className="md:col-span-3 space-y-3 pt-2">
-                                <Label htmlFor="notes" className="font-semibold text-gray-700 dark:text-gray-300">অতিরিক্ত অনুরোধ (ঐচ্ছিক)</Label>
-                                <Textarea 
-                                    id="notes" 
-                                    placeholder="যেমন: নির্দিষ্ট কোনো এয়ারলাইন্স, উইন্ডো সিট বা অতিরিক্ত লাগেজ সংক্রান্ত অনুরোধ..." 
-                                    className="min-h-[100px] p-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors resize-none"
-                                    value={formData.additional_notes}
-                                    onChange={(e) => setFormData({...formData, additional_notes: e.target.value})}
-                                />
+                        {/* Right Column: Contact & Notes */}
+                        <div className="space-y-6 lg:pl-8">
+                            {/* Section 3: Contact & Notes */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+                                    <User className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                                    যোগাযোগের তথ্য ও অন্যান্য
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="name" className="text-sm font-semibold text-gray-700 dark:text-gray-300">পূর্ণ নাম <span className="text-red-500">*</span></Label>
+                                        <Input 
+                                            id="name" 
+                                            placeholder="আপনার নাম লিখুন" 
+                                            required
+                                            value={formData.full_name}
+                                            onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                                            className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors text-sm"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300">মোবাইল নম্বর <span className="text-red-500">*</span></Label>
+                                            <Input 
+                                                id="phone" 
+                                                placeholder="মোবাইল নম্বর" 
+                                                required
+                                                value={formData.contact_number}
+                                                onChange={(e) => setFormData({...formData, contact_number: e.target.value})}
+                                                className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors text-sm"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">ইমেইল ঠিকানা <span className="text-red-500">*</span></Label>
+                                            <Input 
+                                                id="email" 
+                                                type="email" 
+                                                placeholder="ইমেইল ঠিকানা" 
+                                                required
+                                                value={formData.email_address}
+                                                onChange={(e) => setFormData({...formData, email_address: e.target.value})}
+                                                className="h-11 px-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 dark:text-gray-300">অতিরিক্ত অনুরোধ (ঐচ্ছিক)</Label>
+                                        <Textarea 
+                                            id="notes" 
+                                            placeholder="যেমন: নির্দিষ্ট কোনো এয়ারলাইন্স, উইন্ডো সিট বা অনুরোধ..." 
+                                            className="min-h-[92px] p-3 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors resize-none text-sm leading-relaxed"
+                                            value={formData.additional_notes}
+                                            onChange={(e) => setFormData({...formData, additional_notes: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </CardContent>
                 
-                <CardFooter className="bg-gray-50/80 dark:bg-gray-900/30 px-6 py-8 sm:px-10 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-start gap-3 p-4 bg-blue-50/80 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl text-blue-700 dark:text-blue-300 w-full md:w-auto md:max-w-xl">
-                        <Info className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm leading-relaxed font-medium">
+                <CardFooter className="bg-gray-50/80 dark:bg-gray-900/30 px-5 py-5 sm:px-8 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-start gap-2.5 p-3 bg-blue-50/80 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl text-blue-700 dark:text-blue-300 w-full sm:w-auto sm:max-w-xl">
+                        <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs leading-relaxed font-medium">
                             আমাদের প্রতিনিধি আপনার ভ্রমণ তথ্যের ভিত্তিতে টিকিটের সেরা মূল্য নির্ধারণ করে সাম্প্রতিক অর্ডারসমূহ ট্যাবে জানিয়ে দেবেন।
                         </p>
                     </div>
                     <Button
                         type="submit"
                         size="lg"
-                        className="w-full md:w-auto h-12 px-10 text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-blue-600/25 transition-all text-white gap-2"
+                        className="w-full sm:w-auto h-11 px-8 text-sm font-bold bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-blue-600/25 transition-all text-white gap-2"
                         disabled={loading}
                     >
                         {loading ? 'প্রক্রিয়াধীন...' : (
                             <>
-                                <Send className="w-5 h-5" />
+                                <Send className="w-4 h-4" />
                                 রিকোয়েস্ট পাঠান
                             </>
                         )}
