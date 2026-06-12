@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { updateUserSubscription } from '@/actions/superadmin'
-import { updateUserInfo } from '@/actions/superadmin-server'
+import { updateUserInfo, deleteUser } from '@/actions/superadmin-server'
 import { useRouter } from 'next/navigation'
-import { Search, Pencil, Crown, CheckCircle2, XCircle } from 'lucide-react'
+import { Search, Pencil, Crown, CheckCircle2, XCircle, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -127,6 +127,7 @@ export function UsersTable({
     const [editUser, setEditUser] = useState<UserWithSubscription | null>(null)
     const [editState, setEditState] = useState<EditState | null>(null)
     const [loading, setLoading] = useState(false)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
     // Sync local users when prop changes
     useEffect(() => {
@@ -230,6 +231,23 @@ export function UsersTable({
             alert('Failed to save changes.')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleDeleteUser = async (userId: string, identifier: string) => {
+        if (!confirm(`Are you sure you want to permanently delete user "${identifier}"? This action cannot be undone and will delete all their shops, subscriptions, and associated files.`)) {
+            return
+        }
+        setDeletingId(userId)
+        try {
+            await deleteUser(userId)
+            setUsers((prev) => prev.filter((u) => u.id !== userId))
+            alert('User deleted successfully.')
+        } catch (err: any) {
+            console.error(err)
+            alert(err.message || 'Failed to delete user.')
+        } finally {
+            setDeletingId(null)
         }
     }
 
@@ -392,15 +410,27 @@ export function UsersTable({
                                         {new Date(user.created_at).toLocaleDateString()}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleOpenEdit(user)}
-                                            className="gap-1.5"
-                                        >
-                                            <Pencil className="h-3.5 w-3.5" />
-                                            Edit
-                                        </Button>
+                                        <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleOpenEdit(user)}
+                                                className="gap-1.5"
+                                            >
+                                                <Pencil className="h-3.5 w-3.5" />
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => handleDeleteUser(user.id, user.email || user.full_name || '')}
+                                                disabled={deletingId === user.id}
+                                                className="gap-1.5"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                {deletingId === user.id ? 'Deleting...' : 'Delete'}
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             )
@@ -444,7 +474,7 @@ export function UsersTable({
                     if (!open) { setEditUser(null); setEditState(null) }
                 }}
             >
-                <DialogContent className="max-w-lg">
+                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Pencil className="h-4 w-4 text-muted-foreground" />

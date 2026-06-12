@@ -203,3 +203,27 @@ export async function fetchPaginatedUsers(params: {
         totalPages: count ? Math.ceil(count / params.pageSize) : 0
     }
 }
+
+export async function deleteUser(userId: string) {
+    const supabase = createAdminClient()
+    
+    // Delete service orders and flight tickets first to clear the non-cascading FK constraints
+    const { error: ticketError } = await supabase
+        .from('flight_ticket_orders')
+        .delete()
+        .eq('user_id', userId)
+    if (ticketError) throw new Error(`Failed to delete flight tickets: ${ticketError.message}`)
+
+    const { error: serviceError } = await supabase
+        .from('service_orders')
+        .delete()
+        .eq('user_id', userId)
+    if (serviceError) throw new Error(`Failed to delete service orders: ${serviceError.message}`)
+
+    // Delete the auth user (this cascades to public.users, subscriptions, shops, etc.)
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+    if (authError) {
+        throw new Error(authError.message)
+    }
+}
+
