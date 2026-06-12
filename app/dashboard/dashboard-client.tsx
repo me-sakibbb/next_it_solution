@@ -1,12 +1,66 @@
 "use client";
 
 import { useState } from "react";
-import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace, FolderOpen, FileText, ScanText, Plane } from "lucide-react";
+import { ImageIcon, FileUser, Store, ShoppingBag, BotMessageSquare, BrainCircuit, ScanFace, FolderOpen, FileText, ScanText, Plane, Sparkles, Laptop, Globe, Wrench, FileCode, CheckSquare, Palette } from "lucide-react";
 import { ServiceCard } from "@/components/dashboard/service-card";
 import { RecentOrdersWidget } from "@/components/dashboard/recent-orders-widget";
 import { ServiceOrder, Service, FlightTicketOrder } from "@/lib/types";
 import { ServiceOrderDialog } from "@/components/services/service-order-dialog";
 import { useUsageLimits } from "@/hooks/use-usage-limits";
+
+// Dynamic Icon selector for premium services
+const getServiceIcon = (name: string, category?: string) => {
+  const searchStr = `${name} ${category || ''}`.toLowerCase();
+  if (searchStr.includes('design') || searchStr.includes('ডিজাইন') || searchStr.includes('ফটো') || searchStr.includes('photo') || searchStr.includes('logo') || searchStr.includes('গ্রাফিক্স')) {
+    return Palette;
+  }
+  if (searchStr.includes('web') || searchStr.includes('ওয়েব') || searchStr.includes('website') || searchStr.includes('internet') || searchStr.includes('ডোমেইন') || searchStr.includes('domain') || searchStr.includes('hosting')) {
+    return Globe;
+  }
+  if (searchStr.includes('code') || searchStr.includes('ডেভেলপমেন্ট') || searchStr.includes('development') || searchStr.includes('software') || searchStr.includes('অ্যাপ') || searchStr.includes('app')) {
+    return FileCode;
+  }
+  if (searchStr.includes('setup') || searchStr.includes('সেটআপ') || searchStr.includes('install') || searchStr.includes('কনফিগার') || searchStr.includes('উইন্ডোজ') || searchStr.includes('windows')) {
+    return Wrench;
+  }
+  if (searchStr.includes('task') || searchStr.includes('কাজ') || searchStr.includes('অর্ডার') || searchStr.includes('লিস্ট') || searchStr.includes('list')) {
+    return CheckSquare;
+  }
+  return Sparkles; // default premium icon
+};
+
+// Dynamic Color selector for premium services
+const getServiceColors = (name: string, category?: string) => {
+  const searchStr = `${name} ${category || ''}`.toLowerCase();
+  if (searchStr.includes('design') || searchStr.includes('ডিজাইন') || searchStr.includes('ফটো') || searchStr.includes('photo') || searchStr.includes('logo') || searchStr.includes('গ্রাফিক্স')) {
+    return {
+      colorClass: "bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400",
+      iconColorClass: "text-purple-500"
+    };
+  }
+  if (searchStr.includes('web') || searchStr.includes('ওয়েব') || searchStr.includes('website') || searchStr.includes('domain') || searchStr.includes('hosting')) {
+    return {
+      colorClass: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+      iconColorClass: "text-blue-500"
+    };
+  }
+  if (searchStr.includes('code') || searchStr.includes('ডেভেলপমেন্ট') || searchStr.includes('development') || searchStr.includes('software') || searchStr.includes('app')) {
+    return {
+      colorClass: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+      iconColorClass: "text-emerald-500"
+    };
+  }
+  if (searchStr.includes('setup') || searchStr.includes('সেটআপ') || searchStr.includes('install') || searchStr.includes('windows')) {
+    return {
+      colorClass: "bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400",
+      iconColorClass: "text-orange-500"
+    };
+  }
+  return {
+    colorClass: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
+    iconColorClass: "text-amber-500"
+  };
+};
 
 interface DashboardClientProps {
   totalRevenue: number;
@@ -193,12 +247,43 @@ export function DashboardClient({
         </div>
       </section>
 
+      {/* Premium Services - Dynamic Section */}
+      {premiumServices.length > 0 && (
+        <section className="space-y-6 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-1 bg-amber-500 rounded-full" />
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+              প্রিমিয়াম সার্ভিসসমূহ
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {premiumServices.map((service) => {
+              const IconComponent = getServiceIcon(service.name, service.category);
+              const colors = getServiceColors(service.name, service.category);
+              return (
+                <ServiceCard
+                  key={service.id}
+                  title={service.name}
+                  description={service.description || ""}
+                  icon={IconComponent}
+                  href="#"
+                  price={service.price}
+                  onClick={() => handleDirectServiceClick(service)}
+                  colorClass={colors.colorClass}
+                  iconColorClass={colors.iconColorClass}
+                  adminRestricted={profile?.disabled_features?.includes(service.id) || profile?.disabled_features?.includes(service.name)}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Recent Activity */}
       <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <RecentOrdersWidget
           orders={orders}
           flightTickets={flightTickets}
-          shopName={shopName}
         />
       </section>
 
@@ -208,11 +293,10 @@ export function DashboardClient({
         onOpenChange={setIsOrderDialogOpen}
         service={selectedService!}
         userBalance={userBalance}
-        onSuccess={() => {
+        onOrderSuccess={() => {
           setIsOrderDialogOpen(false);
           if (onRefresh) onRefresh();
         }}
-        shopName={shopName}
       />
     </div>
   );

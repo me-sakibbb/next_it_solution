@@ -13,7 +13,7 @@ export function useDashboardStats() {
     const { user, shop, loading: shopLoading } = useShop()
     const shopId = shop?.id || ''
 
-    const { sales, loading: salesLoading } = useSales(shopId)
+    const { sales, isLoading: salesLoading } = useSales(shopId)
     const { products, loading: productsLoading } = useProducts(shopId)
     const { staff, loading: staffLoading } = useStaff(shopId)
     const { tasks, loading: tasksLoading } = useShopTasks(shopId)

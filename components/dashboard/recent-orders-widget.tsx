@@ -239,7 +239,7 @@ export function RecentOrdersWidget({ orders, flightTickets }: RecentOrdersWidget
                         <AlertDialogAction 
                             className="bg-green-600 hover:bg-green-700"
                             onClick={() => confirmOrder && handlePay(confirmOrder.id)}
-                            disabled={confirmOrder && loadingMap[confirmOrder.id]}
+                            disabled={!!(confirmOrder && loadingMap[confirmOrder.id])}
                         >
                             পেমেন্ট করুন
                         </AlertDialogAction>

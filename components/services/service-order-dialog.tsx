@@ -85,16 +85,16 @@ export function ServiceOrderDialog({ service, isOpen, onOpenChange, userBalance,
                     <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md space-y-2 text-sm">
                         <div className="flex justify-between">
                             <span className="text-gray-500">Service Price:</span>
-                            <span className="font-medium">${service.price.toFixed(2)}</span>
+                            <span className="font-medium">৳{service.price.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-500">Your Balance:</span>
-                            <span className="font-medium">${userBalance.toFixed(2)}</span>
+                            <span className="font-medium">৳{userBalance.toFixed(2)}</span>
                         </div>
                         <div className="border-t pt-2 mt-2 flex justify-between font-bold">
                             <span>Remaining:</span>
                             <span className={userBalance >= (service.price || 0) ? 'text-green-600' : 'text-red-600'}>
-                                ${(userBalance - (service.price || 0)).toFixed(2)}
+                                ৳{(userBalance - (service.price || 0)).toFixed(2)}
                             </span>
                         </div>
                     </div>

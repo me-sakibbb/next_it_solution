@@ -188,7 +188,7 @@ export function ServiceCatalog({ initialServices, userBalance, onOrderSuccess, g
                 onOpenChange={setIsOrderDialogOpen}
                 service={selectedService!}
                 userBalance={userBalance}
-                onSuccess={() => {
+                onOrderSuccess={() => {
                     setIsOrderDialogOpen(false)
                     if (onOrderSuccess) onOrderSuccess()
                 }}
