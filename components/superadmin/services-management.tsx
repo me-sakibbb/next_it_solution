@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Service } from '@/lib/types'
-import { upsertService } from '@/actions/superadmin'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -21,29 +19,22 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from '@/components/ui/label'
-import { Plus, Pencil, Trash2, ClipboardList } from 'lucide-react'
+import { Plus, Pencil } from 'lucide-react'
 import { ServiceFormBuilder } from './service-form-builder'
 
 interface ServicesManagementProps {
-    initialServices: Service[]
+    services: Service[]
+    onSaveService: (service: Partial<Service>) => Promise<boolean>
 }
 
-export function ServicesManagement({ initialServices }: ServicesManagementProps) {
-    const router = useRouter()
-    const [services, setServices] = useState(initialServices)
+export function ServicesManagement({ services, onSaveService }: ServicesManagementProps) {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [currentService, setCurrentService] = useState<Partial<Service>>({})
     const [priceInput, setPriceInput] = useState('')
     const [loading, setLoading] = useState(false)
-
-    // Synchronize local state with props when they change
-    useEffect(() => {
-        setServices(initialServices);
-    }, [initialServices]);
 
     const handleOpenDialog = (service?: Service) => {
         if (service) {
@@ -70,12 +61,10 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
                 ...currentService,
                 price: parseFloat(priceInput) || 0
             }
-            await upsertService(serviceToSave)
+            await onSaveService(serviceToSave)
             setIsDialogOpen(false)
-            router.refresh()
         } catch (error) {
             console.error('Failed to save service', error)
-            alert('Failed to save service')
         } finally {
             setLoading(false)
         }
@@ -90,7 +79,7 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
                 </Button>
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-md border bg-white dark:bg-gray-950">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -102,23 +91,31 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {services.map((service) => (
-                            <TableRow key={service.id}>
-                                <TableCell className="font-medium">{service.name}</TableCell>
-                                <TableCell>{service.category}</TableCell>
-                                <TableCell>${service.price.toFixed(2)}</TableCell>
-                                <TableCell>
-                                    <span className={`px-2 py-1 rounded-full text-xs ${service.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                        {service.is_active ? 'Active' : 'Inactive'}
-                                    </span>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(service)}>
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
+                        {services.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                                    No services found.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            services.map((service) => (
+                                <TableRow key={service.id}>
+                                    <TableCell className="font-medium text-gray-950 dark:text-gray-50">{service.name}</TableCell>
+                                    <TableCell>{service.category}</TableCell>
+                                    <TableCell className="font-medium">৳{service.price.toLocaleString()}</TableCell>
+                                    <TableCell>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${service.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-850 dark:text-gray-400'}`}>
+                                            {service.is_active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(service)}>
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </div>
@@ -168,7 +165,7 @@ export function ServicesManagement({ initialServices }: ServicesManagementProps)
                         <div className="flex items-center gap-2">
                             <Switch
                                 id="active"
-                                checked={currentService.is_active}
+                                checked={currentService.is_active ?? true}
                                 onCheckedChange={(checked) => setCurrentService({ ...currentService, is_active: checked })}
                             />
                             <Label htmlFor="active">Active</Label>
