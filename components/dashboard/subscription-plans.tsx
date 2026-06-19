@@ -163,6 +163,7 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
                     const isCurrent = isCurrentPlan(plan.id)
                     const canAffordWithWallet = userBalance >= plan.price
                     const isProcessing = processingPlan === plan.id
+                    const isPaidPlan = currentPlan && !['free', 'trial'].includes(currentPlan)
 
                     return (
                         <Card
@@ -226,7 +227,7 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
                                         {isProcessing && processingPlan === plan.id ? (
                                             <Loader2 className="w-4 h-4 animate-spin" />
                                         ) : null}
-                                        {isCurrent ? 'রিনিউ / মেয়াদ বাড়ান' : (currentPlan ? 'প্ল্যান পরিবর্তন করুন' : 'bKash দিয়ে কিনুন')}
+                                        {isCurrent ? 'রিনিউ / মেয়াদ বাড়ান' : (isPaidPlan ? 'প্ল্যান পরিবর্তন করুন' : 'bKash দিয়ে কিনুন')}
                                     </Button>
 
                                     {/* Wallet */}
@@ -258,7 +259,7 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
 
             {/* Confirmation Dialog */}
             <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ open })}>
-                <DialogContent className="sm:max-w-[400px]">
+                <DialogContent className="sm:max-w-[400px] subscription-modal-content">
                     <DialogHeader>
                         <DialogTitle>নিশ্চিত করুন</DialogTitle>
                         <DialogDescription>
