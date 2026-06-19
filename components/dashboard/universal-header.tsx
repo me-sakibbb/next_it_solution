@@ -31,6 +31,10 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
   const { status, loading, refresh } = useSubscriptionStatus(user.id);
   const [balance, setBalance] = useState<number>(parseFloat(profile?.balance ?? 0));
 
+  useEffect(() => {
+    setBalance(parseFloat(profile?.balance ?? 0));
+  }, [profile?.balance]);
+
   // Keep balance in sync with real-time updates to the users table
   useEffect(() => {
     const supabase = createClient();
@@ -45,8 +49,11 @@ export function UniversalHeader({ user, profile }: UniversalHeaderProps) {
           filter: `id=eq.${user.id}`,
         },
         (payload) => {
-          const newBalance = parseFloat(payload.new?.balance ?? 0);
-          setBalance(newBalance);
+          if (payload.new && 'balance' in payload.new) {
+            const newBalance = parseFloat(payload.new.balance ?? 0);
+            setBalance(newBalance);
+            router.refresh();
+          }
         }
       )
       .subscribe();

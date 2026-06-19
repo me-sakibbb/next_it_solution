@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export interface SubscriptionStatusResult {
     isActive: boolean
@@ -11,6 +12,7 @@ export interface SubscriptionStatusResult {
 }
 
 export function useSubscriptionStatus(userId: string) {
+    const router = useRouter()
     const [status, setStatus] = useState<SubscriptionStatusResult>({
         isActive: false,
         planType: null,
@@ -85,8 +87,9 @@ export function useSubscriptionStatus(userId: string) {
                     table: 'subscriptions',
                     filter: `user_id=eq.${userId}`,
                 },
-                () => {
-                    checkStatus()
+                async () => {
+                    await checkStatus()
+                    router.refresh()
                 }
             )
             .subscribe()
