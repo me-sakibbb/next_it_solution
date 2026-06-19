@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Service } from '@/lib/types'
 import { notifyUser } from './notifications'
+import { getPaginationRange } from '@/lib/pagination'
 
 export async function getAdminStats() {
     const supabase = await createClient()
@@ -39,6 +40,42 @@ export async function getAllOrdersAdmin() {
         .order('created_at', { ascending: false })
     if (error) throw new Error(error.message)
     return data ?? []
+}
+
+export async function fetchPaginatedOrders(params: {
+    page: number
+    pageSize: number
+    status?: string
+    search?: string
+}) {
+    const supabase = await createClient()
+    const { from, to } = getPaginationRange(params.page, params.pageSize)
+
+    let query = supabase
+        .from('service_orders')
+        .select('*, service:services(*), user:users!inner(id, email, full_name)', { count: 'exact' })
+
+    if (params.status && params.status !== 'all') {
+        query = query.eq('status', params.status)
+    }
+
+    if (params.search) {
+        query = query.or(`email.ilike.%${params.search}%,full_name.ilike.%${params.search}%`, { foreignTable: 'user' })
+    }
+
+    const { data, count, error } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to)
+
+    if (error) throw new Error(error.message)
+
+    return {
+        data: data ?? [],
+        total: count ?? 0,
+        page: params.page,
+        pageSize: params.pageSize,
+        totalPages: count ? Math.ceil(count / params.pageSize) : 0
+    }
 }
 
 export async function updateOrderStatus(

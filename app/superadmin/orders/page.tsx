@@ -1,27 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { getAllOrdersAdmin } from '@/actions/superadmin'
+import { useAdminOrders } from '@/hooks/use-admin-orders'
 import { OrdersList } from '@/components/superadmin/orders-list'
+import { Loader2 } from 'lucide-react'
 
 export default function SuperAdminOrdersPage() {
-    const [orders, setOrders] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        getAllOrdersAdmin()
-            .then(setOrders)
-            .catch(console.error)
-            .finally(() => setLoading(false))
-    }, [])
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <span className="text-gray-500">Loading orders...</span>
-            </div>
-        )
-    }
+    const {
+        orders,
+        total,
+        loading,
+        page,
+        params,
+        onParamsChange,
+        handleUpdateOrderStatus
+    } = useAdminOrders()
 
     return (
         <div className="space-y-6">
@@ -29,7 +21,20 @@ export default function SuperAdminOrdersPage() {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Order Management</h1>
             </div>
 
-            <OrdersList initialOrders={orders} />
+            <OrdersList
+                orders={orders}
+                totalCount={total}
+                currentPage={page}
+                onParamsChange={onParamsChange}
+                params={params}
+                onUpdateStatus={handleUpdateOrderStatus}
+            />
+
+            {loading && (
+                <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            )}
         </div>
     )
 }
