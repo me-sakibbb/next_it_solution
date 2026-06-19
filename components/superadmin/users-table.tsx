@@ -34,6 +34,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { User, Subscription, SubscriptionPlanType, SubscriptionStatus } from '@/lib/types'
+import { formatCurrency } from '@/lib/utils'
 
 type UserWithSubscription = User & {
     subscription: Subscription | null
@@ -362,7 +363,7 @@ export function UsersTable({
                                     </TableCell>
                                     <TableCell className="capitalize">{user.role}</TableCell>
                                     <TableCell className="font-medium">
-                                        ${user.balance?.toFixed(2) || '0.00'}
+                                        {formatCurrency(user.balance || 0)}
                                     </TableCell>
                                     <TableCell>
                                         {user.is_active ? (
@@ -519,7 +520,7 @@ export function UsersTable({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Balance ($)</Label>
+                                    <Label>Balance (৳)</Label>
                                     <Input
                                         type="number"
                                         step="0.01"

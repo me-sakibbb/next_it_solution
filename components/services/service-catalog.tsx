@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card"
 import { ShoppingBag, FolderOpen, FileText, ExternalLink, Plane } from 'lucide-react'
 import { ServiceOrderDialog } from './service-order-dialog'
+import { formatCurrency } from '@/lib/utils'
 
 interface ServiceCatalogProps {
     initialServices: Service[]
@@ -160,7 +161,7 @@ export function ServiceCatalog({ initialServices, userBalance, onOrderSuccess, g
                                 <CardHeader>
                                     <div className="flex justify-between items-start">
                                         <CardTitle className="text-lg">{service.name}</CardTitle>
-                                        <Badge variant="secondary">${service.price}</Badge>
+                                        <Badge variant="secondary">{formatCurrency(service.price)}</Badge>
                                     </div>
                                     <CardDescription className="line-clamp-2">{service.description}</CardDescription>
                                 </CardHeader>

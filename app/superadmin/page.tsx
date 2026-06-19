@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getAdminStats } from '@/actions/superadmin'
 import { Users, ShoppingCart, DollarSign } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
 
 interface AdminStats {
     users: number
@@ -59,7 +60,7 @@ export default function SuperAdminPage() {
                         <div>
                             <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Revenue</p>
                             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {loading ? '...' : `$${stats.revenue.toFixed(2)}`}
+                                {loading ? '...' : formatCurrency(stats.revenue)}
                             </h3>
                         </div>
                         <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
