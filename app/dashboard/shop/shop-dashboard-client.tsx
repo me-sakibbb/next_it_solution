@@ -79,7 +79,7 @@ export function ShopDashboardClient({
 
 
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-8 animate-fade-in isolate [transform:translateZ(0)]">
             {/* Header / Dynamic Hero Section */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-gradient-to-r from-primary/5 via-transparent to-transparent p-6 rounded-2xl border border-primary/10">
                 <div>

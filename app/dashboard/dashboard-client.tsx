@@ -132,7 +132,7 @@ export function DashboardClient({
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-12 animate-fade-in">
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-12 animate-fade-in isolate [transform:translateZ(0)]">
       {/* Header Section */}
       <section>
         <div className="mb-6">
@@ -249,7 +249,7 @@ export function DashboardClient({
 
       {/* Premium Services - Dynamic Section */}
       {premiumServices.length > 0 && (
-        <section className="space-y-6 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+        <section className="space-y-6 animate-slide-up isolate [transform:translateZ(0)]" style={{ animationDelay: '0.05s' }}>
           <div className="flex items-center gap-2">
             <div className="h-8 w-1 bg-amber-500 rounded-full" />
             <h2 className="text-2xl font-bold tracking-tight text-foreground">
@@ -280,7 +280,7 @@ export function DashboardClient({
       )}
 
       {/* Recent Activity */}
-      <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <section className="animate-slide-up isolate [transform:translateZ(0)]" style={{ animationDelay: '0.1s' }}>
         <RecentOrdersWidget
           orders={orders}
           flightTickets={flightTickets}

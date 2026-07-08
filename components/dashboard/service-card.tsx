@@ -48,7 +48,7 @@ export function ServiceCard({
     }
     const Content = (
         <Card className={cn(
-            "h-full transition-all duration-300 border-border/50 hover:shadow-md hover:border-primary/20 group relative overflow-hidden",
+            "h-full transition-[border-color,box-shadow,transform] duration-300 border-border/50 hover:shadow-md hover:border-primary/20 group relative overflow-hidden isolate [transform:translateZ(0)] [backface-visibility:hidden]",
             (disabled || adminRestricted) && "opacity-60"
         )}>
             <CardContent className="p-6 flex flex-col h-full">
