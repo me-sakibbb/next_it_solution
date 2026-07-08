@@ -17,7 +17,9 @@ export async function GET(request: NextRequest) {
             token_hash,
         })
 
-        if (!error) {
+        if (error) {
+            console.error('verifyOtp error details:', error)
+        } else {
             // redirect user to specified redirect URL or root of app
             redirect(next)
         }
