@@ -34,6 +34,7 @@ interface Transaction {
     status: string
     trx_id: string | null
     bkash_error: string | null
+    gateway_error: string | null
     created_at: string
     updated_at: string
     user: {
@@ -247,9 +248,9 @@ export function TransactionHistory({
                                             <StatusIcon className="h-3 w-3" />
                                             {statusCfg.label}
                                         </Badge>
-                                        {tx.bkash_error && (
-                                            <div className="text-xs text-destructive mt-1 max-w-40 truncate" title={tx.bkash_error}>
-                                                {tx.bkash_error}
+                                        {(tx.gateway_error || tx.bkash_error) && (
+                                            <div className="text-xs text-destructive mt-1 max-w-40 truncate" title={tx.gateway_error || tx.bkash_error || ''}>
+                                                {tx.gateway_error || tx.bkash_error}
                                             </div>
                                         )}
                                     </TableCell>

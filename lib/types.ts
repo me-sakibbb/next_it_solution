@@ -399,22 +399,30 @@ export interface Notification {
 }
 
 
-export type BkashPaymentIntent = 'add_balance' | 'subscribe'
-export type BkashPaymentStatus = 'created' | 'executed' | 'failed' | 'cancelled'
+export type PaymentIntent = 'add_balance' | 'subscribe'
+export type PaymentStatus = 'created' | 'executed' | 'failed' | 'cancelled'
 
-export interface BkashPayment {
+export interface Payment {
   id: string
   user_id: string
   payment_id: string
-  intent: BkashPaymentIntent
+  invoice_number?: string
+  intent: PaymentIntent
   plan_type?: string
   amount: number
-  status: BkashPaymentStatus
+  status: PaymentStatus
   trx_id?: string
-  bkash_error?: string
+  payment_method?: string
+  gateway_error?: string
+  bkash_error?: string  // legacy field
   created_at: string
   updated_at: string
 }
+
+// Legacy aliases for backward compatibility
+export type BkashPaymentIntent = PaymentIntent
+export type BkashPaymentStatus = PaymentStatus
+export type BkashPayment = Payment
 
 export interface PushSubscriptionData {
   id: string

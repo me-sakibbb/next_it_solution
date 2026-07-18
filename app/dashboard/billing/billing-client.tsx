@@ -14,7 +14,7 @@ import {
     XCircle, Clock, ArrowDownCircle, ArrowUpCircle,
     RefreshCw
 } from 'lucide-react'
-import { BkashPayment } from '@/lib/types'
+import { Payment } from '@/lib/types'
 import { useToast } from '@/components/ui/use-toast'
 import { useSubscriptionContext } from '@/lib/subscription-context'
 
@@ -22,7 +22,7 @@ interface BillingPageClientProps {
     user: any
     profile: any
     subscription: any
-    payments: BkashPayment[]
+    payments: Payment[]
     referralStats: ReferralStats
 }
 
@@ -185,7 +185,7 @@ export function BillingPageClient({ user, profile, subscription, payments, refer
                 <div>
                     <h2 className="text-lg font-semibold">প্ল্যান নির্বাচন করুন</h2>
                     <p className="text-sm text-muted-foreground">
-                        বিকাশ দিয়ে পেমেন্ট করুন অথবা ওয়ালেট ব্যালেন্স ব্যবহার করুন
+                        বিকাশ, নগদ বা যেকোনো মাধ্যমে পেমেন্ট করুন অথবা ওয়ালেট ব্যালেন্স ব্যবহার করুন
                     </p>
                 </div>
                 <SubscriptionPlans

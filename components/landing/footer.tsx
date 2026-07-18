@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { ShoppingCart, Facebook, Twitter, Instagram, Linkedin, Github } from 'lucide-react'
+import Image from 'next/image'
+import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react'
 
 export function Footer() {
     return (
@@ -57,6 +58,23 @@ export function Footer() {
                             <li><Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
                             <li><Link href="/cookies" className="text-muted-foreground hover:text-primary transition-colors">Cookie Policy</Link></li>
                         </ul>
+                    </div>
+                </div>
+
+                {/* Payment Gateway Banner */}
+                <div className="flex justify-center mb-8">
+                    <div className="bg-background/80 backdrop-blur-sm border border-border/60 rounded-xl px-6 py-4 shadow-sm">
+                        <p className="text-[11px] text-muted-foreground text-center uppercase tracking-wider font-medium mb-3">
+                            Secured Payment Gateway
+                        </p>
+                        <Image
+                            src="/payment_banner.png"
+                            alt="Paystation — Secured Payment Gateway"
+                            width={400}
+                            height={60}
+                            className="h-10 md:h-12 w-auto object-contain mx-auto"
+                            priority={false}
+                        />
                     </div>
                 </div>
 

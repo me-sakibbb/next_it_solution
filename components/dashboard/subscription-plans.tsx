@@ -13,7 +13,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Check, Crown, Zap, Star, Wallet, Loader2, AlertCircle } from 'lucide-react'
-import { useBkashPayment } from '@/hooks/use-bkash-payment'
+import { usePayment } from '@/hooks/use-payment'
 import { useToast } from '@/components/ui/use-toast'
 import { useRouter } from 'next/navigation'
 import { useSubscriptionContext } from '@/lib/subscription-context'
@@ -98,7 +98,7 @@ interface SubscriptionPlansProps {
 }
 
 export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: SubscriptionPlansProps) {
-    const { initiateBkashPayment, initiateWalletSubscribe, isLoading } = useBkashPayment()
+    const { initiatePayment, initiateWalletSubscribe, isLoading } = usePayment()
     const { toast } = useToast()
     const router = useRouter()
     const { refresh: refreshSubscription } = useSubscriptionContext()
@@ -106,11 +106,11 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean
         plan?: Plan
-        method?: 'bkash' | 'wallet'
+        method?: 'gateway' | 'wallet'
     }>({ open: false })
     const [processingPlan, setProcessingPlan] = useState<string | null>(null)
 
-    const openConfirm = (plan: Plan, method: 'bkash' | 'wallet') => {
+    const openConfirm = (plan: Plan, method: 'gateway' | 'wallet') => {
         setConfirmDialog({ open: true, plan, method })
     }
 
@@ -122,8 +122,8 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
         setProcessingPlan(plan.id)
 
         try {
-            if (method === 'bkash') {
-                await initiateBkashPayment({
+            if (method === 'gateway') {
+                await initiatePayment({
                     amount: plan.price,
                     intent: 'subscribe',
                     planType: plan.id,
@@ -218,16 +218,16 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
 
                                 {/* Action Buttons */}
                                 <div className="flex flex-col gap-2 pt-1">
-                                    {/* bKash Direct */}
+                                    {/* Payment Gateway */}
                                     <Button
-                                        className="w-full gap-2 bg-[#d12053] hover:bg-[#b01845] text-white border-none shadow-sm"
+                                        className="w-full gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-none shadow-sm"
                                         disabled={isProcessing}
-                                        onClick={() => openConfirm(plan, 'bkash')}
+                                        onClick={() => openConfirm(plan, 'gateway')}
                                     >
                                         {isProcessing && processingPlan === plan.id ? (
                                             <Loader2 className="w-4 h-4 animate-spin" />
                                         ) : null}
-                                        {isCurrent ? 'রিনিউ / মেয়াদ বাড়ান' : (isPaidPlan ? 'প্ল্যান পরিবর্তন করুন' : 'bKash দিয়ে কিনুন')}
+                                        {isCurrent ? 'রিনিউ / মেয়াদ বাড়ান' : (isPaidPlan ? 'প্ল্যান পরিবর্তন করুন' : 'পেমেন্ট করে কিনুন')}
                                     </Button>
 
                                     {/* Wallet */}
@@ -239,7 +239,7 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
                                         title={!canAffordWithWallet ? `পর্যাপ্ত ব্যালেন্স নেই (৳${plan.price} প্রয়োজন)` : undefined}
                                     >
                                         <Wallet className="w-4 h-4" />
-                                        {isCurrent ? 'ব্যালেন্স দিয়ে রিনিউ' : 'ব্যালেন্স দিয়ে কিনুন'}
+                                        {isCurrent ? 'ব্যালেন্স দিয়ে রিনিউ' : 'ব্যালেন্স দিয়ে কিনুন'}
                                         {!canAffordWithWallet && (
                                             <AlertCircle className="w-3 h-3 text-muted-foreground" />
                                         )}
@@ -266,8 +266,8 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
                             {confirmDialog.plan && confirmDialog.method && (
                                 <>
                                     <span className="font-semibold text-foreground">{confirmDialog.plan.name}</span> প্ল্যান কিনতে{' '}
-                                    {confirmDialog.method === 'bkash' ? (
-                                        <span>bKash-এর মাধ্যমে <span className="font-semibold text-foreground">৳{confirmDialog.plan.price}</span> পেমেন্ট করুন।</span>
+                                    {confirmDialog.method === 'gateway' ? (
+                                        <span>পেমেন্ট গেটওয়ের মাধ্যমে <span className="font-semibold text-foreground">৳{confirmDialog.plan.price}</span> পেমেন্ট করুন।</span>
                                     ) : (
                                         <span>আপনার ওয়ালেট থেকে <span className="font-semibold text-foreground">৳{confirmDialog.plan.price}</span> কাটা হবে।</span>
                                     )}
@@ -293,9 +293,9 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
                         </div>
                     )}
 
-                    {confirmDialog.method === 'bkash' && (
-                        <div className="bg-[#d12053]/5 border border-[#d12053]/20 rounded-lg p-3 text-sm text-muted-foreground">
-                            আপনাকে bKash-এর পেমেন্ট পেজে নিয়ে যাওয়া হবে। পেমেন্ট সম্পন্ন হলে স্বয়ংক্রিয়ভাবে সাবস্ক্রিপশন সক্রিয় হবে।
+                    {confirmDialog.method === 'gateway' && (
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 text-sm text-muted-foreground">
+                            আপনাকে পেমেন্ট গেটওয়ের পেজে নিয়ে যাওয়া হবে। পেমেন্ট সম্পন্ন হলে স্বয়ংক্রিয়ভাবে সাবস্ক্রিপশন সক্রিয় হবে।
                         </div>
                     )}
 
@@ -305,7 +305,7 @@ export function SubscriptionPlans({ currentPlan, userBalance = 0, onSuccess }: S
                         </Button>
                         <Button
                             onClick={handleConfirm}
-                            className={confirmDialog.method === 'bkash' ? 'bg-[#d12053] hover:bg-[#b01845] text-white' : ''}
+                            className={confirmDialog.method === 'gateway' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white' : ''}
                         >
                             নিশ্চিত করুন
                         </Button>

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Wallet, PlusCircle, Loader2, ShieldCheck } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { useBkashPayment } from "@/hooks/use-bkash-payment"
+import { usePayment } from "@/hooks/use-payment"
 
 const QUICK_AMOUNTS = [50, 100, 200, 500, 1000]
 
@@ -22,7 +22,7 @@ export function AddBalanceModal({ children }: { children?: React.ReactNode }) {
     const [open, setOpen] = useState(false)
     const [amount, setAmount] = useState('')
     const { toast } = useToast()
-    const { initiateBkashPayment, isLoading } = useBkashPayment()
+    const { initiatePayment, isLoading } = usePayment()
 
     const handleAmountSelect = (val: number) => {
         setAmount(val.toString())
@@ -41,8 +41,8 @@ export function AddBalanceModal({ children }: { children?: React.ReactNode }) {
         }
 
         try {
-            await initiateBkashPayment({ amount: amountNum, intent: 'add_balance' })
-            // Page redirects to bKash — setOpen(false) not needed
+            await initiatePayment({ amount: amountNum, intent: 'add_balance' })
+            // Page redirects to Paystation — setOpen(false) not needed
         } catch (err) {
             toast({
                 title: 'পেমেন্ট ব্যর্থ',
@@ -70,7 +70,7 @@ export function AddBalanceModal({ children }: { children?: React.ReactNode }) {
                         <DialogTitle className="text-xl">ব্যালেন্স যোগ করুন</DialogTitle>
                     </div>
                     <DialogDescription>
-                        bKash-এর মাধ্যমে সরাসরি আপনার ওয়ালেটে টাকা যোগ করুন।
+                        পেমেন্ট গেটওয়ের মাধ্যমে সরাসরি আপনার ওয়ালেটে টাকা যোগ করুন।
                     </DialogDescription>
                 </DialogHeader>
 
@@ -113,31 +113,31 @@ export function AddBalanceModal({ children }: { children?: React.ReactNode }) {
                         <p className="text-[11px] text-muted-foreground">সর্বনিম্ন: ৳১০</p>
                     </div>
 
-                    {/* bKash Pay Button */}
+                    {/* Pay Button */}
                     <Button
-                        className="w-full h-11 bg-[#d12053] hover:bg-[#b01845] text-white border-none shadow-md shadow-[#d12053]/20 text-sm font-semibold gap-2"
+                        className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-none shadow-md shadow-emerald-600/20 text-sm font-semibold gap-2"
                         onClick={handlePay}
                         disabled={isLoading || !amount || parseFloat(amount) < 10}
                     >
                         {isLoading ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                            <span className="font-black text-base">bKash</span>
+                            <Wallet className="w-4 h-4" />
                         )}
-                        {isLoading ? 'প্রসেস হচ্ছে...' : `৳${amount || '0'} bKash দিয়ে পেমেন্ট`}
+                        {isLoading ? 'প্রসেস হচ্ছে...' : `৳${amount || '0'} পেমেন্ট করুন`}
                     </Button>
 
                     {/* Security note */}
                     <div className="flex items-start gap-2 p-3 bg-muted/40 rounded-lg">
                         <ShieldCheck className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                         <p className="text-[11px] text-muted-foreground leading-relaxed">
-                            আপনার পেমেন্ট বাংলাদেশ ব্যাংক অনুমোদিত bKash-এর নিরাপদ গেটওয়ের মাধ্যমে সম্পন্ন হবে। পেমেন্ট সম্পন্ন হলে স্বয়ংক্রিয়ভাবে ব্যালেন্স যোগ হবে।
+                            আপনার পেমেন্ট Paystation-এর নিরাপদ গেটওয়ের মাধ্যমে সম্পন্ন হবে। পেমেন্ট সম্পন্ন হলে স্বয়ংক্রিয়ভাবে ব্যালেন্স যোগ হবে।
                         </p>
                     </div>
                 </div>
 
                 <div className="flex justify-center text-[10px] text-muted-foreground uppercase tracking-widest font-medium pt-2">
-                    Nex IT Solution • Secured by bKash
+                    Nex IT Solution • Secured by Paystation
                 </div>
             </DialogContent>
         </Dialog>

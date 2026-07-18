@@ -45,8 +45,8 @@ export default function SuperAdminBkashTransactionsPage() {
                         <CreditCard className="h-5 w-5 text-indigo-500" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">bKash Transactions</h1>
-                        <p className="text-sm text-muted-foreground mt-0.5">All bKash payment records — contributes to total revenue</p>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payment Transactions</h1>
+                        <p className="text-sm text-muted-foreground mt-0.5">All payment records — contributes to total revenue</p>
                     </div>
                 </div>
                 <div className="text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-md">

@@ -40,7 +40,8 @@ interface BalanceTransactionHistoryProps {
 
 const REFERENCE_TYPE_LABELS: Record<string, string> = {
     service_order: 'Service Order',
-    bkash_payment: 'bKash Top-Up',
+    bkash_payment: 'Payment Top-Up',
+    gateway_payment: 'Payment Top-Up',
     subscription: 'Subscription',
     referral_bonus: 'Referral Bonus',
     manual: 'Manual',
